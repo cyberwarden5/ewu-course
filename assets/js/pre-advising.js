@@ -7,39 +7,6 @@
 (() => {
     const API_BASE_URL = window.API_BASE_URL || 'https://api.aftabkabir.me';
 
-    const COURSE_TITLES = {
-        'CSE103': 'Structured Programming',
-        'CSE106': 'Discrete Mathematics',
-        'CSE110': 'Object Oriented Programming',
-        'CSE200': 'Computer-Aided Engineering Drawing',
-        'CSE207': 'Data Structures',
-        'CSE209': 'Electrical Circuits',
-        'CSE225': 'Numerical Methods',
-        'CSE246': 'Algorithms',
-        'CSE251': 'Electronic Circuits',
-        'CSE302': 'Database Systems',
-        'CSE303': 'Statistics for Data Science',
-        'CSE325': 'Operating Systems',
-        'CSE326': 'Compiler Design',
-        'CSE345': 'Computer Architecture',
-        'CSE350': 'Data Communications',
-        'CSE412': 'Software Engineering',
-        'FIN101': 'Principles of Finance',
-        'MKT101': 'Principles of Marketing',
-        'ACT101': 'Financial Accounting',
-        'BUS231': 'Business Communication',
-        'BUS321': 'Business for Engineering & Technology',
-        'MAT101': 'Differential & Integral Calculus',
-        'MAT102': 'Differential Equations & Special Functions',
-        'MAT104': 'Coordinate Geometry & Vector Analysis',
-        'STA102': 'Statistics and Probability',
-        'CHE109': 'Engineering Chemistry-I',
-        'PHY109': 'Engineering Physics-I',
-        'ENG101': 'Basic English',
-        'ENG102': 'Composition and Communication Skills',
-        'GEN226': 'Emergence of Bangladesh'
-    };
-
     let currentView = 'grid';
     let availableSemesters = [];
     let currentSemesterId = null;
@@ -47,11 +14,6 @@
     function cleanText(s) {
         if (s == null) return '';
         return String(s).replace(/[\r\n\t]+/g, ' ').replace(/\s+/g, ' ').trim();
-    }
-
-    function getCourseTitle(code) {
-        const cleanCode = cleanText(code).toUpperCase();
-        return COURSE_TITLES[cleanCode] || `${cleanCode} Course`;
     }
 
     async function handleLogout(event) {
@@ -230,16 +192,16 @@
                     </div>
                 `;
             } else {
-                gridView.innerHTML = courses.map((course, idx) => {
+                gridView.innerHTML = courses.map((course) => {
                     const code = cleanText(course.CourseCode);
-                    const title = getCourseTitle(code);
+                    const courseName = cleanText(course.CourseName || course.CourseTitle);
                     const credits = parseFloat(course.CreditHour) || 0;
                     const regId = course.PreCourseRegistrationId || '--';
 
                     return `
                         <div class="relative overflow-hidden rounded-2xl p-5 bg-white/[0.02] hover:bg-white/[0.04] border border-white/[0.08] hover:border-teal-500/40 transition-all duration-200 group shadow-lg">
                             <div class="flex items-start justify-between gap-3 mb-3">
-                                <span class="inline-flex items-center px-3 py-1 rounded-xl text-xs font-mono font-bold bg-teal-500/15 border border-teal-500/30 text-teal-300">
+                                <span class="inline-flex items-center px-3 py-1.5 rounded-xl text-sm font-mono font-bold bg-teal-500/15 border border-teal-500/30 text-teal-300">
                                     ${code}
                                 </span>
                                 <span class="px-2.5 py-0.5 rounded-full text-[10px] font-mono bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-medium">
@@ -247,9 +209,7 @@
                                 </span>
                             </div>
 
-                            <h3 class="text-sm font-semibold text-white group-hover:text-teal-300 transition-colors line-clamp-2">
-                                ${title}
-                            </h3>
+                            ${courseName ? `<div class="text-xs text-gray-300 font-medium mb-3">${courseName}</div>` : ''}
 
                             <div class="mt-4 pt-3 border-t border-white/[0.06] flex items-center justify-between text-xs font-mono">
                                 <span class="text-gray-400">Credit Load:</span>
@@ -257,7 +217,7 @@
                             </div>
 
                             <div class="mt-2 flex items-center justify-between text-[11px] font-mono text-gray-400">
-                                <span>Reference ID:</span>
+                                <span>Registration ID:</span>
                                 <span class="text-gray-300">#${regId}</span>
                             </div>
                         </div>
@@ -271,7 +231,7 @@
             if (count === 0) {
                 tableBody.innerHTML = `
                     <tr>
-                        <td colspan="6" class="py-8 text-center text-gray-400 font-mono text-xs">
+                        <td colspan="5" class="py-8 text-center text-gray-400 font-mono text-xs">
                             No pre-advised courses recorded for this semester.
                         </td>
                     </tr>
@@ -279,7 +239,6 @@
             } else {
                 tableBody.innerHTML = courses.map((course, idx) => {
                     const code = cleanText(course.CourseCode);
-                    const title = getCourseTitle(code);
                     const credits = parseFloat(course.CreditHour) || 0;
                     const regId = course.PreCourseRegistrationId || '--';
 
@@ -287,7 +246,6 @@
                         <tr class="hover:bg-white/[0.02] transition-colors">
                             <td class="py-3 px-4 font-mono text-gray-400">${idx + 1}</td>
                             <td class="py-3 px-4 font-mono font-bold text-teal-300">${code}</td>
-                            <td class="py-3 px-4 font-medium text-white">${title}</td>
                             <td class="py-3 px-4 text-center font-mono font-bold text-white">${credits % 1 === 0 ? credits.toFixed(0) : credits.toFixed(1)}</td>
                             <td class="py-3 px-4 font-mono text-gray-400">#${regId}</td>
                             <td class="py-3 px-4 text-right">
