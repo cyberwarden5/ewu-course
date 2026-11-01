@@ -7,94 +7,6 @@
 (() => {
     const API_BASE_URL = window.API_BASE_URL || 'https://api.aftabkabir.me';
 
-    const FALLBACK_ANALYSIS = {
-        "StudentId": "2025-2-60-331",
-        "FirstName": "Aftab Kabir Limon",
-        "CGPA": 3.69,
-        "CreditsAttend": 46.00,
-        "CrEarned": 46.00,
-        "MinCr": 140.00,
-        "RemainingCr": 94.00,
-        "ProgramCurriculumName": "B.Sc. in Computer Science and Engineering"
-    };
-
-    const FALLBACK_COURSE_AREAS = [
-        {
-            "Area": "Basic Science Courses",
-            "TotalAreaCredits": 11.00,
-            "TotalCreditsEarned": 8.00,
-            "TotalRemainingCredits": 3.00,
-            "CourseView": [
-                { "CourseCode": "CHE109", "CourseName": "Engineering Chemistry-I", "CreditHour": 4.00, "Grade": "A", "GradePoint": 15.00, "CreditEarn": 4.00 },
-                { "CourseCode": "PHY109", "CourseName": "Engineering Physics-I", "CreditHour": 4.00, "Grade": "B+", "GradePoint": 13.00, "CreditEarn": 4.00 }
-            ]
-        },
-        {
-            "Area": "Mathematics and Statistics Courses",
-            "TotalAreaCredits": 15.00,
-            "TotalCreditsEarned": 12.00,
-            "TotalRemainingCredits": 3.00,
-            "CourseView": [
-                { "CourseCode": "MAT101", "CourseName": "Differential & Integral Calculus", "CreditHour": 3.00, "Grade": "A+", "GradePoint": 12.00, "CreditEarn": 3.00 },
-                { "CourseCode": "MAT102", "CourseName": "Differential Equations & Special Functions", "CreditHour": 3.00, "Grade": "A", "GradePoint": 11.25, "CreditEarn": 3.00 },
-                { "CourseCode": "MAT104", "CourseName": "Co-ordinate Geometry & Vector Analysis", "CreditHour": 3.00, "Grade": "A-", "GradePoint": 10.50, "CreditEarn": 3.00 },
-                { "CourseCode": "STA102", "CourseName": "Statistics and Probability", "CreditHour": 3.00, "Grade": "A-", "GradePoint": 10.50, "CreditEarn": 3.00 }
-            ]
-        },
-        {
-            "Area": "Compulsory Language and General Education Courses",
-            "TotalAreaCredits": 9.00,
-            "TotalCreditsEarned": 9.00,
-            "TotalRemainingCredits": 0.00,
-            "CourseView": [
-                { "CourseCode": "ENG7101", "CourseName": "Basic English", "CreditHour": 3.00, "Grade": "A", "GradePoint": 11.25, "CreditEarn": 3.00 },
-                { "CourseCode": "ENG7102", "CourseName": "Composition and Communication Skills", "CreditHour": 3.00, "Grade": "A+", "GradePoint": 12.00, "CreditEarn": 3.00 },
-                { "CourseCode": "GEN7226", "CourseName": "Emergence of Bangladesh", "CreditHour": 3.00, "Grade": "A-", "GradePoint": 10.50, "CreditEarn": 3.00 }
-            ]
-        },
-        {
-            "Area": "Elective General Education Courses",
-            "TotalAreaCredits": 9.00,
-            "TotalCreditsEarned": 0.00,
-            "TotalRemainingCredits": 9.00,
-            "CourseView": []
-        },
-        {
-            "Area": "Core Computer Science and Engineering Courses",
-            "TotalAreaCredits": 62.00,
-            "TotalCreditsEarned": 17.00,
-            "TotalRemainingCredits": 45.00,
-            "CourseView": [
-                { "CourseCode": "CSE103", "CourseName": "Structured Programming", "CreditHour": 4.50, "Grade": "A+", "GradePoint": 18.00, "CreditEarn": 4.50 },
-                { "CourseCode": "CSE106", "CourseName": "Discrete Mathematics", "CreditHour": 3.00, "Grade": "A+", "GradePoint": 12.00, "CreditEarn": 3.00 },
-                { "CourseCode": "CSE110", "CourseName": "Object Oriented Programming", "CreditHour": 4.50, "Grade": "A", "GradePoint": 16.87, "CreditEarn": 4.50 },
-                { "CourseCode": "CSE200", "CourseName": "Computer-Aided Engineering Drawing", "CreditHour": 1.00, "Grade": "A+", "GradePoint": 4.00, "CreditEarn": 1.00 },
-                { "CourseCode": "CSE209", "CourseName": "Electrical Circuits", "CreditHour": 4.00, "Grade": "B+", "GradePoint": 13.00, "CreditEarn": 4.00 }
-            ]
-        },
-        {
-            "Area": "Capstone Project",
-            "TotalAreaCredits": 6.00,
-            "TotalCreditsEarned": 0.00,
-            "TotalRemainingCredits": 6.00,
-            "CourseView": []
-        },
-        {
-            "Area": "Non-major Elective Computer Science and Engineering Courses",
-            "TotalAreaCredits": 8.00,
-            "TotalCreditsEarned": 0.00,
-            "TotalRemainingCredits": 8.00,
-            "CourseView": []
-        },
-        {
-            "Area": "Major",
-            "TotalAreaCredits": 20.00,
-            "TotalCreditsEarned": 0.00,
-            "TotalRemainingCredits": 20.00,
-            "CourseView": []
-        }
-    ];
-
     function cleanStr(s) {
         if (s == null) return '';
         return String(s).replace(/[\r\n\t]+/g, ' ').replace(/\s+/g, ' ').trim();
@@ -137,36 +49,23 @@
         if (contentEl) contentEl.classList.add('hidden');
 
         try {
-            let data = null;
-            try {
-                const res = await fetch(`${API_BASE_URL}/api/degree-review`, { credentials: 'include' });
-                if (res.status === 401 || res.status === 403) {
-                    window.location.href = 'login.html';
-                    return;
-                }
-
-                if (res.ok) {
-                    const json = await res.json();
-                    if (json && json.status === 'success') {
-                        data = json;
-                    }
-                }
-            } catch (netErr) {
-                console.warn('Network request to /api/degree-review failed:', netErr);
+            const res = await fetch(`${API_BASE_URL}/api/degree-review`, { credentials: 'include' });
+            if (res.status === 401 || res.status === 403) {
+                window.location.href = 'login.html';
+                return;
             }
 
-            if (!data) {
-                console.info('Using reference degree review data');
-                data = {
-                    status: 'success',
-                    studentId: '2025-2-60-331',
-                    analysis: FALLBACK_ANALYSIS,
-                    courseAreas: FALLBACK_COURSE_AREAS,
-                    transferWaiver: { TransferData: { courses: [] }, WaiverData: { courses: [] } }
-                };
+            const json = await res.json().catch(() => null);
+            if (!res.ok) {
+                const errMsg = json?.message || `Server returned status ${res.status} (${res.statusText || 'Error'})`;
+                throw new Error(errMsg);
             }
 
-            renderDegreeReview(data);
+            if (!json || json.status === 'error') {
+                throw new Error(json?.message || 'Invalid degree review response received');
+            }
+
+            renderDegreeReview(json);
 
             if (loadingEl) loadingEl.classList.add('hidden');
             if (contentEl) contentEl.classList.remove('hidden');

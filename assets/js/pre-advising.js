@@ -7,13 +7,6 @@
 (() => {
     const API_BASE_URL = window.API_BASE_URL || 'https://api.aftabkabir.me';
 
-    const FALLBACK_PREADVISING = [
-        { "PreCourseRegistrationId": 62907, "CreditHour": 3, "CourseCode": "FIN101" },
-        { "PreCourseRegistrationId": 62905, "CreditHour": 4.5, "CourseCode": "CSE302" },
-        { "PreCourseRegistrationId": 40095, "CreditHour": 3, "CourseCode": "MKT101" },
-        { "PreCourseRegistrationId": 40084, "CreditHour": 4, "CourseCode": "CSE207" }
-    ];
-
     const COURSE_TITLES = {
         'CSE103': 'Structured Programming',
         'CSE106': 'Discrete Mathematics',
@@ -118,7 +111,7 @@
                 }
             }
         } catch (e) {
-            console.warn('Could not fetch semesters, using fallback:', e);
+            console.warn('Could not fetch semesters from worker:', e);
         }
 
         if (!availableSemesters || availableSemesters.length === 0) {
@@ -170,33 +163,24 @@
         if (contentEl) contentEl.classList.add('hidden');
 
         try {
-            let courses = null;
-            try {
-                const url = currentSemesterId
-                    ? `${API_BASE_URL}/api/preadvising?semesterId=${encodeURIComponent(currentSemesterId)}`
-                    : `${API_BASE_URL}/api/preadvising`;
+            const url = currentSemesterId
+                ? `${API_BASE_URL}/api/preadvising?semesterId=${encodeURIComponent(currentSemesterId)}`
+                : `${API_BASE_URL}/api/preadvising`;
 
-                const res = await fetch(url, { credentials: 'include' });
-                if (res.status === 401 || res.status === 403) {
-                    window.location.href = 'login.html';
-                    return;
-                }
-
-                if (res.ok) {
-                    const json = await res.json();
-                    const payload = json && json.data ? json.data : json;
-                    if (payload && Array.isArray(payload.Result)) {
-                        courses = payload.Result;
-                    }
-                }
-            } catch (netErr) {
-                console.warn('Network request to /api/preadvising failed:', netErr);
+            const res = await fetch(url, { credentials: 'include' });
+            if (res.status === 401 || res.status === 403) {
+                window.location.href = 'login.html';
+                return;
             }
 
-            if (!courses) {
-                console.info('Using reference pre-advising data');
-                courses = FALLBACK_PREADVISING;
+            const json = await res.json().catch(() => null);
+            if (!res.ok) {
+                const errMsg = json?.message || `Server returned status ${res.status} (${res.statusText || 'Error'})`;
+                throw new Error(errMsg);
             }
+
+            const payload = json && json.data ? json.data : json;
+            const courses = (payload && Array.isArray(payload.Result)) ? payload.Result : [];
 
             renderPreAdvising(courses);
 

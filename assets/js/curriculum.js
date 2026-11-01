@@ -7,78 +7,6 @@
 (() => {
     const API_BASE_URL = window.API_BASE_URL || 'https://api.aftabkabir.me';
 
-    const FALLBACK_PROGRAM = {
-        "ProgramCurriculumId": 38,
-        "ProgramCurriculumName": "B.Sc. in Computer Science and Engineering",
-        "SemesterName": "Summer-2018",
-        "TotalCredits": 140.00
-    };
-
-    const FALLBACK_COURSES = [
-        { "CourseCode": "ACT101", "CourseName": "Financial Accounting", "MinCredit": 15.00, "PrerequisiteCourseCodes": null },
-        { "CourseCode": "BUS231", "CourseName": "Business Communication", "MinCredit": 15.00, "PrerequisiteCourseCodes": "ENG7101" },
-        { "CourseCode": "BUS321", "CourseName": "Business for Engineering and Technology", "MinCredit": 15.00, "PrerequisiteCourseCodes": "ENG7101" },
-        { "CourseCode": "CHE109", "CourseName": "Engineering Chemistry-I", "MinCredit": 0.00, "PrerequisiteCourseCodes": null },
-        { "CourseCode": "CSE103", "CourseName": "Structured Programming", "MinCredit": 0.00, "PrerequisiteCourseCodes": null },
-        { "CourseCode": "CSE106", "CourseName": "Discrete Mathematics", "MinCredit": 3.00, "PrerequisiteCourseCodes": "CSE103" },
-        { "CourseCode": "CSE110", "CourseName": "Object Oriented Programming", "MinCredit": 15.00, "PrerequisiteCourseCodes": "CSE103,CSE106" },
-        { "CourseCode": "CSE200", "CourseName": "Computer-Aided Engineering Drawing", "MinCredit": 25.00, "PrerequisiteCourseCodes": null },
-        { "CourseCode": "CSE207", "CourseName": "Data Structures", "MinCredit": 25.00, "PrerequisiteCourseCodes": "CSE110" },
-        { "CourseCode": "CSE209", "CourseName": "Electrical Circuits", "MinCredit": 25.00, "PrerequisiteCourseCodes": null },
-        { "CourseCode": "CSE225", "CourseName": "Numerical Methods", "MinCredit": 90.00, "PrerequisiteCourseCodes": "CSE103" },
-        { "CourseCode": "CSE246", "CourseName": "Algorithms", "MinCredit": 35.00, "PrerequisiteCourseCodes": "CSE207" },
-        { "CourseCode": "CSE251", "CourseName": "Electronic Circuits", "MinCredit": 35.00, "PrerequisiteCourseCodes": "CSE209" },
-        { "CourseCode": "CSE302", "CourseName": "Database Systems", "MinCredit": 50.00, "PrerequisiteCourseCodes": "CSE207" },
-        { "CourseCode": "CSE325", "CourseName": "Operating Systems", "MinCredit": 60.00, "PrerequisiteCourseCodes": "CSE207" },
-        { "CourseCode": "CSE345", "CourseName": "Computer Architecture", "MinCredit": 60.00, "PrerequisiteCourseCodes": "CSE207" },
-        { "CourseCode": "CSE350", "CourseName": "Data Communications", "MinCredit": 60.00, "PrerequisiteCourseCodes": "CSE207" },
-        { "CourseCode": "CSE412", "CourseName": "Software Engineering", "MinCredit": 80.00, "PrerequisiteCourseCodes": "CSE302" },
-        { "CourseCode": "MAT101", "CourseName": "Differential & Integral Calculus", "MinCredit": 0.00, "PrerequisiteCourseCodes": null },
-        { "CourseCode": "MAT102", "CourseName": "Differential Equations & Special Functions", "MinCredit": 3.00, "PrerequisiteCourseCodes": "MAT101" },
-        { "CourseCode": "MAT104", "CourseName": "Co-ordinate Geometry & Vector Analysis", "MinCredit": 3.00, "PrerequisiteCourseCodes": "MAT101" },
-        { "CourseCode": "STA102", "CourseName": "Statistics and Probability", "MinCredit": 0.00, "PrerequisiteCourseCodes": null },
-        { "CourseCode": "PHY109", "CourseName": "Engineering Physics-I", "MinCredit": 0.00, "PrerequisiteCourseCodes": null },
-        { "CourseCode": "ENG101", "CourseName": "Basic English", "MinCredit": 0.00, "PrerequisiteCourseCodes": null },
-        { "CourseCode": "ENG102", "CourseName": "Composition and Communication Skills", "MinCredit": 3.00, "PrerequisiteCourseCodes": "ENG101" },
-        { "CourseCode": "GEN226", "CourseName": "Emergence of Bangladesh", "MinCredit": 0.00, "PrerequisiteCourseCodes": null }
-    ];
-
-    const FALLBACK_TRACKS = [
-        {
-            "MajorAreaId": 81,
-            "MajorMinorName": "Communications and Networking",
-            "CreditRuleCredits": 20.00,
-            "MajorAreaCoursesViews": [
-                { "CourseCode": "CSE350", "CourseName": "Data Communications", "CreditHour": 4.00 },
-                { "CourseCode": "CSE432", "CourseName": "Digital Signal Processing", "CreditHour": 4.00 },
-                { "CourseCode": "CSE452", "CourseName": "Distributed Systems and Algorithms", "CreditHour": 4.00 },
-                { "CourseCode": "CSE453", "CourseName": "Wireless Network", "CreditHour": 4.00 },
-                { "CourseCode": "CSE457", "CourseName": "Cellular Networks", "CreditHour": 4.00 },
-                { "CourseCode": "CSE489", "CourseName": "Mobile Programming", "CreditHour": 4.00 }
-            ]
-        },
-        {
-            "MajorAreaId": 79,
-            "MajorMinorName": "Software Engineering",
-            "CreditRuleCredits": 20.00,
-            "MajorAreaCoursesViews": [
-                { "CourseCode": "CSE412", "CourseName": "Software Engineering", "CreditHour": 4.00 },
-                { "CourseCode": "CSE422", "CourseName": "Simulation and Modeling", "CreditHour": 4.00 },
-                { "CourseCode": "CSE423", "CourseName": "Software Architecture", "CreditHour": 4.00 },
-                { "CourseCode": "CSE428", "CourseName": "Human Computer Interactions", "CreditHour": 4.00 },
-                { "CourseCode": "CSE430", "CourseName": "Software Testing and Quality Assurance", "CreditHour": 4.00 },
-                { "CourseCode": "CSE464", "CourseName": "Advanced Database Systems", "CreditHour": 4.00 }
-            ]
-        }
-    ];
-
-    const FALLBACK_EQUIVALENTS = [
-        { "CourseName": "CSE209: Electrical Circuits", "EquivalentCourseName": "EEE101: Electrical Circuits I", "CreditHour": 4.00 },
-        { "CourseName": "ENG101: Basic English", "EquivalentCourseName": "ENG7101: Basic English", "CreditHour": 3.00 },
-        { "CourseName": "ENG102: Composition and Communication Skills", "EquivalentCourseName": "ENG7102: Composition and Communication Skills", "CreditHour": 3.00 },
-        { "CourseName": "GEN226: Emergence of Bangladesh", "EquivalentCourseName": "GEN7226: Emergence of Bangladesh", "CreditHour": 3.00 }
-    ];
-
     let allCoursesList = [];
     let majorTracksList = [];
     let equivalentsList = [];
@@ -142,33 +70,21 @@
         if (contentEl) contentEl.classList.add('hidden');
 
         try {
-            let data = null;
-            try {
-                const res = await fetch(`${API_BASE_URL}/api/curriculum`, { credentials: 'include' });
-                if (res.status === 401 || res.status === 403) {
-                    window.location.href = 'login.html';
-                    return;
-                }
-
-                if (res.ok) {
-                    const json = await res.json();
-                    if (json && json.status === 'success') {
-                        data = json;
-                    }
-                }
-            } catch (netErr) {
-                console.warn('Network request to /api/curriculum failed:', netErr);
+            const res = await fetch(`${API_BASE_URL}/api/curriculum`, { credentials: 'include' });
+            if (res.status === 401 || res.status === 403) {
+                window.location.href = 'login.html';
+                return;
             }
 
-            if (!data) {
-                console.info('Using reference curriculum catalog data');
-                data = {
-                    status: 'success',
-                    program: FALLBACK_PROGRAM,
-                    allCourses: FALLBACK_COURSES,
-                    majorAreas: { MajorAreaCoursesVMs: FALLBACK_TRACKS },
-                    equivalents: FALLBACK_EQUIVALENTS
-                };
+            const json = await res.json().catch(() => null);
+            if (!res.ok) {
+                const errMsg = json?.message || `Server returned status ${res.status} (${res.statusText || 'Error'})`;
+                throw new Error(errMsg);
+            }
+
+            const data = json && json.data ? json.data : json;
+            if (!data || typeof data !== 'object') {
+                throw new Error(json?.message || 'Empty or invalid curriculum catalog received');
             }
 
             allCoursesList = Array.isArray(data.allCourses) ? data.allCourses : [];

@@ -6,37 +6,6 @@
 (() => {
     const API_BASE_URL = window.API_BASE_URL || 'https://api.aftabkabir.me';
 
-    const FALLBACK_PROFILE = {
-        "StudentId": "2025-2-60-331",
-        "FirstName": "Aftab Kabir Limon",
-        "MiddleName": null,
-        "LastName": null,
-        "MobileNo": "1732287766",
-        "EmailAddress": "2025-2-60-331@std.ewubd.edu",
-        "ProgramName": "B.Sc. in Computer Science and Engineering",
-        "ProgramShortName": "CSE",
-        "AcademicDepartmentName": "Department of CSE",
-        "CreditsCompleted": 46,
-        "CGPA": 3.69,
-        "PresentAddress": "Monihar, Ward # 03, Kamranga Bazar, Rampur, Chandpur Sadar, Chandpur",
-        "PermanentAddress": "Monihar, Ward # 03, Kamranga Bazar, Rampur, Chandpur Sadar, Chandpur",
-        "SemesterName": "Summer-2025",
-        "Year": 2025,
-        "DateofBirth": "2007-01-26T00:00:00",
-        "Religion": "Islam",
-        "BloodGroup": "AB+",
-        "MaritalStatus": "Single",
-        "NationalId": "9597315911",
-        "Mentor": "Ms. Fouzia Risdin(FZRN)",
-        "MentorEmail": "fouzia.risdin@ewubd.edu",
-        "ProfilePictureUrl": "/Documents/StudentProfile/StudentProfilePhoto/2025-2-60-331.jpg",
-        "Gender": "Male",
-        "DateOfEnrollment": "2025-05-23T21:21:40.637",
-        "StartedSemester": "Summer-2025",
-        "ProbationNumber": "0",
-        "UniqueId": "00925205101331"
-    };
-
     function cleanStr(s) {
         if (s == null) return '';
         return String(s).replace(/[\r\n\t]+/g, ' ').replace(/\s+/g, ' ').trim();
@@ -110,25 +79,21 @@
         if (contentEl) contentEl.classList.add('hidden');
 
         try {
-            let data = null;
-            try {
-                const res = await fetch(`${API_BASE_URL}/api/profile`, { credentials: 'include' });
-                if (res.status === 401 || res.status === 403) {
-                    window.location.href = 'login.html';
-                    return;
-                }
-                if (res.ok) {
-                    const json = await res.json();
-                    data = json && json.data ? json.data : json;
-                }
-            } catch (netErr) {
-                console.warn('Network request to /api/profile failed, checking fallback:', netErr);
+            const res = await fetch(`${API_BASE_URL}/api/profile`, { credentials: 'include' });
+            if (res.status === 401 || res.status === 403) {
+                window.location.href = 'login.html';
+                return;
             }
 
-            // If worker endpoint is not yet updated on Cloudflare, use reference profile
-            if (!data) {
-                console.info('Using reference profile source');
-                data = FALLBACK_PROFILE;
+            const json = await res.json().catch(() => null);
+            if (!res.ok) {
+                const errMsg = json?.message || `Server returned status ${res.status} (${res.statusText || 'Error'})`;
+                throw new Error(errMsg);
+            }
+
+            const data = json && json.data ? json.data : json;
+            if (!data || typeof data !== 'object') {
+                throw new Error(json?.message || 'Empty or invalid profile data received');
             }
 
             renderProfile(data);
