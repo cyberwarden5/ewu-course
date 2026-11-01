@@ -105,25 +105,24 @@ async function parsePortalJson(response) {
 
 // Helper: Get CORS headers
 function getCorsHeaders(request) {
-  const origin = request.headers.get('Origin');
+  const origin = request?.headers?.get('Origin');
   const isAllowed = origin && (
     ALLOWED_ORIGINS.includes(origin) ||
     /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)
   );
 
-  if (ALLOWED_ORIGINS.includes(origin)) {
-    if (isAllowed) {
-      return {
-        'Access-Control-Allow-Origin': origin,
-        'Access-Control-Allow-Credentials': 'true',
-        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Cookie, Authorization, X-Requested-With',
-        'Access-Control-Max-Age': '86400',
-      };
-    }
-
-    return {};
+  if (isAllowed) {
+    return {
+      'Access-Control-Allow-Origin': origin,
+      'Access-Control-Allow-Credentials': 'true',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Cookie, Authorization, X-Requested-With',
+      'Access-Control-Max-Age': '86400',
+    };
   }
+
+  return {};
+}
 
   // Helper: Create JSON response with CORS
   function jsonResponse(data, status = 200, request) {

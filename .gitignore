@@ -51,3 +51,7 @@ recommended-course.md
 dashboard.png
 image.png
 Info/
+
+.dev.vars*
+!.dev.vars.example
+!.env.example

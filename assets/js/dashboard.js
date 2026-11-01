@@ -84,7 +84,7 @@ async function loadStudentProfileName() {
             }
         }
     } catch (e) {
-        // Silent catch: non-blocking profile name fetch
+        // Non-blocking profile name fetch
     }
 }
 
@@ -291,6 +291,33 @@ function lockedCardHtml(key, status) {
 // Preserves dashboard state in memory when switching views
 // ========================================
 const pageCache = new Map();
+const loadedScripts = new Set();
+
+function loadScriptAsync(src) {
+    const cleanSrc = src.split('?')[0];
+    if (loadedScripts.has(cleanSrc)) return Promise.resolve();
+    
+    // Check if script already exists in document
+    const existing = document.querySelector(`script[src*="${cleanSrc}"]`);
+    if (existing) {
+        loadedScripts.add(cleanSrc);
+        return Promise.resolve();
+    }
+
+    return new Promise((resolve) => {
+        const script = document.createElement('script');
+        script.src = src;
+        script.onload = () => {
+            loadedScripts.add(cleanSrc);
+            resolve();
+        };
+        script.onerror = () => {
+            console.warn('Script failed to load:', src);
+            resolve(); // Don't crash router
+        };
+        document.body.appendChild(script);
+    });
+}
 
 async function navigateToPage(url, pushState = true) {
     const homeView = document.getElementById('dashboardHomeView');
@@ -322,41 +349,47 @@ async function navigateToPage(url, pushState = true) {
         const parser = new DOMParser();
         const doc = parser.parseFromString(htmlText, 'text/html');
 
-        // Extract title
         if (doc.title) document.title = doc.title;
 
-        // Extract main or body content
         const mainEl = doc.querySelector('main');
         const pageContent = mainEl ? mainEl.innerHTML : doc.body.innerHTML;
 
         pageView.innerHTML = pageContent;
 
-        // Execute external or inline scripts from target page
-        const scripts = doc.querySelectorAll('script');
-        scripts.forEach(s => {
+        // Dynamically load any scripts needed
+        const scripts = Array.from(doc.querySelectorAll('script'));
+        for (const s of scripts) {
             const src = s.getAttribute('src');
-            // Skip redundant global scripts that are already loaded in dashboard
-            if (src && (src.includes('tailwind') || src.includes('styles.css') || src.includes('features.js'))) {
-                return;
-            }
-
-            const newScript = document.createElement('script');
             if (src) {
-                newScript.src = src;
-            } else {
-                newScript.textContent = s.textContent;
+                if (src.includes('tailwind') || src.includes('styles.css') || src.includes('features.js') || src.includes('dashboard.js')) {
+                    continue;
+                }
+                await loadScriptAsync(src);
             }
-            document.body.appendChild(newScript);
-        });
+        }
 
         if (loadingView) loadingView.classList.add('hidden');
         pageView.classList.remove('hidden');
         window.scrollTo({ top: 0, behavior: 'smooth' });
 
-        // Bind any newly injected "Back to Dashboard" buttons
+        // Invoke page lifecycle initializer
+        if (url.includes('profile')) {
+            if (typeof window.initProfilePage === 'function') window.initProfilePage();
+            else if (typeof window.fetchProfile === 'function') window.fetchProfile();
+        } else if (url.includes('pre-advising')) {
+            if (typeof window.initPreAdvisingPage === 'function') window.initPreAdvisingPage();
+            else if (typeof window.loadPreAdvising === 'function') window.loadPreAdvising();
+        } else if (url.includes('degree-review')) {
+            if (typeof window.initDegreeReviewPage === 'function') window.initDegreeReviewPage();
+            else if (typeof window.loadDegreeReview === 'function') window.loadDegreeReview();
+        } else if (url.includes('curriculum')) {
+            if (typeof window.initCurriculumPage === 'function') window.initCurriculumPage();
+            else if (typeof window.loadCurriculum === 'function') window.loadCurriculum();
+        }
+
         bindSubpageBackButtons();
     } catch (err) {
-        console.error('AJAX navigation failed, falling back to full load:', err);
+        console.error('AJAX navigation fallback to full load:', err);
         window.location.href = url;
     }
 }
@@ -391,7 +424,6 @@ function bindSubpageBackButtons() {
 }
 
 function initAjaxRouter() {
-    // Intercept navigation link clicks globally
     document.addEventListener('click', (e) => {
         const link = e.target.closest('a');
         if (!link) return;
@@ -411,11 +443,9 @@ function initAjaxRouter() {
             }
         }
 
-        // Handle internal sub-pages via smooth AJAX
+        // Supported AJAX pages
         const targetPages = [
-            'profile.html', 'pre-advising.html', 'degree-review.html', 'curriculum.html',
-            'advise.html', 'department-courses.html', 'class-schedule.html',
-            'course-planner.html', 'account-ledger.html', 'grade-report.html', 'cgpa-planner.html'
+            'profile.html', 'pre-advising.html', 'degree-review.html', 'curriculum.html'
         ];
 
         const matchingPage = targetPages.find(p => href === p || href.endsWith('/' + p) || href.startsWith(p + '?'));
@@ -438,7 +468,6 @@ function initAjaxRouter() {
         }
     });
 
-    // Save initial state
     history.replaceState({ page: 'dashboard' }, '', window.location.pathname);
 }
 
