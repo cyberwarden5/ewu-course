@@ -319,3 +319,4 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     loadDegreeReview();
 });
+
