@@ -77,6 +77,42 @@
             color: 'rose',
             active: true,
             description: 'Project target GPA and forecast required grades for graduation goals.'
+        },
+        preadvising: {
+            key: 'preadvising',
+            name: 'Pre-Advising',
+            page: 'pre-advising.html',
+            icon: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="9" y1="15" x2="15" y2="15"></line><line x1="9" y1="11" x2="15" y2="11"></line><line x1="9" y1="7" x2="11" y2="7"></line></svg>',
+            color: 'teal',
+            active: true,
+            description: 'Review your pre-advised courses, total credit load, and upcoming semester offerings.'
+        },
+        degreereview: {
+            key: 'degreereview',
+            name: 'Degree Review',
+            page: 'degree-review.html',
+            icon: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></svg>',
+            color: 'indigo',
+            active: true,
+            description: 'Comprehensive degree audit, earned credits, remaining graduation requirements and course areas.'
+        },
+        curriculum: {
+            key: 'curriculum',
+            name: 'Curriculum',
+            page: 'curriculum.html',
+            icon: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>',
+            color: 'amber',
+            active: true,
+            description: 'Explore full academic curriculum structure, major tracks, prerequisites, and course descriptions.'
+        },
+        profile: {
+            key: 'profile',
+            name: 'Student Profile',
+            page: 'profile.html',
+            icon: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>',
+            color: 'coral',
+            active: true,
+            description: 'Personal, academic, advisor contact information and institutional records.'
         }
     };
 

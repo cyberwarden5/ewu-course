@@ -330,14 +330,16 @@
 
                     <!-- Right Controls -->
                     <div class="hidden md:flex items-center gap-3.5">
-                        <!-- Student ID Badge (Shows Student ID instead of User) -->
-                        <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/[0.04] border border-white/[0.08] text-xs font-mono text-gray-200 shadow-sm" title="Logged in Student ID">
-                            <svg class="w-3.5 h-3.5 text-[#D86C5A]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                                <circle cx="12" cy="7" r="4"></circle>
-                            </svg>
-                            <span id="userId" class="tracking-wide">Student ID</span>
-                        </div>
+                        <!-- Student Profile Link (Displays Student Name, Click to navigate to Profile) -->
+                        <a href="profile.html" id="profileHeaderLink" class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] hover:border-[#D86C5A]/40 text-xs text-gray-200 transition-all shadow-sm group no-underline" title="View Student Profile">
+                            <div class="w-5 h-5 rounded-md bg-[#D86C5A]/15 border border-[#D86C5A]/30 flex items-center justify-center text-[#D86C5A] group-hover:scale-105 transition-transform flex-shrink-0">
+                                <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="12" cy="7" r="4"></circle>
+                                </svg>
+                            </div>
+                            <span id="userId" class="font-semibold text-white group-hover:text-[#D86C5A] transition-colors truncate max-w-[180px]">Student Profile</span>
+                        </a>
 
                         <!-- Documentation -->
                         <a href="documentation.html" class="px-3 py-1.5 text-xs text-gray-300 hover:text-white font-medium transition-colors">Documentation</a>
@@ -362,7 +364,10 @@
                             <span class="live-dot"></span>
                             <span class="text-emerald-400 font-medium">Portal Connected</span>
                         </span>
-                        <span class="text-white font-mono bg-white/[0.06] px-2.5 py-1 rounded border border-white/[0.08]" id="userIdMobile">Student ID</span>
+                        <a href="profile.html" id="profileMobileLink" class="flex items-center gap-1.5 text-white text-xs font-medium bg-white/[0.06] hover:bg-white/[0.1] px-2.5 py-1 rounded-lg border border-white/[0.08] transition-colors no-underline">
+                            <span id="userIdMobile" class="truncate max-w-[140px]">Student Profile</span>
+                            <span class="text-[#D86C5A]">&rarr;</span>
+                        </a>
                     </div>
                     <div class="grid grid-cols-2 gap-2 pt-1">
                         <a href="documentation.html" class="block text-center py-2 rounded-lg bg-white/[0.04] text-xs text-gray-300 hover:text-white transition-colors">Documentation</a>
@@ -375,6 +380,8 @@
 
     <!-- Main Content Container -->
     <main class="flex-grow w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
+        <!-- Dashboard Home View Container (Preserved in memory during AJAX navigation) -->
+        <div id="dashboardHomeView">
         <!-- Hero Header -->
         <div class="mb-8 sm:mb-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-white/[0.08] pb-6">
             <div class="fade-in">
@@ -421,6 +428,14 @@
             </div>
             <div id="comingGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6"></div>
         </section>
+        </div><!-- /#dashboardHomeView -->
+
+        <!-- Dynamic AJAX Page View Container (Swapped in without page reloads) -->
+        <div id="dashboardPageView" class="hidden"></div>
+        <div id="dashboardPageLoading" class="hidden py-24 flex flex-col items-center justify-center space-y-4">
+            <div class="w-12 h-12 rounded-full border-2 border-[#D86C5A] border-t-transparent animate-spin"></div>
+            <p class="text-xs text-gray-400 font-mono tracking-wide">Loading page content...</p>
+        </div>
     </main>
 
     <!-- Footer (Properly pinned at bottom and 100% full width) -->

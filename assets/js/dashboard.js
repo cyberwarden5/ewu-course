@@ -1,7 +1,8 @@
 // ========================================
 // Student Dashboard Logic
 // Handles session verification, dynamic feature rendering (driven by
-// admin-controlled feature statuses), student ID display, and navigation.
+// admin-controlled feature statuses), student name/ID display, and
+// smooth AJAX-based client navigation (zero-reload return to dashboard).
 // Depends on assets/js/features.js (FEATURES registry + API_BASE_URL).
 // ========================================
 
@@ -29,14 +30,62 @@ function getStoredStudentId() {
     return null;
 }
 
-// Update student ID in UI badges
-function updateStudentIdDisplay(id) {
-    const studentId = id || getStoredStudentId() || 'Student ID';
+// Retrieve student Name from local storage
+function getStoredStudentName() {
+    try {
+        const name = localStorage.getItem('studentName');
+        if (name && name !== 'User' && name !== 'Student') {
+            return name;
+        }
+    } catch (e) {}
+    return null;
+}
+
+// Update student Name/ID in UI badges
+function updateStudentIdDisplay(id, name) {
+    const studentName = name || getStoredStudentName();
+    const studentId = id || getStoredStudentId();
+    const displayLabel = studentName || studentId || 'Student Profile';
+
     const userBadge = document.getElementById('userId');
     const userBadgeMobile = document.getElementById('userIdMobile');
 
-    if (userBadge) userBadge.textContent = studentId;
-    if (userBadgeMobile) userBadgeMobile.textContent = studentId;
+    if (userBadge) {
+        userBadge.textContent = displayLabel;
+        if (studentId) userBadge.title = `Student ID: ${studentId}`;
+    }
+    if (userBadgeMobile) {
+        userBadgeMobile.textContent = displayLabel;
+    }
+}
+
+// Fetch student profile asynchronously to display full name in header
+async function loadStudentProfileName() {
+    try {
+        const res = await fetch(`${API_BASE_URL}/api/profile`, { credentials: 'include' });
+        if (res.ok) {
+            const json = await res.json();
+            const prof = json && json.data ? json.data : null;
+            if (prof) {
+                const cleanName = [prof.FirstName, prof.MiddleName, prof.LastName]
+                    .filter(Boolean)
+                    .join(' ')
+                    .replace(/[\r\n\t]+/g, ' ')
+                    .replace(/\s+/g, ' ')
+                    .trim();
+
+                if (cleanName) {
+                    try { localStorage.setItem('studentName', cleanName); } catch (e) {}
+                    if (prof.StudentId) {
+                        try { localStorage.setItem('studentId', prof.StudentId); } catch (e) {}
+                    }
+                    updateStudentIdDisplay(prof.StudentId, cleanName);
+                }
+            }
+        }
+    } catch (e) {
+        // Silent catch: non-blocking profile name fetch
+    }
 }
 
 // Check authentication state on page load
@@ -52,8 +101,12 @@ async function checkAuth() {
             try { localStorage.setItem('studentId', data.userId); } catch (e) {}
             updateStudentIdDisplay(data.userId);
         } else {
-            updateStudentIdDisplay(getStoredStudentId() || 'Student ID');
+            updateStudentIdDisplay(getStoredStudentId());
         }
+
+        // Asynchronously fetch profile to populate student's full name in header
+        loadStudentProfileName();
+
         return true;
     } catch (error) {
         console.warn('Auth status check failed, redirecting to login:', error);
@@ -72,9 +125,10 @@ async function handleLogout(event) {
     }
     try {
         localStorage.removeItem('studentId');
+        localStorage.removeItem('studentName');
         localStorage.removeItem('ewu_student_id');
         localStorage.removeItem('userId');
-        sessionStorage.removeItem('studentId');
+        sessionStorage.clear();
     } catch (e) {}
     window.location.href = 'login.html';
 }
@@ -90,7 +144,9 @@ const CARD_THEME = {
     violet:  { accent: '#8b5cf6', bg: 'linear-gradient(135deg, rgba(139,92,246,0.2) 0%, rgba(139,92,246,0.05) 100%)', border: 'rgba(139,92,246,0.35)', btn: 'linear-gradient(135deg,#8b5cf6,#7c3aed)', glow: 'rgba(139,92,246,0.35)' },
     emerald: { accent: '#10b981', bg: 'linear-gradient(135deg, rgba(16,185,129,0.2) 0%, rgba(16,185,129,0.05) 100%)', border: 'rgba(16,185,129,0.35)', btn: 'linear-gradient(135deg,#10b981,#059669)', glow: 'rgba(16,185,129,0.35)' },
     amber:   { accent: '#f59e0b', bg: 'linear-gradient(135deg, rgba(245,158,11,0.2) 0%, rgba(245,158,11,0.05) 100%)', border: 'rgba(245,158,11,0.35)', btn: 'linear-gradient(135deg,#f59e0b,#d97706)', glow: 'rgba(245,158,11,0.35)' },
-    rose:    { accent: '#f43f5e', bg: 'linear-gradient(135deg, rgba(244,63,94,0.2) 0%, rgba(244,63,94,0.05) 100%)', border: 'rgba(244,63,94,0.35)', btn: 'linear-gradient(135deg,#f43f5e,#e11d48)', glow: 'rgba(244,63,94,0.35)' }
+    rose:    { accent: '#f43f5e', bg: 'linear-gradient(135deg, rgba(244,63,94,0.2) 0%, rgba(244,63,94,0.05) 100%)', border: 'rgba(244,63,94,0.35)', btn: 'linear-gradient(135deg,#f43f5e,#e11d48)', glow: 'rgba(244,63,94,0.35)' },
+    teal:    { accent: '#0d9488', bg: 'linear-gradient(135deg, rgba(13,148,136,0.2) 0%, rgba(13,148,136,0.05) 100%)', border: 'rgba(13,148,136,0.35)', btn: 'linear-gradient(135deg,#0d9488,#0f766e)', glow: 'rgba(13,148,136,0.35)' },
+    indigo:  { accent: '#6366f1', bg: 'linear-gradient(135deg, rgba(99,102,241,0.2) 0%, rgba(99,102,241,0.05) 100%)', border: 'rgba(99,102,241,0.35)', btn: 'linear-gradient(135deg,#6366f1,#4f46e5)', glow: 'rgba(99,102,241,0.35)' }
 };
 
 const STATUS_PILL = {
@@ -104,7 +160,7 @@ const STATUS_PILL = {
 
 // Feature display order + lightweight dashboard copy
 const DASHBOARD_FEATURES = [
-    'recommended', 'department', 'schedule', 'planner', 'ledger', 'grades', 'cgpa'
+    'recommended', 'department', 'preadvising', 'degreereview', 'curriculum', 'schedule', 'planner', 'ledger', 'grades', 'cgpa'
 ];
 
 // Local fallback registry so the dashboard still renders even if the shared
@@ -112,11 +168,15 @@ const DASHBOARD_FEATURES = [
 const FALLBACK_FEATURES = {
     recommended: { name: 'Recommended Courses', page: 'advise.html', color: 'coral', icon: '', description: 'Personalized course offerings from your advising routine.' },
     department: { name: 'Department-Wise Courses', page: 'department-courses.html', color: 'blue', icon: '', description: 'Search and filter course offerings across all departments.' },
+    preadvising: { name: 'Pre-Advising', page: 'pre-advising.html', color: 'teal', icon: '', description: 'Review your pre-advised courses, total credit load, and upcoming semester offerings.' },
+    degreereview: { name: 'Degree Review', page: 'degree-review.html', color: 'indigo', icon: '', description: 'Degree audit, earned credits, remaining graduation requirements and course areas.' },
+    curriculum: { name: 'Curriculum', page: 'curriculum.html', color: 'amber', icon: '', description: 'Explore full academic curriculum structure, major tracks, prerequisites, and courses.' },
     schedule: { name: 'Class Schedule', page: 'class-schedule.html', color: 'cyan', icon: '', description: 'Personalized weekly timetable grid and registered credits.' },
     planner: { name: 'Course Planner', page: 'course-planner.html', color: 'violet', icon: '', description: 'Build and validate multiple course combinations.' },
     ledger: { name: 'Account Ledger', page: 'account-ledger.html', color: 'emerald', icon: '', description: 'Track tuition balances, payments and scholarships.' },
     grades: { name: 'Grade Report', page: 'grade-report.html', color: 'amber', icon: '', description: 'Academic transcript with term-by-term GPA history.' },
-    cgpa: { name: 'CGPA Planner', page: 'cgpa-planner.html', color: 'rose', icon: '', description: 'Project target GPA and required grades.' }
+    cgpa: { name: 'CGPA Planner', page: 'cgpa-planner.html', color: 'rose', icon: '', description: 'Project target GPA and required grades.' },
+    profile: { name: 'Student Profile', page: 'profile.html', color: 'coral', icon: '', description: 'Personal, academic, advisor contact information and institutional records.' }
 };
 
 function getFeatureMeta(key) {
@@ -191,7 +251,7 @@ function activeCardHtml(key, status) {
                 <p class="text-gray-300 text-xs sm:text-sm leading-relaxed mb-6">${esc(f.description)}</p>
             </div>
             <div class="px-6 sm:px-7 pb-6 sm:pb-7 pt-0">
-                <a href="${f.page}" class="no-underline" style="display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:13px 20px;font-size:0.925rem;font-weight:600;border-radius:12px;background:${theme.btn};color:#fff;box-shadow:0 4px 18px ${theme.glow};">
+                <a href="${f.page}" class="no-underline ajax-nav-link" style="display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:13px 20px;font-size:0.925rem;font-weight:600;border-radius:12px;background:${theme.btn};color:#fff;box-shadow:0 4px 18px ${theme.glow};">
                     <span>${isBeta ? 'Open (Beta)' : 'Open'}</span>
                     <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
                 </a>
@@ -226,12 +286,169 @@ function lockedCardHtml(key, status) {
         </div>`;
 }
 
+// ========================================
+// AJAX Navigation Router (Zero-Reload Return)
+// Preserves dashboard state in memory when switching views
+// ========================================
+const pageCache = new Map();
+
+async function navigateToPage(url, pushState = true) {
+    const homeView = document.getElementById('dashboardHomeView');
+    const pageView = document.getElementById('dashboardPageView');
+    const loadingView = document.getElementById('dashboardPageLoading');
+
+    if (!homeView || !pageView) {
+        window.location.href = url;
+        return;
+    }
+
+    if (pushState) {
+        history.pushState({ page: url }, '', url);
+    }
+
+    homeView.classList.add('hidden');
+    pageView.classList.add('hidden');
+    if (loadingView) loadingView.classList.remove('hidden');
+
+    try {
+        let htmlText = pageCache.get(url);
+        if (!htmlText) {
+            const res = await fetch(url);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            htmlText = await res.text();
+            pageCache.set(url, htmlText);
+        }
+
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(htmlText, 'text/html');
+
+        // Extract title
+        if (doc.title) document.title = doc.title;
+
+        // Extract main or body content
+        const mainEl = doc.querySelector('main');
+        const pageContent = mainEl ? mainEl.innerHTML : doc.body.innerHTML;
+
+        pageView.innerHTML = pageContent;
+
+        // Execute external or inline scripts from target page
+        const scripts = doc.querySelectorAll('script');
+        scripts.forEach(s => {
+            const src = s.getAttribute('src');
+            // Skip redundant global scripts that are already loaded in dashboard
+            if (src && (src.includes('tailwind') || src.includes('styles.css') || src.includes('features.js'))) {
+                return;
+            }
+
+            const newScript = document.createElement('script');
+            if (src) {
+                newScript.src = src;
+            } else {
+                newScript.textContent = s.textContent;
+            }
+            document.body.appendChild(newScript);
+        });
+
+        if (loadingView) loadingView.classList.add('hidden');
+        pageView.classList.remove('hidden');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+
+        // Bind any newly injected "Back to Dashboard" buttons
+        bindSubpageBackButtons();
+    } catch (err) {
+        console.error('AJAX navigation failed, falling back to full load:', err);
+        window.location.href = url;
+    }
+}
+
+function restoreDashboardHome(pushState = true) {
+    const homeView = document.getElementById('dashboardHomeView');
+    const pageView = document.getElementById('dashboardPageView');
+    const loadingView = document.getElementById('dashboardPageLoading');
+
+    if (!homeView) return;
+
+    if (pushState) {
+        history.pushState({ page: 'dashboard' }, '', 'dashboard.html');
+    }
+
+    if (pageView) pageView.classList.add('hidden');
+    if (loadingView) loadingView.classList.add('hidden');
+    homeView.classList.remove('hidden');
+
+    document.title = 'Academic Dashboard - EWU Course Fetching';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function bindSubpageBackButtons() {
+    const backLinks = document.querySelectorAll('a[href="dashboard.html"], a[href="/dashboard.html"], a[href="/"], #backToDashBtn');
+    backLinks.forEach(link => {
+        link.onclick = (e) => {
+            e.preventDefault();
+            restoreDashboardHome(true);
+        };
+    });
+}
+
+function initAjaxRouter() {
+    // Intercept navigation link clicks globally
+    document.addEventListener('click', (e) => {
+        const link = e.target.closest('a');
+        if (!link) return;
+
+        const href = link.getAttribute('href');
+        if (!href || href.startsWith('#') || href.startsWith('mailto:') || href.startsWith('tel:') || href.startsWith('javascript:')) {
+            return;
+        }
+
+        // Return to dashboard
+        if (href === 'dashboard.html' || href === '/dashboard.html' || href === './dashboard.html') {
+            const homeView = document.getElementById('dashboardHomeView');
+            if (homeView) {
+                e.preventDefault();
+                restoreDashboardHome(true);
+                return;
+            }
+        }
+
+        // Handle internal sub-pages via smooth AJAX
+        const targetPages = [
+            'profile.html', 'pre-advising.html', 'degree-review.html', 'curriculum.html',
+            'advise.html', 'department-courses.html', 'class-schedule.html',
+            'course-planner.html', 'account-ledger.html', 'grade-report.html', 'cgpa-planner.html'
+        ];
+
+        const matchingPage = targetPages.find(p => href === p || href.endsWith('/' + p) || href.startsWith(p + '?'));
+        if (matchingPage) {
+            const homeView = document.getElementById('dashboardHomeView');
+            if (homeView) {
+                e.preventDefault();
+                navigateToPage(href, true);
+            }
+        }
+    });
+
+    // Handle browser Back / Forward buttons
+    window.addEventListener('popstate', (e) => {
+        const state = e.state;
+        if (state && state.page && state.page !== 'dashboard' && !state.page.includes('dashboard.html')) {
+            navigateToPage(state.page, false);
+        } else {
+            restoreDashboardHome(false);
+        }
+    });
+
+    // Save initial state
+    history.replaceState({ page: 'dashboard' }, '', window.location.pathname);
+}
+
 // Initialize on DOM load
 document.addEventListener('DOMContentLoaded', async () => {
     const yearEl = document.getElementById('dynamicYear');
     if (yearEl) yearEl.textContent = new Date().getFullYear();
 
     updateStudentIdDisplay();
+    initAjaxRouter();
 
     const mobileMenuBtn = document.getElementById('mobileMenuBtn');
     const mobileMenu = document.getElementById('mobileMenu');

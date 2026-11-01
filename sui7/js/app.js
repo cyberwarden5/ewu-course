@@ -20,7 +20,7 @@ try {
     if (savedSettings) {
         currentSettings = { ...currentSettings, ...JSON.parse(savedSettings) };
     }
-} catch (e) {}
+} catch (e) { }
 
 // Apply performance mode immediately
 if (currentSettings.lowEndMode) {
@@ -459,7 +459,7 @@ function hydrateView(viewName, data) {
 function saveSettings() {
     try {
         localStorage.setItem('adminSettings', JSON.stringify(currentSettings));
-    } catch (e) {}
+    } catch (e) { }
 }
 
 // ================= RENDER COMPONENTS =================
@@ -610,7 +610,11 @@ const FEATURE_LABELS = {
     planner: 'Course Planner',
     ledger: 'Account Ledger',
     grades: 'Grade Report',
-    cgpa: 'CGPA Planner'
+    cgpa: 'CGPA Planner',
+    preadvising: 'Pre-Advising',
+    degreereview: 'Degree Review',
+    curriculum: 'Curriculum',
+    profile: 'Student Profile'
 };
 
 const FEATURE_META_ICONS = {
@@ -620,7 +624,11 @@ const FEATURE_META_ICONS = {
     planner: { icon: 'ph-compass', color: 'text-purple-400 bg-purple-500/10 border-purple-500/20' },
     ledger: { icon: 'ph-receipt', color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' },
     grades: { icon: 'ph-graduation-cap', color: 'text-amber-400 bg-amber-500/10 border-amber-500/20' },
-    cgpa: { icon: 'ph-calculator', color: 'text-pink-400 bg-pink-500/10 border-pink-500/20' }
+    cgpa: { icon: 'ph-calculator', color: 'text-pink-400 bg-pink-500/10 border-pink-500/20' },
+    preadvising: { icon: 'ph-files', color: 'text-teal-400 bg-teal-500/10 border-teal-500/20' },
+    degreereview: { icon: 'ph-chart-pie-slice', color: 'text-indigo-400 bg-indigo-500/10 border-indigo-500/20' },
+    curriculum: { icon: 'ph-books', color: 'text-amber-400 bg-amber-500/10 border-amber-500/20' },
+    profile: { icon: 'ph-user-circle', color: 'text-orange-400 bg-orange-500/10 border-orange-500/20' }
 };
 
 const FEATURE_STATUS_OPTIONS = [
@@ -1353,12 +1361,12 @@ async function pingPortalHealth(force = false) {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         const elapsed = Math.round(performance.now() - startTime);
-        
+
         if (res.ok) {
             const data = await res.json();
             const latency = typeof data.latencyMs === 'number' && data.latencyMs > 0 ? data.latencyMs : elapsed;
             pingLatencyEl.textContent = latency;
-            
+
             if (httpStatusEl) {
                 httpStatusEl.textContent = `${data.httpStatus || 200} OK`;
                 httpStatusEl.className = 'font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/30';
@@ -1387,7 +1395,7 @@ async function pingPortalHealth(force = false) {
         } else {
             throw new Error('Ping failed');
         }
-    } catch(e) {
+    } catch (e) {
         if (pingLatencyEl) pingLatencyEl.textContent = '--';
         if (httpStatusEl) {
             httpStatusEl.textContent = '503 ERR';
@@ -1409,7 +1417,7 @@ function setupOverviewListeners() {
     if (pingBtn) {
         pingBtn.onclick = () => pingPortalHealth(true);
     }
-    
+
     // Auto probe every 12 seconds when overview is open
     if (portalPingInterval) clearInterval(portalPingInterval);
     portalPingInterval = setInterval(() => {
@@ -1540,7 +1548,7 @@ function renderAuditLogs(auditLogs) {
     if (!tbody) return;
 
     const filterQuery = (document.getElementById('secAuditSearchInput')?.value || '').toLowerCase().trim();
-    const filtered = filterQuery ? auditLogs.filter(a => 
+    const filtered = filterQuery ? auditLogs.filter(a =>
         (a.action || '').toLowerCase().includes(filterQuery) ||
         (a.target || '').toLowerCase().includes(filterQuery) ||
         (a.actor || '').toLowerCase().includes(filterQuery) ||
@@ -2068,7 +2076,7 @@ function playAcousticPulse(type = 'success') {
             osc.start(ctx.currentTime);
             osc.stop(ctx.currentTime + 0.3);
         }
-    } catch (e) {}
+    } catch (e) { }
 }
 
 // ================= UTILS & BINDINGS =================
