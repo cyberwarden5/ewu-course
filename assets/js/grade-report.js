@@ -8,7 +8,12 @@
     let parsedResult = null;
     let currentUserId = 'Student';
 
-    document.addEventListener('DOMContentLoaded', init);
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+    window.initGradeReportPage = init;
 
     async function init() {
         const gate = await gateFeaturePage('grades');

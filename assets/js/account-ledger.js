@@ -5,7 +5,12 @@
 (function () {
     let transactions = [];
 
-    document.addEventListener('DOMContentLoaded', init);
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+    window.initAccountLedgerPage = init;
 
     async function init() {
         const gate = await gateFeaturePage('ledger');

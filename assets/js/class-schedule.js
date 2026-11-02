@@ -15,7 +15,12 @@
     const DOW_FULL = { Sun: 'Sunday', Mon: 'Monday', Tue: 'Tuesday', Wed: 'Wednesday', Thu: 'Thursday', Fri: 'Friday', Sat: 'Saturday' };
     const LOGO_URL = 'assets/images/ewu.png';
 
-    document.addEventListener('DOMContentLoaded', init);
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+    window.initClassSchedulePage = init;
 
     async function init() {
         const gate = await gateFeaturePage('schedule');

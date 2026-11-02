@@ -21,7 +21,12 @@
     let selectedCourseFilter = null;
     let uniqueCourseCodes = [];
 
-    document.addEventListener('DOMContentLoaded', init);
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+    window.initCoursePlannerPage = init;
 
     async function init() {
         const gate = await gateFeaturePage('planner');

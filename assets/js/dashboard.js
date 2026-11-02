@@ -293,11 +293,13 @@ function lockedCardHtml(key, status) {
 // ========================================
 const pageCache = new Map();
 const loadedScripts = new Set();
+const loadedStyles = new Set();
 
 function loadScriptAsync(src) {
+    if (!src) return Promise.resolve();
     const cleanSrc = src.split('?')[0];
     if (loadedScripts.has(cleanSrc)) return Promise.resolve();
-    
+
     // Check if script already exists in document
     const existing = document.querySelector(`script[src*="${cleanSrc}"]`);
     if (existing) {
@@ -320,6 +322,63 @@ function loadScriptAsync(src) {
     });
 }
 
+function loadStyleAsync(href) {
+    if (!href) return;
+    const cleanHref = href.split('?')[0];
+    if (loadedStyles.has(cleanHref)) return;
+
+    const existing = document.querySelector(`link[rel="stylesheet"][href*="${cleanHref}"]`);
+    if (existing) {
+        loadedStyles.add(cleanHref);
+        return;
+    }
+
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = href;
+    loadedStyles.add(cleanHref);
+    document.head.appendChild(link);
+}
+
+function cleanupPreviousPage() {
+    // Stop auto-refresh intervals from advise.js if active
+    if (typeof window.stopAutoRefresh === 'function') {
+        try { window.stopAutoRefresh(); } catch (e) {}
+    }
+}
+
+function invokePageLifecycle(url) {
+    const cleanUrl = url.split('?')[0].split('#')[0].toLowerCase();
+    try {
+        if (cleanUrl.includes('profile')) {
+            if (typeof window.initProfilePage === 'function') window.initProfilePage();
+            else if (typeof window.fetchProfile === 'function') window.fetchProfile();
+        } else if (cleanUrl.includes('pre-advising')) {
+            if (typeof window.initPreAdvisingPage === 'function') window.initPreAdvisingPage();
+        } else if (cleanUrl.includes('degree-review')) {
+            if (typeof window.initDegreeReviewPage === 'function') window.initDegreeReviewPage();
+        } else if (cleanUrl.includes('curriculum')) {
+            if (typeof window.initCurriculumPage === 'function') window.initCurriculumPage();
+        } else if (cleanUrl.includes('class-schedule')) {
+            if (typeof window.initClassSchedulePage === 'function') window.initClassSchedulePage();
+        } else if (cleanUrl.includes('course-planner')) {
+            if (typeof window.initCoursePlannerPage === 'function') window.initCoursePlannerPage();
+        } else if (cleanUrl.includes('department-courses')) {
+            if (typeof window.initDepartmentCoursesPage === 'function') window.initDepartmentCoursesPage();
+        } else if (cleanUrl.includes('account-ledger')) {
+            if (typeof window.initAccountLedgerPage === 'function') window.initAccountLedgerPage();
+        } else if (cleanUrl.includes('grade-report')) {
+            if (typeof window.initGradeReportPage === 'function') window.initGradeReportPage();
+        } else if (cleanUrl.includes('cgpa-planner')) {
+            if (typeof window.initCgpaPlannerPage === 'function') window.initCgpaPlannerPage();
+        } else if (cleanUrl.includes('advise')) {
+            if (typeof window.initAdvisePage === 'function') window.initAdvisePage();
+        }
+    } catch (err) {
+        console.warn('Page lifecycle invocation notice:', err);
+    }
+}
+
 async function navigateToPage(url, pushState = true) {
     const homeView = document.getElementById('dashboardHomeView');
     const pageView = document.getElementById('dashboardPageView');
@@ -329,6 +388,8 @@ async function navigateToPage(url, pushState = true) {
         window.location.href = url;
         return;
     }
+
+    cleanupPreviousPage();
 
     if (pushState) {
         history.pushState({ page: url }, '', url);
@@ -352,17 +413,26 @@ async function navigateToPage(url, pushState = true) {
 
         if (doc.title) document.title = doc.title;
 
+        // Load stylesheets from subpage head
+        const stylesheets = Array.from(doc.querySelectorAll('link[rel="stylesheet"]'));
+        for (const link of stylesheets) {
+            const href = link.getAttribute('href');
+            if (href && !href.includes('styles.css')) {
+                loadStyleAsync(href);
+            }
+        }
+
         const mainEl = doc.querySelector('main');
         const pageContent = mainEl ? mainEl.innerHTML : doc.body.innerHTML;
 
         pageView.innerHTML = pageContent;
 
-        // Dynamically load any scripts needed
+        // Dynamically load vendor & feature scripts needed
         const scripts = Array.from(doc.querySelectorAll('script'));
         for (const s of scripts) {
             const src = s.getAttribute('src');
             if (src) {
-                if (src.includes('tailwind') || src.includes('styles.css') || src.includes('features.js') || src.includes('dashboard.js')) {
+                if (src.includes('tailwind') || src.includes('styles.css') || src.includes('dashboard.js') || src.includes('system-metrics.js')) {
                     continue;
                 }
                 await loadScriptAsync(src);
@@ -374,20 +444,9 @@ async function navigateToPage(url, pushState = true) {
         window.scrollTo({ top: 0, behavior: 'smooth' });
 
         // Invoke page lifecycle initializer
-        if (url.includes('profile')) {
-            if (typeof window.initProfilePage === 'function') window.initProfilePage();
-            else if (typeof window.fetchProfile === 'function') window.fetchProfile();
-        } else if (url.includes('pre-advising')) {
-            if (typeof window.initPreAdvisingPage === 'function') window.initPreAdvisingPage();
-            else if (typeof window.loadPreAdvising === 'function') window.loadPreAdvising();
-        } else if (url.includes('degree-review')) {
-            if (typeof window.initDegreeReviewPage === 'function') window.initDegreeReviewPage();
-            else if (typeof window.loadDegreeReview === 'function') window.loadDegreeReview();
-        } else if (url.includes('curriculum')) {
-            if (typeof window.initCurriculumPage === 'function') window.initCurriculumPage();
-            else if (typeof window.loadCurriculum === 'function') window.loadCurriculum();
-        }
+        invokePageLifecycle(url);
 
+        // Bind all Back to Dashboard links in the newly rendered view
         bindSubpageBackButtons();
     } catch (err) {
         console.error('AJAX navigation fallback to full load:', err);
@@ -402,6 +461,8 @@ function restoreDashboardHome(pushState = true) {
 
     if (!homeView) return;
 
+    cleanupPreviousPage();
+
     if (pushState) {
         history.pushState({ page: 'dashboard' }, '', 'dashboard.html');
     }
@@ -415,7 +476,7 @@ function restoreDashboardHome(pushState = true) {
 }
 
 function bindSubpageBackButtons() {
-    const backLinks = document.querySelectorAll('a[href="dashboard.html"], a[href="/dashboard.html"], a[href="/"], #backToDashBtn');
+    const backLinks = document.querySelectorAll('a[href="dashboard.html"], a[href="/dashboard.html"], a[href="./dashboard.html"], #backToDashBtn, [data-back-dashboard]');
     backLinks.forEach(link => {
         link.onclick = (e) => {
             e.preventDefault();
@@ -425,6 +486,7 @@ function bindSubpageBackButtons() {
 }
 
 function initAjaxRouter() {
+    // Intercept clicks on links globally
     document.addEventListener('click', (e) => {
         const link = e.target.closest('a');
         if (!link) return;
@@ -444,12 +506,25 @@ function initAjaxRouter() {
             }
         }
 
-        // Supported AJAX pages
+        // All connected dashboard subpages supported for instant AJAX navigation
         const targetPages = [
-            'profile.html', 'pre-advising.html', 'degree-review.html', 'curriculum.html'
+            'advise.html',
+            'department-courses.html',
+            'pre-advising.html',
+            'degree-review.html',
+            'curriculum.html',
+            'class-schedule.html',
+            'course-planner.html',
+            'account-ledger.html',
+            'grade-report.html',
+            'cgpa-planner.html',
+            'profile.html',
+            'documentation.html',
+            'learn-more.html'
         ];
 
-        const matchingPage = targetPages.find(p => href === p || href.endsWith('/' + p) || href.startsWith(p + '?'));
+        const cleanHref = href.split('?')[0].split('#')[0];
+        const matchingPage = targetPages.find(p => cleanHref === p || cleanHref.endsWith('/' + p));
         if (matchingPage) {
             const homeView = document.getElementById('dashboardHomeView');
             if (homeView) {
@@ -480,6 +555,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     updateStudentIdDisplay();
     initAjaxRouter();
 
+    // Instant optimistic hydration of cards from sessionStorage to avoid any layout shift
+    try {
+        const cachedStatusesStr = sessionStorage.getItem('ewu_dashboard_statuses');
+        if (cachedStatusesStr) {
+            const cachedStatuses = JSON.parse(cachedStatusesStr);
+            renderFeatureCards(cachedStatuses);
+        }
+    } catch (e) {}
+
     const mobileMenuBtn = document.getElementById('mobileMenuBtn');
     const mobileMenu = document.getElementById('mobileMenu');
     if (mobileMenuBtn && mobileMenu) {
@@ -496,6 +580,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             ? await window.fetchFeatureStatuses()
             : {};
         renderFeatureCards(statuses);
+        try {
+            sessionStorage.setItem('ewu_dashboard_statuses', JSON.stringify(statuses));
+        } catch (err) {}
     } catch (e) {
         renderFeatureCards({});
     }

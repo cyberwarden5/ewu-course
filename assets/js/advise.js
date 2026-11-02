@@ -986,7 +986,7 @@ function truncateForPDF(text, maxLength) {
 }
 
 // Initialize on page load
-document.addEventListener('DOMContentLoaded', async function () {
+async function initAdvisePage() {
     // Initialize all UI components
     initializeSearch();
     initializeToggle();
@@ -1002,7 +1002,14 @@ document.addEventListener('DOMContentLoaded', async function () {
         // Load courses after successful auth check
         loadCourses();
     }
-});
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initAdvisePage);
+} else {
+    initAdvisePage();
+}
+window.initAdvisePage = initAdvisePage;
 
 // Initialize sort select
 function initializeSortSelect() {
@@ -1111,5 +1118,6 @@ function stopAutoRefresh() {
         autoRefreshInterval = null;
     }
 }
+window.stopAutoRefresh = stopAutoRefresh;
 
 // initAutoRefresh is initialized inside the main DOMContentLoaded above

@@ -14,7 +14,12 @@
 
     let planned = []; // { name, credit, grade }
 
-    document.addEventListener('DOMContentLoaded', init);
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+    window.initCgpaPlannerPage = init;
 
     async function init() {
         const gate = await gateFeaturePage('cgpa');

@@ -806,7 +806,7 @@ function exportCoursesToTxt() {
 }
 
 // Initialize on DOM load
-document.addEventListener('DOMContentLoaded', () => {
+function initDepartmentCoursesPage() {
     // Dynamic Year
     const yearEl = document.getElementById('dynamicYear');
     if (yearEl) yearEl.textContent = new Date().getFullYear();
@@ -961,4 +961,11 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
-});
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initDepartmentCoursesPage);
+} else {
+    initDepartmentCoursesPage();
+}
+window.initDepartmentCoursesPage = initDepartmentCoursesPage;
