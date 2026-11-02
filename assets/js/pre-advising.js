@@ -197,7 +197,7 @@
 
         if (countEl) countEl.textContent = count;
         if (creditsEl) creditsEl.textContent = `${totalCredits % 1 === 0 ? totalCredits.toFixed(0) : totalCredits.toFixed(1)} cr`;
-        const semName = select?.options[select.selectedIndex]?.text || 'Spring-2027';
+        const semName = (select && select.options && select.selectedIndex >= 0 && select.options[select.selectedIndex]) ? select.options[select.selectedIndex].text : 'Spring-2027';
         if (semNameEl) {
             semNameEl.textContent = semName;
         }
@@ -398,16 +398,20 @@
         const uid = localStorage.getItem('studentId') || localStorage.getItem('userId') || localStorage.getItem('ewu_student_id');
         const uidEl = document.getElementById('userId');
         if (uidEl && uid) uidEl.textContent = uid;
+        const printUidEl = document.getElementById('printStudentId');
+        if (printUidEl && uid) printUidEl.textContent = uid;
+        const printDateEl = document.getElementById('printDate');
+        if (printDateEl) printDateEl.textContent = new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 
         try {
             const savedView = localStorage.getItem('preadvisingView');
             if (savedView === 'table' || savedView === 'grid') {
                 switchView(savedView);
             } else {
-                switchView('grid');
+                switchView('table');
             }
         } catch (e) {
-            switchView('grid');
+            switchView('table');
         }
 
         loadSemesters();

@@ -729,23 +729,40 @@
         
         /* Print & PDF optimizations */
         @media print {
+            nav, .fp-nav, #backToDashBtn, #backToDashDiv, .no-print, button, footer, .refresh-btn, #auto-refresh-settings-container {
+                display: none !important;
+            }
+            body {
+                background: #ffffff !important;
+                color: #111827 !important;
+            }
+            .glass-premium, .glass-card {
+                background: #ffffff !important;
+                border-color: #d1d5db !important;
+                color: #111827 !important;
+                box-shadow: none !important;
+            }
+            td, th, span, div, h1, h2, h3, p {
+                color: #111827 !important;
+                text-shadow: none !important;
+            }
             .table-premium thead {
                 position: static;
+                display: table-header-group;
+                background: #f3f4f6 !important;
             }
-            
             .table-premium {
                 page-break-inside: auto;
+                border: 1px solid #d1d5db !important;
             }
-            
             .table-premium tr {
                 page-break-inside: avoid;
                 page-break-after: auto;
             }
-            
-            .table-premium thead {
-                display: table-header-group;
+            .table-premium td, .table-premium th {
+                border-color: #e5e7eb !important;
+                color: #111827 !important;
             }
-            
             .table-scroll-container {
                 max-height: none;
                 overflow: visible;
@@ -1041,7 +1058,7 @@
     </div>
 
     <!-- Footer -->
-    <footer class="mt-auto border-t border-white/[0.08] bg-black/40 backdrop-blur-md py-4 text-xs">
+    <footer class="no-print mt-auto border-t border-white/[0.08] bg-black/40 backdrop-blur-md py-4 text-xs">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
                 <p class="text-[11px] sm:text-xs text-gray-400 max-w-3xl leading-relaxed">

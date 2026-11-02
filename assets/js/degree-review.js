@@ -113,7 +113,7 @@
         if (pctEl) pctEl.textContent = `${progressPct.toFixed(1)}% Completed`;
         if (barEl) {
             setTimeout(() => {
-                barEl.style.width = `${progressPct}%`;
+                if (barEl && barEl.style) barEl.style.width = `${progressPct}%`;
             }, 100);
         }
         if (earnedCrEl) earnedCrEl.textContent = `${earnedCr.toFixed(1)}`;
@@ -405,6 +405,31 @@
         }, 150);
     }
     window.exportDegreeReviewPdf = exportDegreeReviewPdf;
+
+    function initDegreeReviewPage() {
+        const studentId = localStorage.getItem('studentId') || localStorage.getItem('ewu_student_id') || localStorage.getItem('userId');
+        if (studentId) {
+            const userBadge = document.getElementById('userId');
+            if (userBadge) userBadge.textContent = studentId;
+            const degreeStudentId = document.getElementById('degreeStudentId');
+            if (degreeStudentId && degreeStudentId.textContent === '--') degreeStudentId.textContent = studentId;
+        }
+        const printDateEl = document.getElementById('printDegreeDate');
+        if (printDateEl) {
+            printDateEl.textContent = new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+        }
+        const backBtn = document.getElementById('backToDashBtn');
+        if (backBtn) {
+            backBtn.onclick = (e) => {
+                if (window.history.length > 1 && document.referrer.includes('dashboard')) {
+                    e.preventDefault();
+                    window.history.back();
+                }
+            };
+        }
+        loadDegreeReview();
+    }
+    window.initDegreeReviewPage = initDegreeReviewPage;
 
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', initDegreeReviewPage);

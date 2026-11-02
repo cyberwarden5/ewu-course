@@ -10,6 +10,7 @@
     let allCoursesList = [];
     let majorTracksList = [];
     let equivalentsList = [];
+    let currentCurriculumData = null;
     let currentActiveTab = 'courses';
 
     function cleanStr(s) {
@@ -26,6 +27,101 @@
         if (c.startsWith('PHY') || c.startsWith('CHE')) return 'bg-cyan-500/15 border-cyan-500/30 text-cyan-300';
         return 'bg-rose-500/15 border-rose-500/30 text-rose-300';
     }
+
+    // ========================================
+    // Export Functions (Exposed immediately to window)
+    // ========================================
+    function exportCurriculumTxt() {
+        if (!allCoursesList.length && !currentCurriculumData) {
+            alert('Curriculum catalog is still loading. Please wait a moment and try again.');
+            return;
+        }
+
+        const prog = currentCurriculumData?.program || {};
+        const progName = cleanStr(prog.ProgramCurriculumName) || 'B.Sc. in Computer Science and Engineering';
+        const session = cleanStr(prog.SemesterName || prog.EffectiveSessionName) || 'Summer-2018';
+        const minCr = (parseFloat(prog.TotalCredits || prog.MinCr) || 140).toFixed(1);
+        const studentId = localStorage.getItem('studentId') || localStorage.getItem('ewu_student_id') || localStorage.getItem('userId') || '--';
+
+        let lines = [];
+        lines.push('========================================================================================');
+        lines.push('                   EAST WEST UNIVERSITY - PROGRAM CURRICULUM');
+        lines.push('========================================================================================');
+        lines.push(`Program           : ${progName}`);
+        lines.push(`Effective Session : ${session}`);
+        lines.push(`Required Credits  : ${minCr} Credits`);
+        lines.push(`Total Courses     : ${allCoursesList.length}`);
+        lines.push(`Student ID        : ${studentId}`);
+        lines.push(`Exported On       : ${new Date().toLocaleString()}`);
+        lines.push('========================================================================================\n');
+
+        lines.push('----------------------------------------------------------------------------------------');
+        lines.push('                                COURSE CATALOG LISTING');
+        lines.push('----------------------------------------------------------------------------------------');
+        lines.push('COURSE CODE   CREDITS   MIN-REQ   PREREQUISITES             COURSE TITLE');
+        lines.push('----------------------------------------------------------------------------------------');
+
+        allCoursesList.forEach(c => {
+            const code = cleanStr(c.CourseCode).padEnd(13);
+            const cr = (parseFloat(c.CreditHour) || 0).toFixed(1).padStart(7);
+            const minPrereq = (parseFloat(c.MinCredit || c.CreditPass) || 0).toFixed(0).padStart(7) + ' cr';
+            const prereqs = cleanStr(c.PrerequisiteCourseCodes || c.PreRequisiteCourses || 'None').padEnd(25);
+            const title = cleanStr(c.CourseName || c.CourseTitle || 'Untitled Course');
+            lines.push(`${code} ${cr}   ${minPrereq}   ${prereqs} ${title}`);
+        });
+
+        if (majorTracksList.length > 0) {
+            lines.push('\n========================================================================================');
+            lines.push('                               MAJOR SPECIALIZATION TRACKS');
+            lines.push('========================================================================================');
+            majorTracksList.forEach(tr => {
+                const trName = cleanStr(tr.MajorMinorName || tr.MajorAreaName || 'Specialization Track');
+                const reqCr = (parseFloat(tr.CreditRuleCredits) || 20).toFixed(1);
+                const trCourses = Array.isArray(tr.MajorAreaCoursesViews || tr.Courses) ? (tr.MajorAreaCoursesViews || tr.Courses) : [];
+                lines.push(`\n[ TRACK: ${trName} (Required: ${reqCr} Credits, Available Courses: ${trCourses.length}) ]`);
+                lines.push('----------------------------------------------------------------------------------------');
+                trCourses.forEach(tc => {
+                    const cCode = cleanStr(tc.CourseCode).padEnd(12);
+                    const cCr = (parseFloat(tc.CreditHour) || 0).toFixed(1).padStart(5);
+                    const cTitle = cleanStr(tc.CourseName || tc.CourseTitle || '');
+                    lines.push(`  - ${cCode} ${cCr} cr  : ${cTitle}`);
+                });
+            });
+        }
+
+        if (equivalentsList.length > 0) {
+            lines.push('\n========================================================================================');
+            lines.push('                                COURSE EQUIVALENCIES');
+            lines.push('========================================================================================');
+            lines.push('STANDARD CURRICULUM COURSE         ACCEPTED EQUIVALENT COURSE         CREDIT');
+            lines.push('----------------------------------------------------------------------------------------');
+            equivalentsList.forEach(eq => {
+                const stdCourse = cleanStr(eq.CourseName).padEnd(34);
+                const eqCourse = cleanStr(eq.EquivalentCourseName).padEnd(34);
+                const eqCr = (parseFloat(eq.CreditHour) || 0).toFixed(1).padStart(5);
+                lines.push(`${stdCourse} ${eqCourse} ${eqCr}`);
+            });
+        }
+
+        const safeProg = progName.replace(/[^a-zA-Z0-9_-]/g, '_').substring(0, 30);
+        const blob = new Blob([lines.join('\r\n')], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Curriculum_${safeProg}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    function exportCurriculumPdf() {
+        window.print();
+    }
+
+    // Attach to window immediately so inline button onclick attributes never throw ReferenceError
+    window.exportCurriculumTxt = exportCurriculumTxt;
+    window.exportCurriculumPdf = exportCurriculumPdf;
 
     async function handleLogout(event) {
         if (event) event.preventDefault();
@@ -88,6 +184,7 @@
                 throw new Error(json?.message || 'Empty or invalid curriculum catalog received');
             }
 
+            currentCurriculumData = data;
             allCoursesList = Array.isArray(data.allCourses) ? data.allCourses : [];
             majorTracksList = data.majorAreas?.MajorAreaCoursesVMs || [];
             equivalentsList = Array.isArray(data.equivalents) ? data.equivalents : [];
@@ -112,6 +209,13 @@
     window.loadCurriculum = loadCurriculum;
 
     function renderCurriculumHeader(data) {
+        currentCurriculumData = data;
+        const studentId = localStorage.getItem('studentId') || localStorage.getItem('ewu_student_id') || localStorage.getItem('userId');
+        if (studentId) {
+            const userBadge = document.getElementById('userId');
+            if (userBadge) userBadge.textContent = studentId;
+        }
+
         const program = data.program || {};
         const titleEl = document.getElementById('currProgramTitle');
         const sessionEl = document.getElementById('currEffectiveSession');
@@ -120,8 +224,8 @@
         const tracksCountEl = document.getElementById('currStatTracks');
 
         if (titleEl) titleEl.textContent = cleanStr(program.ProgramCurriculumName) || 'B.Sc. in Computer Science and Engineering';
-        if (sessionEl) sessionEl.textContent = cleanStr(program.SemesterName) || 'Summer-2018';
-        if (creditsEl) creditsEl.textContent = program.TotalCredits ? parseFloat(program.TotalCredits).toFixed(1) : '140.0';
+        if (sessionEl) sessionEl.textContent = cleanStr(program.SemesterName || program.EffectiveSessionName) || 'Summer-2018';
+        if (creditsEl) creditsEl.textContent = program.TotalCredits ? parseFloat(program.TotalCredits).toFixed(1) : (program.MinCr ? parseFloat(program.MinCr).toFixed(1) : '140.0');
         if (coursesCountEl) coursesCountEl.textContent = allCoursesList.length;
         if (tracksCountEl) tracksCountEl.textContent = majorTracksList.length;
 
@@ -145,8 +249,8 @@
 
         let filtered = allCoursesList.filter(course => {
             const code = cleanStr(course.CourseCode).toLowerCase();
-            const name = cleanStr(course.CourseName).toLowerCase();
-            const prereq = cleanStr(course.PrerequisiteCourseCodes).toLowerCase();
+            const name = cleanStr(course.CourseName || course.CourseTitle).toLowerCase();
+            const prereq = cleanStr(course.PrerequisiteCourseCodes || course.PreRequisiteCourses).toLowerCase();
 
             if (query) {
                 const matchesQuery = code.includes(query) || name.includes(query) || prereq.includes(query);
@@ -163,10 +267,10 @@
         filtered.sort((a, b) => {
             const codeA = cleanStr(a.CourseCode);
             const codeB = cleanStr(b.CourseCode);
-            const nameA = cleanStr(a.CourseName);
-            const nameB = cleanStr(b.CourseName);
-            const minA = parseFloat(a.MinCredit) || 0;
-            const minB = parseFloat(b.MinCredit) || 0;
+            const nameA = cleanStr(a.CourseName || a.CourseTitle);
+            const nameB = cleanStr(b.CourseName || b.CourseTitle);
+            const minA = parseFloat(a.MinCredit || a.CreditPass) || 0;
+            const minB = parseFloat(b.MinCredit || b.CreditPass) || 0;
 
             if (sortOrder === 'code_asc') return codeA.localeCompare(codeB);
             if (sortOrder === 'code_desc') return codeB.localeCompare(codeA);
@@ -210,9 +314,10 @@
 
         grid.innerHTML = courses.map(course => {
             const code = cleanStr(course.CourseCode);
-            const name = cleanStr(course.CourseName);
-            const prereq = cleanStr(course.PrerequisiteCourseCodes);
-            const minCr = parseFloat(course.MinCredit) || 0;
+            const name = cleanStr(course.CourseName || course.CourseTitle);
+            const prereq = cleanStr(course.PrerequisiteCourseCodes || course.PreRequisiteCourses);
+            const minCr = parseFloat(course.MinCredit || course.CreditPass) || 0;
+            const creditHour = parseFloat(course.CreditHour) || 0;
             const badgeColor = getCourseBadgeColor(code);
 
             const prereqList = prereq ? prereq.split(',').map(p => p.trim()).filter(Boolean) : [];
@@ -224,15 +329,22 @@
                             <span class="inline-flex items-center px-3 py-1 rounded-xl text-xs font-mono font-bold border ${badgeColor}">
                                 ${code}
                             </span>
-                            ${minCr > 0 ? `
-                                <span class="px-2 py-0.5 rounded-md text-[10px] font-mono bg-white/[0.04] text-gray-400 border border-white/[0.08]" title="Minimum credits required to enroll">
-                                    &ge; ${minCr} cr req
-                                </span>
-                            ` : `
-                                <span class="px-2 py-0.5 rounded-md text-[10px] font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                                    Open Entry
-                                </span>
-                            `}
+                            <div class="flex items-center gap-1.5">
+                                ${creditHour > 0 ? `
+                                    <span class="px-2 py-0.5 rounded-md text-[10px] font-mono bg-amber-500/10 text-amber-300 border border-amber-500/20">
+                                        ${creditHour.toFixed(1)} cr
+                                    </span>
+                                ` : ''}
+                                ${minCr > 0 ? `
+                                    <span class="px-2 py-0.5 rounded-md text-[10px] font-mono bg-white/[0.04] text-gray-400 border border-white/[0.08]" title="Minimum credits required to enroll">
+                                        &ge; ${minCr} cr req
+                                    </span>
+                                ` : `
+                                    <span class="px-2 py-0.5 rounded-md text-[10px] font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                        Open Entry
+                                    </span>
+                                `}
+                            </div>
                         </div>
 
                         <h3 class="text-sm font-semibold text-white group-hover:text-amber-300 transition-colors leading-snug">
@@ -273,9 +385,9 @@
         }
 
         container.innerHTML = tracks.map((track, idx) => {
-            const title = cleanStr(track.MajorMinorName) || `Specialization Track ${idx + 1}`;
+            const title = cleanStr(track.MajorMinorName || track.MajorAreaName) || `Specialization Track ${idx + 1}`;
             const credits = parseFloat(track.CreditRuleCredits) || 20;
-            const courses = Array.isArray(track.MajorAreaCoursesViews) ? track.MajorAreaCoursesViews : [];
+            const courses = Array.isArray(track.MajorAreaCoursesViews || track.Courses) ? (track.MajorAreaCoursesViews || track.Courses) : [];
 
             return `
                 <div class="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-6 space-y-4 shadow-xl">
@@ -285,7 +397,7 @@
                                 <span class="w-2.5 h-2.5 rounded-full bg-sky-400"></span>
                                 <h3 class="text-base font-bold text-white tracking-tight">${title}</h3>
                             </div>
-                            <p class="text-xs text-gray-400">Complete ${credits} credit hours from this elective track</p>
+                            <p class="text-xs text-gray-400">Complete ${credits.toFixed(1)} credit hours from this elective track</p>
                         </div>
                         <span class="px-3 py-1 rounded-xl text-xs font-mono font-bold bg-sky-500/15 border border-sky-500/30 text-sky-300 self-start sm:self-auto">
                             ${credits.toFixed(1)} Credits Track
@@ -297,7 +409,7 @@
                             <div class="p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.06] flex items-start justify-between gap-3">
                                 <div>
                                     <span class="font-mono font-bold text-xs text-sky-300">${cleanStr(c.CourseCode)}</span>
-                                    <div class="text-xs font-medium text-white mt-1">${cleanStr(c.CourseName)}</div>
+                                    <div class="text-xs font-medium text-white mt-1">${cleanStr(c.CourseName || c.CourseTitle)}</div>
                                 </div>
                                 <span class="text-[11px] font-mono text-gray-400 bg-white/[0.04] px-2 py-0.5 rounded border border-white/10 flex-shrink-0">
                                     ${(parseFloat(c.CreditHour) || 0).toFixed(1)} cr
@@ -334,108 +446,14 @@
         `).join('');
     }
 
-    let currentCurriculumData = null;
-
-    const _origRenderCurriculumHeader = renderCurriculumHeader;
-    renderCurriculumHeader = function(data) {
-        currentCurriculumData = data;
-        const studentId = localStorage.getItem('studentId') || localStorage.getItem('ewu_student_id') || localStorage.getItem('userId');
-        if (studentId) {
-            const userBadge = document.getElementById('userId');
-            if (userBadge) userBadge.textContent = studentId;
-        }
-        _origRenderCurriculumHeader(data);
-    };
-
-    function exportCurriculumTxt() {
-        if (!currentCurriculumData && allCoursesList.length === 0) {
-            alert('Curriculum data is still loading.');
-            return;
-        }
-        const prog = currentCurriculumData?.program || {};
-        const progName = cleanStr(prog.ProgramCurriculumName) || 'Academic Program Curriculum';
-        const session = cleanStr(prog.EffectiveSessionName) || 'Summer-2018';
-        const minCr = (parseFloat(prog.MinCr) || 140).toFixed(1);
-        const studentId = localStorage.getItem('studentId') || localStorage.getItem('ewu_student_id') || '--';
-
-        let lines = [];
-        lines.push('================================================================');
-        lines.push('             EAST WEST UNIVERSITY - PROGRAM CURRICULUM');
-        lines.push('================================================================');
-        lines.push(`Program           : ${progName}`);
-        lines.push(`Effective Session : ${session}`);
-        lines.push(`Required Credits  : ${minCr} Credits`);
-        lines.push(`Total Courses     : ${allCoursesList.length}`);
-        lines.push(`Student ID        : ${studentId}`);
-        lines.push(`Exported On       : ${new Date().toLocaleString()}`);
-        lines.push('================================================================\n');
-
-        lines.push('----------------------------------------------------------------');
-        lines.push('                     COURSE CATALOG LISTING');
-        lines.push('----------------------------------------------------------------');
-        lines.push('CODE         CR    MIN-CR  PRE-REQUISITES       TITLE');
-        lines.push('----------------------------------------------------------------');
-
-        allCoursesList.forEach(c => {
-            const code = cleanStr(c.CourseCode).padEnd(12);
-            const cr = (parseFloat(c.CreditHour) || 0).toFixed(1).padStart(5);
-            const minPrereq = (parseFloat(c.CreditPass) || 0).toFixed(0).padStart(6);
-            const prereqs = cleanStr(c.PreRequisiteCourses || '--').padEnd(20);
-            const title = cleanStr(c.CourseTitle || c.CourseName);
-            lines.push(`${code} ${cr} ${minPrereq}  ${prereqs} ${title}`);
-        });
-
-        if (majorTracksList.length > 0) {
-            lines.push('\n================================================================');
-            lines.push('                    MAJOR SPECIALIZATIONS');
-            lines.push('================================================================');
-            majorTracksList.forEach(tr => {
-                const trName = cleanStr(tr.MajorAreaName);
-                const trCourses = Array.isArray(tr.Courses) ? tr.Courses : [];
-                lines.push(`\n[ TRACK: ${trName} (${trCourses.length} Courses) ]`);
-                trCourses.forEach(tc => {
-                    lines.push(`  - ${cleanStr(tc.CourseCode).padEnd(10)} ${(parseFloat(tc.CreditHour) || 0).toFixed(1)} cr  : ${cleanStr(tc.CourseTitle || tc.CourseName)}`);
-                });
-            });
-        }
-
-        if (equivalentsList.length > 0) {
-            lines.push('\n================================================================');
-            lines.push('                    COURSE EQUIVALENCIES');
-            lines.push('================================================================');
-            lines.push('STANDARD COURSE                EQUIVALENT COURSE              CREDIT');
-            lines.push('----------------------------------------------------------------');
-            equivalentsList.forEach(eq => {
-                lines.push(`${cleanStr(eq.CourseName).padEnd(30)} ${cleanStr(eq.EquivalentCourseName).padEnd(30)} ${(parseFloat(eq.CreditHour) || 0).toFixed(1)}`);
-            });
-        }
-
-        const blob = new Blob([lines.join('\r\n')], { type: 'text/plain;charset=utf-8' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `Curriculum_${progName.replace(/[^a-zA-Z0-9_-]/g, '_').substring(0, 30)}.txt`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-    }
-    window.exportCurriculumTxt = exportCurriculumTxt;
-
-    function exportCurriculumPdf() {
-        selectTab('courses');
-        setTimeout(() => {
-            window.print();
-        }, 150);
-    }
-    window.exportCurriculumPdf = exportCurriculumPdf;
-
     function initCurriculumPage() {
         const studentId = localStorage.getItem('studentId') || localStorage.getItem('ewu_student_id') || localStorage.getItem('userId');
         if (studentId) {
             const userBadge = document.getElementById('userId');
             if (userBadge) userBadge.textContent = studentId;
         }
+
+        // Bind back button
         const backBtn = document.getElementById('backToDashBtn');
         if (backBtn) {
             backBtn.onclick = (e) => {
@@ -445,6 +463,23 @@
                 }
             };
         }
+
+        // Bind export buttons explicitly
+        const btnTxt = document.getElementById('btnExportCurriculumTxt');
+        if (btnTxt) {
+            btnTxt.onclick = (e) => {
+                e.preventDefault();
+                exportCurriculumTxt();
+            };
+        }
+        const btnPdf = document.getElementById('btnExportCurriculumPdf');
+        if (btnPdf) {
+            btnPdf.onclick = (e) => {
+                e.preventDefault();
+                exportCurriculumPdf();
+            };
+        }
+
         loadCurriculum();
     }
     window.initCurriculumPage = initCurriculumPage;

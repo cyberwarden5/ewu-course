@@ -412,3 +412,47 @@ select.fp-input option { background: #12121a; color: #f3f4f6; }
 @media (prefers-reduced-motion: reduce) {
     * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
+
+/* Universal Print Improvements across feature pages */
+@media print {
+    .fp-nav,
+    .no-print,
+    #backToDashBtn,
+    #backToDashDiv,
+    .btn-card-action,
+    .toast-notification,
+    #toastContainer,
+    button:not(.allow-print),
+    footer {
+        display: none !important;
+    }
+
+    body {
+        background: #ffffff !important;
+        color: #111827 !important;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+    }
+
+    .fp-bg {
+        display: none !important;
+    }
+
+    .fp-card, .fp-panel {
+        background: #ffffff !important;
+        border: 1px solid #d1d5db !important;
+        box-shadow: none !important;
+        color: #111827 !important;
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+
+    .fp-table td, .fp-table th, .fp-transcript td, .fp-transcript th {
+        color: #111827 !important;
+        border-color: #e5e7eb !important;
+    }
+
+    a {
+        text-decoration: none !important;
+        color: inherit !important;
+    }
+}

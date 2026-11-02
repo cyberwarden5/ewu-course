@@ -1069,12 +1069,17 @@ select.glass-select option,
     .toast-notification,
     .retry-widget,
     nav,
+    .fp-nav,
+    #backToDashBtn,
+    #backToDashDiv,
+    .no-print,
+    footer,
     #auto-refresh-settings-container,
     .btn-premium-primary,
     .btn-premium-secondary {
         display: none !important;
     }
     
-    body { background: #ffffff !important; color: #000000 !important; }
-    .glass-card, .glass-premium { background: transparent !important; border: 1px solid #ccc !important; box-shadow: none !important; color: #000 !important; }
+    body { background: #ffffff !important; color: #111827 !important; }
+    .glass-card, .glass-premium { background: transparent !important; border: 1px solid #d1d5db !important; box-shadow: none !important; color: #111827 !important; }
 }
