@@ -754,14 +754,17 @@
     </style>
 </head>
 
-<body class="text-white min-h-screen" style="background: linear-gradient(135deg, #050508 0%, #0a0a0f 25%, #0e0e14 50%, #0a0a0f 75%, #050508 100%); background-attachment: fixed;">
+<body class="text-white min-h-screen flex flex-col justify-between" style="background: linear-gradient(135deg, #050508 0%, #0a0a0f 25%, #0e0e14 50%, #0a0a0f 75%, #050508 100%); background-attachment: fixed;">
     <!-- Navigation -->
     <nav class="glass-premium sticky top-0 z-50 mb-6" style="border-bottom: 1px solid rgba(90, 143, 216, 0.08);">
         <div class="container mx-auto px-4 sm:px-6 py-4">
             <div class="flex justify-between items-center">
-                <a href="index.html" class="flex items-center gap-3 hover:opacity-80 transition-opacity" style="text-decoration: none;">
-                    <img src="assets/images/ewu.png" alt="EWU Logo" class="h-9 w-auto object-contain" style="animation: none; transition: none;">
-                    <span class="text-lg font-bold text-white" style="animation: none; transition: none;">EWU Courses</span>
+                <a href="dashboard.html" class="flex items-center gap-3 hover:opacity-90 transition-opacity no-underline" title="EWU Course Portal">
+                    <img src="assets/images/ewu.png" alt="EWU Logo" class="h-9 sm:h-10 w-auto object-contain">
+                    <div class="flex flex-col">
+                        <span class="text-base sm:text-lg font-bold text-white tracking-tight">EWU Course Portal</span>
+                        <span class="text-[10px] text-gray-400 font-mono hidden sm:inline-block">Academic Hub</span>
+                    </div>
                 </a>
                 <!-- Desktop Navigation -->
                 <div class="hidden md:flex gap-4 items-center">
@@ -1037,13 +1040,22 @@
         <span class="toast-message" id="toastMessage">Refreshed Successfully</span>
     </div>
 
-    <!-- Disclaimer & Footer -->
-    <div style="padding: 1.5rem; text-align: center; border-top: 1px solid rgba(255,255,255,0.05); background: rgba(0,0,0,0.2); margin-top: 2rem;">
-        <p style="color: rgba(255,255,255,0.5); margin-bottom: 0.5rem; font-size: 0.85rem; max-width: 600px; margin-left: auto; margin-right: auto;">
-            This website is created for educational purposes only. It has no official connection with East West University (EWU). If any authority requests content removal, please contact us.
-        </p>
-        <a href="mailto:contact.aftabkabir@proton.me" style="display: inline-block; padding: 0.4rem 1rem; border-radius: 4px; background: rgba(90, 143, 216, 0.1); border: 1px solid rgba(90, 143, 216, 0.3); color: #5a8fd8; text-decoration: none; font-size: 0.8rem; margin-top: 0.5rem; transition: all 0.2s;">Contact</a>
-    </div>
+    <!-- Footer -->
+    <footer class="mt-auto border-t border-white/[0.08] bg-black/40 backdrop-blur-md py-4 text-xs">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
+                <p class="text-[11px] sm:text-xs text-gray-400 max-w-3xl leading-relaxed">
+                    This website is created for educational purposes only. It has no official connection with East West University (EWU). If any authority requests content removal, please contact us.
+                </p>
+                <div class="flex items-center gap-3 flex-shrink-0">
+                    <a href="mailto:contact.aftabkabir@proton.me" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#D86C5A]/10 hover:bg-[#D86C5A]/20 border border-[#D86C5A]/30 text-[#D86C5A] hover:text-[#e07d6d] text-xs font-medium transition-all no-underline" title="Contact Us">
+                        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                        <span>Contact Us</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </footer>
 
     <script src="assets/js/system-metrics.js" defer></script>
     <script src="assets/js/features.js?v=3"></script>

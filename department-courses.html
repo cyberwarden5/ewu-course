@@ -239,11 +239,10 @@
         <nav class="nav-glass sticky top-0 z-50">
             <div class="container mx-auto px-4 sm:px-6 py-3.5">
                 <div class="flex justify-between items-center">
-                    <!-- Brand -->
-                    <a href="dashboard.html" class="flex items-center gap-3 hover:opacity-90 transition-opacity" style="text-decoration: none;">
+                    <a href="dashboard.html" class="flex items-center gap-3 hover:opacity-90 transition-opacity no-underline" title="EWU Course Portal">
                         <img src="assets/images/ewu.png" alt="EWU Logo" class="h-9 sm:h-10 w-auto object-contain">
                         <div class="flex flex-col">
-                            <span class="text-base sm:text-lg font-bold text-white tracking-tight">EWU Course Fetching</span>
+                            <span class="text-base sm:text-lg font-bold text-white tracking-tight">EWU Course Portal</span>
                             <span class="text-[10px] text-[#5a8fd8] font-mono hidden sm:inline-block">Department Explorer</span>
                         </div>
                     </a>
@@ -533,14 +532,23 @@
                         </label>
                     </div>
 
-                    <!-- Export PDF Button -->
-                    <button 
-                        id="btnExportPdf" 
-                        class="px-4 py-2 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/[0.1] text-xs font-semibold text-gray-200 transition-all flex items-center gap-2 shadow-sm"
-                    >
-                        <svg class="w-3.5 h-3.5 text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-                        <span>Export PDF</span>
-                    </button>
+                    <!-- Export Buttons -->
+                    <div class="flex items-center gap-2">
+                        <button 
+                            id="btnExportTxt" 
+                            class="px-3.5 py-2 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/[0.1] text-xs font-semibold text-gray-200 transition-all flex items-center gap-2 shadow-sm cursor-pointer"
+                        >
+                            <svg class="w-3.5 h-3.5 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+                            <span>Export TXT</span>
+                        </button>
+                        <button 
+                            id="btnExportPdf" 
+                            class="px-4 py-2 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/[0.1] text-xs font-semibold text-gray-200 transition-all flex items-center gap-2 shadow-sm cursor-pointer"
+                        >
+                            <svg class="w-3.5 h-3.5 text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                            <span>Export PDF</span>
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -607,15 +615,18 @@
     </button>
 
     <!-- Footer -->
-    <footer class="mt-12 border-t border-white/[0.06] bg-black/40 py-6 text-center">
-        <div class="container mx-auto px-6 max-w-4xl">
-            <p class="text-xs text-gray-400 mb-2">
-                This website is created for educational purposes only. It has no official connection with East West University (EWU).
-            </p>
-            <div class="flex items-center justify-center gap-3 text-xs text-gray-500">
-                <span>&copy; <span id="dynamicYear">2026</span> EWU Course Fetching</span>
-                <span>•</span>
-                <a href="mailto:contact.aftabkabir@proton.me" class="text-gray-400 hover:text-[#5a8fd8] transition-colors">Contact Support</a>
+    <footer class="mt-auto border-t border-white/[0.08] bg-black/40 backdrop-blur-md py-4 text-xs">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
+                <p class="text-[11px] sm:text-xs text-gray-400 max-w-3xl leading-relaxed">
+                    This website is created for educational purposes only. It has no official connection with East West University (EWU). If any authority requests content removal, please contact us.
+                </p>
+                <div class="flex items-center gap-3 flex-shrink-0">
+                    <a href="mailto:contact.aftabkabir@proton.me" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#D86C5A]/10 hover:bg-[#D86C5A]/20 border border-[#D86C5A]/30 text-[#D86C5A] hover:text-[#e07d6d] text-xs font-medium transition-all no-underline" title="Contact Us">
+                        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                        <span>Contact Us</span>
+                    </a>
+                </div>
             </div>
         </div>
     </footer>

@@ -34,6 +34,7 @@
             localStorage.removeItem('ewu_student_id');
             localStorage.removeItem('userId');
             sessionStorage.clear();
+            sessionStorage.setItem('ewu_just_logged_out', 'true');
         } catch (e) {}
         window.location.href = 'login.html';
     }
@@ -315,6 +316,95 @@
         loadDegreeReview();
     }
     window.initDegreeReviewPage = initDegreeReviewPage;
+
+    let currentDegreeData = null;
+
+    // Hook renderDegreeReview to retain data
+    const _origRender = renderDegreeReview;
+    renderDegreeReview = function(data) {
+        currentDegreeData = data;
+        const studentId = cleanStr(data.analysis?.StudentId) || data.studentId || localStorage.getItem('studentId') || localStorage.getItem('ewu_student_id') || localStorage.getItem('userId');
+        if (studentId) {
+            const userBadge = document.getElementById('userId');
+            if (userBadge) userBadge.textContent = studentId;
+        }
+        _origRender(data);
+    };
+
+    function exportDegreeReviewTxt() {
+        if (!currentDegreeData) {
+            alert('Degree review data is still loading.');
+            return;
+        }
+        const analysis = currentDegreeData.analysis || {};
+        const areas = Array.isArray(currentDegreeData.courseAreas) ? currentDegreeData.courseAreas : [];
+        const studentName = cleanStr(analysis.FirstName) || localStorage.getItem('studentName') || 'Student';
+        const studentId = cleanStr(analysis.StudentId) || currentDegreeData.studentId || localStorage.getItem('studentId') || '--';
+        const programName = cleanStr(analysis.ProgramCurriculumName) || 'B.Sc. in Computer Science and Engineering';
+        const earnedCr = parseFloat(analysis.CrEarned || analysis.CreditsAttend || 0).toFixed(1);
+        const minCr = parseFloat(analysis.MinCr || 140).toFixed(1);
+        const remainingCr = parseFloat(analysis.RemainingCr || (minCr - earnedCr)).toFixed(1);
+        const cgpa = (analysis.CGPA != null && !isNaN(analysis.CGPA)) ? Number(analysis.CGPA).toFixed(2) : '--';
+
+        let lines = [];
+        lines.push('================================================================');
+        lines.push('               EAST WEST UNIVERSITY - DEGREE AUDIT');
+        lines.push('================================================================');
+        lines.push(`Student Name : ${studentName}`);
+        lines.push(`Student ID   : ${studentId}`);
+        lines.push(`Program      : ${programName}`);
+        lines.push(`CGPA         : ${cgpa}`);
+        lines.push(`Credits      : Earned ${earnedCr} / Required ${minCr} (Remaining: ${remainingCr})`);
+        lines.push(`Generated On : ${new Date().toLocaleString()}`);
+        lines.push('================================================================\n');
+
+        areas.forEach((area, idx) => {
+            const areaName = cleanStr(area.Area) || `Area ${idx + 1}`;
+            const total = (parseFloat(area.TotalAreaCredits) || 0).toFixed(1);
+            const earned = (parseFloat(area.TotalCreditsEarned) || 0).toFixed(1);
+            const rem = (parseFloat(area.TotalRemainingCredits) || 0).toFixed(1);
+            const courses = Array.isArray(area.CourseView) ? area.CourseView : [];
+
+            lines.push(`----------------------------------------------------------------`);
+            lines.push(`AREA: ${areaName}`);
+            lines.push(`Credits: Earned ${earned} / Required ${total} (Remaining: ${rem})`);
+            lines.push(`----------------------------------------------------------------`);
+            if (courses.length === 0) {
+                lines.push('  No completed courses in this area.\n');
+            } else {
+                lines.push(`  CODE        CREDIT   GRADE   GP     TITLE`);
+                lines.push(`  --------------------------------------------------------------`);
+                courses.forEach(c => {
+                    const code = cleanStr(c.CourseCode).padEnd(12);
+                    const cr = (parseFloat(c.CreditHour) || 0).toFixed(1).padStart(6);
+                    const gr = cleanStr(c.Grade || '--').padStart(6);
+                    const gp = (c.GradePoint != null ? parseFloat(c.GradePoint).toFixed(2) : '--').padStart(6);
+                    const title = cleanStr(c.CourseName);
+                    lines.push(`  ${code} ${cr} ${gr} ${gp}   ${title}`);
+                });
+                lines.push('');
+            }
+        });
+
+        const blob = new Blob([lines.join('\r\n')], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Degree_Review_${studentId.replace(/[^a-zA-Z0-9_-]/g, '') || 'Report'}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+    window.exportDegreeReviewTxt = exportDegreeReviewTxt;
+
+    function exportDegreeReviewPdf() {
+        toggleAllAreas(true);
+        setTimeout(() => {
+            window.print();
+        }, 150);
+    }
+    window.exportDegreeReviewPdf = exportDegreeReviewPdf;
 
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', initDegreeReviewPage);

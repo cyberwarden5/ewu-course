@@ -15,6 +15,35 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="assets/css/styles.css">
     <link rel="stylesheet" href="assets/css/features.css?v=4">
+    <style>
+        @media print {
+            .fp-nav, #backToDashBtn, button, select, input, .no-print {
+                display: none !important;
+            }
+            body {
+                background: white !important;
+                color: black !important;
+            }
+            .fp-bg { display: none !important; }
+            .area-card, .rounded-2xl {
+                border: 1px solid #ddd !important;
+                background: white !important;
+                color: black !important;
+                box-shadow: none !important;
+                break-inside: avoid;
+            }
+            h1, h2, h3, h4, span, div, p, td, th {
+                color: black !important;
+                text-shadow: none !important;
+            }
+            #curriculumContent {
+                display: block !important;
+            }
+            #tabContent-courses, #tabContent-tracks, #tabContent-equivalents {
+                display: block !important;
+            }
+        }
+    </style>
 </head>
 
 <body class="fp-body fp-scroll">
@@ -23,14 +52,15 @@
     <nav class="fp-nav sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5">
             <div class="flex justify-between items-center">
-                <a href="dashboard.html" class="flex items-center gap-3 hover:opacity-90 transition-opacity no-underline">
+                <a href="dashboard.html" class="flex items-center gap-3 hover:opacity-90 transition-opacity no-underline" title="EWU Course Portal">
                     <img src="assets/images/ewu.png" alt="EWU Logo" class="h-9 sm:h-10 w-auto object-contain">
                     <div class="flex flex-col">
-                        <span class="text-base sm:text-lg font-bold text-white tracking-tight">Curriculum</span>
-                        <span class="text-[10px] text-gray-400 font-mono hidden sm:inline-block">Academic Structure &amp; Tracks</span>
+                        <span class="text-base sm:text-lg font-bold text-white tracking-tight">EWU Course Portal</span>
+                        <span class="text-[10px] text-gray-400 font-mono hidden sm:inline-block">Program Curriculum</span>
                     </div>
                 </a>
                 <div class="flex items-center gap-3">
+                    <span id="userId" class="text-xs font-mono text-gray-400 bg-white/[0.04] border border-white/[0.08] px-2.5 py-1 rounded-lg">--</span>
                     <a href="dashboard.html" id="backToDashBtn" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-xs font-medium text-gray-300 hover:text-white transition-all no-underline">
                         <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
                         <span>Dashboard</span>
@@ -45,6 +75,24 @@
     </nav>
 
     <main class="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+        <!-- Back to Dashboard -->
+        <div class="flex items-center justify-between mb-2">
+            <a href="dashboard.html" class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-xs font-medium text-gray-300 hover:text-white transition-all group no-underline">
+                <svg class="w-4 h-4 text-gray-400 group-hover:-translate-x-0.5 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                <span>Back to Dashboard</span>
+            </a>
+            <div class="flex items-center gap-2">
+                <button type="button" onclick="exportCurriculumTxt()" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-xs font-medium text-gray-300 hover:text-white transition-all cursor-pointer">
+                    <svg class="w-3.5 h-3.5 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+                    <span>Export TXT</span>
+                </button>
+                <button type="button" onclick="exportCurriculumPdf()" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-xs font-medium text-amber-300 hover:text-white transition-all cursor-pointer">
+                    <svg class="w-3.5 h-3.5 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7"></path><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+                    <span>Print / PDF</span>
+                </button>
+            </div>
+        </div>
+
         <!-- Loading State -->
         <div id="curriculumLoading" class="py-24 flex flex-col items-center justify-center space-y-4">
             <div class="w-12 h-12 rounded-full border-2 border-amber-400 border-t-transparent animate-spin"></div>
@@ -205,6 +253,23 @@
             </div>
         </div>
     </main>
+
+    <!-- Footer -->
+    <footer class="mt-auto border-t border-white/[0.08] bg-black/40 backdrop-blur-md py-4 text-xs">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
+                <p class="text-[11px] sm:text-xs text-gray-400 max-w-3xl leading-relaxed">
+                    This website is created for educational purposes only. It has no official connection with East West University (EWU). If any authority requests content removal, please contact us.
+                </p>
+                <div class="flex items-center gap-3 flex-shrink-0">
+                    <a href="mailto:contact.aftabkabir@proton.me" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#D86C5A]/10 hover:bg-[#D86C5A]/20 border border-[#D86C5A]/30 text-[#D86C5A] hover:text-[#e07d6d] text-xs font-medium transition-all no-underline" title="Contact Us">
+                        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                        <span>Contact Us</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </footer>
 
     <script src="assets/js/features.js?v=4"></script>
     <script src="assets/js/curriculum.js?v=1"></script>

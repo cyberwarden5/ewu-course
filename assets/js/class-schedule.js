@@ -192,25 +192,55 @@
     // ========================================
     // Routine generation
     // ========================================
+    // ========================================
+    // Routine generation
+    // ========================================
+    const STANDARD_DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday'];
+    const DAY_MAP_SHORT_TO_LONG = {
+        'Sun': 'Sunday', 'Sunday': 'Sunday',
+        'Mon': 'Monday', 'Monday': 'Monday',
+        'Tue': 'Tuesday', 'Tuesday': 'Tuesday',
+        'Wed': 'Wednesday', 'Wednesday': 'Wednesday',
+        'Thu': 'Thursday', 'Thursday': 'Thursday',
+        'Fri': 'Friday', 'Friday': 'Friday',
+        'Sat': 'Saturday', 'Saturday': 'Saturday'
+    };
+
     function buildRoutineModel() {
-        // Exclude dropped/withdrawn; group by base course + section
+        // Exclude dropped/withdrawn; preserve separate Theory and Lab columns!
         const map = new Map();
         const order = [];
+
         for (const c of rawCourses) {
             if (isDropped(c)) continue;
-            const code = baseCode(c.CourseCode);
-            const isLab = /lab\s*$/i.test(String(c.CourseCode).trim());
-            const key = `${code}|${c.SectionName}`;
+            const rawCode = String(c.CourseCode || '').trim();
+            if (!rawCode) continue;
+
+            const isLab = /\blab\b/i.test(rawCode) || /lab/i.test(String(c.RoomName || ''));
+            let displayCode = rawCode;
+            if (isLab && !/\blab$/i.test(displayCode)) {
+                displayCode = `${displayCode} Lab`;
+            }
+            const key = `${displayCode}|${c.SectionName}`;
+
             if (!map.has(key)) {
-                map.set(key, { courseCode: code, section: c.SectionName, shortName: c.ShortName || '', slots: [] });
+                map.set(key, {
+                    courseCode: displayCode,
+                    section: c.SectionName,
+                    shortName: c.ShortName || '',
+                    slots: []
+                });
                 order.push(key);
             }
+
             const parsed = parsePortalSlot(c.TimeSlotName);
             const startMin = timeToMinutes(parsed.time.split(' - ')[0]);
             const endMin = timeToMinutes(parsed.time.split(' - ')[1]);
             if (parsed.days.length && startMin !== null && endMin !== null) {
+                // Map short day names to full day names for consistent lookup
+                const fullDays = parsed.days.map(d => DAY_MAP_SHORT_TO_LONG[d] || d);
                 map.get(key).slots.push({
-                    days: parsed.days,
+                    days: fullDays,
                     startMin,
                     endMin,
                     startLabel: prettyTime(parsed.time.split(' - ')[0]),
@@ -222,30 +252,43 @@
         }
 
         const courses = order.map(k => map.get(k));
-        // Sort columns by earliest weekly start time, then day index, then code
+
+        // Sort columns: earliest weekly start time, then day index, then code
+        const dayOrder = ['Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
         courses.forEach(course => {
             let minTime = Infinity, minDay = Infinity;
             course.slots.forEach(s => {
                 if (s.startMin < minTime) minTime = s.startMin;
                 s.days.forEach(d => {
-                    const idx = DOW_INDEX[d];
-                    if (idx !== undefined && idx < minDay) minDay = idx;
+                    const idx = dayOrder.indexOf(d);
+                    if (idx !== -1 && idx < minDay) minDay = idx;
                 });
             });
             course._minTime = minTime === Infinity ? 9999 : minTime;
             course._minDay = minDay === Infinity ? 9999 : minDay;
         });
+
         courses.sort((a, b) => {
             if (a._minTime !== b._minTime) return a._minTime - b._minTime;
             if (a._minDay !== b._minDay) return a._minDay - b._minDay;
             const c = a.courseCode.localeCompare(b.courseCode);
-            return c !== 0 ? c : (String(a.section)).localeCompare(String(b.section));
+            return c !== 0 ? c : String(a.section).localeCompare(String(b.section));
         });
 
         // Determine active days present
-        const activeDays = new Set();
-        courses.forEach(course => course.slots.forEach(s => s.days.forEach(d => activeDays.add(d))));
-        const daysToShow = DOW.filter(d => activeDays.has(d));
+        let hasSaturday = false, hasFriday = false;
+        courses.forEach(course => {
+            course.slots.forEach(s => {
+                s.days.forEach(d => {
+                    if (d === 'Saturday') hasSaturday = true;
+                    if (d === 'Friday') hasFriday = true;
+                });
+            });
+        });
+
+        const daysToShow = [...STANDARD_DAYS];
+        if (hasSaturday) daysToShow.unshift('Saturday');
+        if (hasFriday) daysToShow.push('Friday');
 
         return { courses, daysToShow };
     }
@@ -283,42 +326,43 @@
 
     function buildRoutineHtml(model) {
         const { courses, daysToShow } = model;
-        let h = '<div id="routineExportArea" style="background:#ffffff;border-radius:12px;padding:22px;">';
-        h += `<div style="text-align:center;margin-bottom:16px;">
-            <img src="${LOGO_URL}" crossorigin="anonymous" style="max-height:52px;margin:0 auto 8px;display:block;" onerror="this.style.display='none'">
-            <h2 style="margin:0;font-size:17px;font-weight:800;color:#111827;letter-spacing:0.4px;">CLASS ROUTINE</h2>
-            <p style="margin:4px 0 0;font-size:13px;color:#4b5563;font-weight:600;">${escapeHtml(currentSemesterName || '')}</p>
-            <p style="margin:2px 0 0;font-size:11px;color:#9ca3af;font-family:monospace;">${escapeHtml(currentUserId || '')}</p>
+        let h = '<div id="routineExportArea" style="background:#ffffff;border-radius:14px;padding:24px 20px;box-shadow:0 8px 30px rgba(0,0,0,0.12);max-width:100%;overflow-x:auto;">';
+        h += `<div style="text-align:center;margin-bottom:18px;">
+            <img src="${LOGO_URL}" crossorigin="anonymous" style="max-height:56px;margin:0 auto 8px;display:block;" onerror="this.style.display='none'">
+            <h2 style="margin:0 0 4px;font-size:18px;font-weight:700;color:#222222;letter-spacing:0.5px;font-family:Inter,sans-serif;">CLASS ROUTINE</h2>
+            <p style="margin:0;font-size:13px;color:#555555;font-weight:600;font-family:Inter,sans-serif;">${escapeHtml(currentSemesterName || '')}</p>
+            ${currentUserId ? `<p style="margin:3px 0 0;font-size:11px;color:#666666;font-family:monospace;">${escapeHtml(currentUserId)}</p>` : ''}
         </div>`;
 
-        if (!daysToShow.length) {
-            h += '<p style="text-align:center;color:#6b7280;">No scheduled class times available.</p></div>';
+        if (!daysToShow.length || !courses.length) {
+            h += '<p style="text-align:center;color:#6b7280;padding:20px;">No scheduled class times available.</p></div>';
             return h;
         }
 
-        h += '<table class="fp-timetable" style="background:#fff;">';
-        h += '<thead><tr><th style="width:90px;">Day</th>';
+        h += '<table style="width:100%;border-collapse:collapse;font-size:13px;border:2px solid #4285F4;margin:0 auto;font-family:Inter,sans-serif;">';
+        h += '<thead><tr><th style="background:#1A73E8;color:#FFFFFF;padding:12px 10px;border:1px solid #4285F4;font-weight:700;text-align:center;min-width:85px;width:85px;white-space:nowrap;">Day</th>';
         courses.forEach(c => {
-            h += `<th>${escapeHtml(c.courseCode)}<br><span style="font-size:10px;font-weight:600;opacity:0.8;">Sec ${escapeHtml(String(c.section))}</span></th>`;
+            h += `<th style="background:#1A73E8;color:#FFFFFF;padding:12px 10px;border:1px solid #4285F4;font-weight:700;text-align:center;min-width:115px;white-space:nowrap;">
+                ${escapeHtml(c.courseCode)}<br><span style="font-size:0.85em;opacity:0.92;font-weight:600;">Sec ${escapeHtml(String(c.section))}</span>
+            </th>`;
         });
         h += '</tr></thead><tbody>';
 
         daysToShow.forEach(day => {
-            h += `<tr><td class="tt-day">${escapeHtml(DOW_FULL[day] || day)}</td>`;
+            h += `<tr><td style="background:#E8F0FE;color:#111827;padding:14px 10px;border:1px solid #4285F4;font-weight:700;text-align:center;white-space:nowrap;font-size:13px;">${escapeHtml(day)}</td>`;
             courses.forEach(course => {
                 const slots = findDaySlots(course, day);
                 if (!slots.length) {
-                    h += '<td class="tt-cell"></td>';
+                    h += '<td style="background:#FAFAFA;padding:14px 10px;border:1px solid #4285F4;"></td>';
                     return;
                 }
-                h += '<td class="tt-cell">';
+                h += '<td style="background:#FFFFFF;padding:12px 8px;border:1px solid #4285F4;text-align:center;vertical-align:middle;">';
                 slots.forEach((s, idx) => {
-                    if (idx > 0) h += '<div style="border-top:1px dashed #d1d5db;margin:5px 0;"></div>';
-                    const accent = s.isLab ? '#f59e0b' : '#2563eb';
-                    h += `<div style="border-left:3px solid ${accent};padding-left:6px;text-align:left;">
-                        <div style="font-size:11px;font-weight:700;color:${accent};">${s.startLabel} – ${s.endLabel}</div>
-                        <div style="font-size:10px;color:#4b5563;">${escapeHtml(s.room)}</div>
-                    </div>`;
+                    if (idx > 0) h += '<hr style="margin:6px 0;border:none;border-top:1px solid #E2E8F0;">';
+                    h += `<div style="font-size:12.5px;color:#1A73E8;font-weight:700;white-space:nowrap;line-height:1.4;">${escapeHtml(s.startLabel)} – ${escapeHtml(s.endLabel)}</div>`;
+                    if (s.room) {
+                        h += `<div style="font-size:11.5px;color:#444444;margin-top:2px;line-height:1.3;">${escapeHtml(s.room)}</div>`;
+                    }
                 });
                 h += '</td>';
             });
@@ -328,101 +372,152 @@
         return h;
     }
 
-    // ---- PNG export via canvas ----
+    // ---- PNG export via canvas (Matches Info/routine.png) ----
     async function exportRoutinePng() {
         const model = buildRoutineModel();
         const { courses, daysToShow } = model;
         if (!daysToShow.length) { showFeatureToast('Nothing to export', 'warning'); return; }
 
         const scale = 2;
-        const colCount = courses.length + 1;
-        const colWidth = 128;
-        const dayColWidth = 96;
-        const headerH = 96;
-        const theadH = 52;
-        const rowH = 72;
-        const pad = 18;
+        const colWidth = 120;
+        const dayColWidth = 85;
+        const headerH = 100;
+        const theadH = 50;
+        const rowH = 68;
+        const pad = 20;
 
-        const width = dayColWidth + courses.length * colWidth + pad * 2;
+        const tableWidth = dayColWidth + courses.length * colWidth;
+        const width = tableWidth + pad * 2;
         const height = headerH + theadH + daysToShow.length * rowH + pad * 2;
 
         const canvas = document.createElement('canvas');
-        canvas.width = Math.max(width, 640) * scale;
+        canvas.width = width * scale;
         canvas.height = height * scale;
         const ctx = canvas.getContext('2d');
         ctx.scale(scale, scale);
 
+        // White background
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(0, 0, width, height);
 
-        // Header
-        ctx.fillStyle = '#111827';
-        ctx.font = '800 18px Inter, sans-serif';
+        // Try drawing logo centered
+        let logoDrawn = false;
+        try {
+            const logoImg = new Image();
+            logoImg.crossOrigin = 'anonymous';
+            await new Promise((resolve) => {
+                logoImg.onload = () => {
+                    const lHeight = 44;
+                    const lWidth = (logoImg.width / logoImg.height) * lHeight;
+                    ctx.drawImage(logoImg, width / 2 - lWidth / 2, pad, lWidth, lHeight);
+                    logoDrawn = true;
+                    resolve();
+                };
+                logoImg.onerror = () => resolve();
+                logoImg.src = LOGO_URL;
+                setTimeout(resolve, 350);
+            });
+        } catch (_) {}
+
+        // Header text
+        const titleY = pad + (logoDrawn ? 58 : 24);
+        ctx.fillStyle = '#222222';
+        ctx.font = '700 17px Inter, sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText('CLASS ROUTINE', width / 2, pad + 22);
-        ctx.fillStyle = '#4b5563';
+        ctx.fillText('CLASS ROUTINE', width / 2, titleY);
+
+        ctx.fillStyle = '#555555';
         ctx.font = '600 13px Inter, sans-serif';
-        ctx.fillText(currentSemesterName || '', width / 2, pad + 44);
+        ctx.fillText(currentSemesterName || '', width / 2, titleY + 18);
+
         if (currentUserId) {
-            ctx.fillStyle = '#9ca3af';
+            ctx.fillStyle = '#666666';
             ctx.font = '600 11px monospace';
-            ctx.fillText(currentUserId, width / 2, pad + 62);
+            ctx.fillText(currentUserId, width / 2, titleY + 34);
         }
 
         const startY = pad + headerH;
         const startX = pad;
 
-        // Header row
-        ctx.fillStyle = '#e8f0fe';
-        ctx.fillRect(startX, startY, dayColWidth + courses.length * colWidth, theadH);
-        ctx.strokeStyle = '#93b4e8';
+        // Border styling
+        const borderColor = '#4285F4';
+        ctx.strokeStyle = borderColor;
         ctx.lineWidth = 1;
-        ctx.strokeRect(startX, startY, dayColWidth + courses.length * colWidth, theadH);
 
-        ctx.fillStyle = '#1a365d';
+        // Header row: #1A73E8
+        ctx.fillStyle = '#1A73E8';
+        ctx.fillRect(startX, startY, tableWidth, theadH);
+        ctx.strokeRect(startX, startY, tableWidth, theadH);
+
+        // Day header
+        ctx.fillStyle = '#ffffff';
         ctx.font = '700 13px Inter, sans-serif';
         ctx.textAlign = 'center';
         ctx.fillText('Day', startX + dayColWidth / 2, startY + theadH / 2 + 5);
 
+        // Course headers
         courses.forEach((c, i) => {
             const x = startX + dayColWidth + i * colWidth;
             ctx.strokeRect(x, startY, colWidth, theadH);
-            ctx.fillStyle = '#1a365d';
-            ctx.font = '700 12px monospace';
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '700 12px Inter, sans-serif';
             ctx.fillText(c.courseCode, x + colWidth / 2, startY + 22);
-            ctx.font = '600 10px Inter, sans-serif';
+            ctx.font = '600 10.5px Inter, sans-serif';
             ctx.fillText('Sec ' + c.section, x + colWidth / 2, startY + 38);
         });
 
         // Body rows
         daysToShow.forEach((day, r) => {
             const y = startY + theadH + r * rowH;
-            ctx.fillStyle = '#f1f5f9';
+
+            // Day column: #E8F0FE
+            ctx.fillStyle = '#E8F0FE';
             ctx.fillRect(startX, y, dayColWidth, rowH);
+            ctx.strokeStyle = borderColor;
             ctx.strokeRect(startX, y, dayColWidth, rowH);
-            ctx.fillStyle = '#334155';
-            ctx.font = '700 12px Inter, sans-serif';
+
+            ctx.fillStyle = '#111827';
+            ctx.font = '700 12.5px Inter, sans-serif';
             ctx.textAlign = 'center';
-            ctx.fillText(DOW_FULL[day] || day, startX + dayColWidth / 2, y + rowH / 2 + 4);
+            ctx.fillText(day, startX + dayColWidth / 2, y + rowH / 2 + 4);
 
             courses.forEach((course, ci) => {
                 const x = startX + dayColWidth + ci * colWidth;
-                ctx.strokeStyle = '#cbd5e1';
-                ctx.strokeRect(x, y, colWidth, rowH);
                 const slots = findDaySlots(course, day);
+
+                if (!slots.length) {
+                    ctx.fillStyle = '#FAFAFA';
+                    ctx.fillRect(x, y, colWidth, rowH);
+                    ctx.strokeStyle = borderColor;
+                    ctx.strokeRect(x, y, colWidth, rowH);
+                    return;
+                }
+
+                ctx.fillStyle = '#FFFFFF';
+                ctx.fillRect(x, y, colWidth, rowH);
+                ctx.strokeStyle = borderColor;
+                ctx.strokeRect(x, y, colWidth, rowH);
+
                 slots.forEach((s, si) => {
-                    const ty = y + 20 + si * 26;
-                    ctx.fillStyle = s.isLab ? '#b45309' : '#1d4ed8';
-                    ctx.font = '700 11px monospace';
-                    ctx.textAlign = 'left';
-                    ctx.fillText(`${s.startLabel}`, x + 8, ty);
-                    ctx.fillText(`${s.endLabel}`, x + 8, ty + 12);
-                    ctx.fillStyle = '#475569';
-                    ctx.font = '600 10px Inter, sans-serif';
-                    ctx.fillText(truncate(s.room, 16), x + colWidth - 58, ty + 12);
+                    const midY = slots.length > 1 ? y + 20 + si * 30 : y + rowH / 2 - 2;
+                    ctx.fillStyle = '#1A73E8';
+                    ctx.font = '700 11.5px Inter, sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(`${s.startLabel} – ${s.endLabel}`, x + colWidth / 2, midY);
+
+                    if (s.room) {
+                        ctx.fillStyle = '#444444';
+                        ctx.font = '500 11px Inter, sans-serif';
+                        ctx.fillText(truncate(s.room, 16), x + colWidth / 2, midY + 16);
+                    }
                 });
             });
         });
+
+        // Outer border
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = borderColor;
+        ctx.strokeRect(startX, startY, tableWidth, theadH + daysToShow.length * rowH);
 
         const link = document.createElement('a');
         link.download = `EWU_Routine_${(currentSemesterName || 'semester').replace(/[^a-z0-9]+/gi, '_')}.png`;
@@ -445,17 +540,19 @@
 
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(16);
+        doc.setTextColor(34, 34, 34);
         doc.text('CLASS ROUTINE', pageW / 2, 14, { align: 'center' });
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(10);
+        doc.setTextColor(85, 85, 85);
         doc.text(`${currentSemesterName || ''}${currentUserId ? '  •  ' + currentUserId : ''}`, pageW / 2, 20, { align: 'center' });
 
         const head = [['Day', ...courses.map(c => `${c.courseCode}\nSec ${c.section}`)]];
         const body = daysToShow.map(day => {
-            const row = [DOW_FULL[day] || day];
+            const row = [day];
             courses.forEach(course => {
                 const slots = findDaySlots(course, day);
-                row.push(slots.map(s => `${s.startLabel}-${s.endLabel}\n${s.room}`).join('\n'));
+                row.push(slots.map(s => `${s.startLabel} – ${s.endLabel}\n${s.room}`).join('\n\n'));
             });
             return row;
         });
@@ -463,9 +560,9 @@
         doc.autoTable({
             head, body, startY: 26,
             theme: 'grid',
-            styles: { fontSize: 8, cellPadding: 3, halign: 'center', valign: 'middle', lineColor: [176, 196, 222], lineWidth: 0.2 },
+            styles: { fontSize: 8.5, cellPadding: 4, halign: 'center', valign: 'middle', lineColor: [66, 133, 244], lineWidth: 0.25 },
             headStyles: { fillColor: [26, 115, 232], textColor: [255, 255, 255], fontStyle: 'bold' },
-            columnStyles: { 0: { cellWidth: 26, fontStyle: 'bold' } }
+            columnStyles: { 0: { cellWidth: 26, fillColor: [232, 240, 254], textColor: [17, 24, 39], fontStyle: 'bold' } }
         });
 
         doc.save(`EWU_Routine_${(currentSemesterName || 'semester').replace(/[^a-z0-9]+/gi, '_')}.pdf`);
@@ -473,32 +570,59 @@
         showFeatureToast('Routine PDF saved', 'success');
     }
 
-    // ---- ICS export ----
-    function exportRoutineIcs() {
+    // ---- ICS export with holiday filtering & 30-min reminder ----
+    async function exportRoutineIcs() {
         const model = buildRoutineModel();
         const { courses } = model;
         if (!courses.length) { showFeatureToast('Nothing to export', 'warning'); return; }
 
-        let startDate, endDate;
+        let startDate = new Date();
+        let endDate = new Date(Date.now() + 14 * 7 * 86400000);
+
         if (semesterMeta && semesterMeta.StartingDate && semesterMeta.EndingDate) {
             startDate = new Date(semesterMeta.StartingDate);
             endDate = new Date(semesterMeta.EndingDate);
-        } else {
-            startDate = new Date();
-            endDate = new Date(Date.now() + 16 * 7 * 24 * 3600 * 1000);
         }
 
-        const icsDayCode = { Sun: 'SU', Mon: 'MO', Tue: 'TU', Wed: 'WE', Thu: 'TH', Fri: 'FR', Sat: 'SA' };
+        // Live academic calendar holidays (empty unless returned by API)
+        let holidayDates = new Set();
+
+        try {
+            const calRes = await fetch(`${API_BASE_URL}/api/academic-calendar`, { credentials: 'include' }).catch(() => null);
+            if (calRes && calRes.ok) {
+                const calJson = await calRes.json();
+                if (calJson && calJson.classesStart) startDate = new Date(calJson.classesStart);
+                if (calJson && calJson.classesEnd) endDate = new Date(`${calJson.classesEnd}T23:59:59`);
+                if (calJson && Array.isArray(calJson.holidays)) {
+                    holidayDates.clear();
+                    calJson.holidays.forEach(h => {
+                        let cur = new Date(h.start);
+                        const endH = new Date(h.end);
+                        while (cur <= endH) {
+                            holidayDates.add(cur.toISOString().slice(0, 10));
+                            cur.setDate(cur.getDate() + 1);
+                        }
+                    });
+                }
+            }
+        } catch (_) {}
+
+        const icsDayCode = { Sunday: 'SU', Monday: 'MO', Tuesday: 'TU', Wednesday: 'WE', Thursday: 'TH', Friday: 'FR', Saturday: 'SA' };
+        const dayIdxMap = { Sunday: 0, Monday: 1, Tuesday: 2, Wednesday: 3, Thursday: 4, Friday: 5, Saturday: 6 };
         const pad = n => String(n).padStart(2, '0');
         const fmt = d => `${d.getUTCFullYear()}${pad(d.getUTCMonth() + 1)}${pad(d.getUTCDate())}T${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}00Z`;
 
-        // Find the first matching weekday on/after startDate for each day
+        // Find the first matching weekday on/after startDate
         function firstOccurrence(dayName, startMin) {
-            const target = DOW.indexOf(dayName);
-            const d = new Date(Date.UTC(startDate.getUTCFullYear(), startDate.getUTCMonth(), startDate.getUTCDate(), 0, 0, 0));
+            const target = dayIdxMap[dayName] !== undefined ? dayIdxMap[dayName] : 0;
+            const d = new Date(Date.UTC(startDate.getFullYear(), startDate.getMonth(), startDate.getDate(), 0, 0, 0));
+            // Offset to match Dhaka local time (UTC+6)
+            const dhakaOffsetHours = 6;
+            const hours = Math.floor(startMin / 60) - dhakaOffsetHours;
+            const minutes = startMin % 60;
             const diff = (target - d.getUTCDay() + 7) % 7;
             d.setUTCDate(d.getUTCDate() + diff);
-            d.setUTCMinutes(startMin);
+            d.setUTCHours(hours, minutes, 0, 0);
             return d;
         }
 
@@ -511,15 +635,43 @@
                 s.days.forEach(dayName => {
                     const occ = firstOccurrence(dayName, s.startMin);
                     const endOcc = new Date(occ.getTime() + (s.endMin - s.startMin) * 60000);
-                    const uid = `ewu-${course.courseCode}-${course.section}-${ci}-${si}-${dayName.replace(/\s/g, '')}@aftabkabir.me`;
+                    const uid = `ewu-${course.courseCode.replace(/[^a-zA-Z0-9]/g, '')}-${course.section}-${ci}-${si}-${dayName}@aftabkabir.me`;
+
+                    // Generate EXDATE for every holiday occurrence
+                    const exDates = [];
+                    let checkDate = new Date(occ.getTime());
+                    while (checkDate <= endDate) {
+                        // Check date in UTC+6
+                        const dhakaDate = new Date(checkDate.getTime() + 6 * 3600 * 1000);
+                        const dateStr = dhakaDate.toISOString().slice(0, 10);
+                        if (holidayDates.has(dateStr)) {
+                            exDates.push(fmt(checkDate));
+                        }
+                        checkDate = new Date(checkDate.getTime() + 7 * 24 * 3600 * 1000);
+                    }
+
                     ics += 'BEGIN:VEVENT\r\n';
                     ics += `UID:${uid}\r\n`;
                     ics += `DTSTAMP:${stamp}\r\n`;
                     ics += `DTSTART:${fmt(occ)}\r\n`;
                     ics += `DTEND:${fmt(endOcc)}\r\n`;
                     ics += `RRULE:FREQ=WEEKLY;BYDAY=${icsDayCode[dayName] || 'MO'};UNTIL=${until}\r\n`;
+
+                    if (exDates.length > 0) {
+                        ics += `EXDATE:${exDates.join(',')}\r\n`;
+                    }
+
                     ics += `SUMMARY:${course.courseCode} Sec ${course.section}\r\n`;
-                    ics += `LOCATION:${s.room || ''}\r\n`;
+                    ics += `LOCATION:${s.room || 'East West University'}\r\n`;
+                    ics += `DESCRIPTION:EWU Class Schedule for ${course.courseCode} Section ${course.section}\\nRoom: ${s.room || 'TBA'}\r\n`;
+
+                    // 30-minute reminder
+                    ics += 'BEGIN:VALARM\r\n';
+                    ics += 'TRIGGER:-PT30M\r\n';
+                    ics += 'ACTION:DISPLAY\r\n';
+                    ics += `DESCRIPTION:Reminder: ${course.courseCode} Class in 30 minutes\r\n`;
+                    ics += 'END:VALARM\r\n';
+
                     ics += 'END:VEVENT\r\n';
                 });
             });
@@ -531,10 +683,12 @@
         const a = document.createElement('a');
         a.href = url;
         a.download = `EWU_Routine_${(currentSemesterName || 'semester').replace(/[^a-z0-9]+/gi, '_')}.ics`;
+        document.body.appendChild(a);
         a.click();
+        document.body.removeChild(a);
         URL.revokeObjectURL(url);
         trackEvent('export_routine_ics', { count: courses.length });
-        showFeatureToast('Calendar (.ics) downloaded', 'success');
+        showFeatureToast('Calendar (.ics) downloaded with holiday exclusions & 30-min reminders', 'success');
     }
 
     window.openRoutine = openRoutine;

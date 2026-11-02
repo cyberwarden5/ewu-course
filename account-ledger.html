@@ -23,11 +23,11 @@
     <nav class="fp-nav">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5">
             <div class="flex justify-between items-center">
-                <a href="dashboard.html" class="flex items-center gap-3 hover:opacity-90 transition-opacity no-underline">
+                <a href="dashboard.html" class="flex items-center gap-3 hover:opacity-90 transition-opacity no-underline" title="EWU Course Portal">
                     <img src="assets/images/ewu.png" alt="EWU Logo" class="h-9 sm:h-10 w-auto object-contain">
                     <div class="flex flex-col">
-                        <span class="text-base sm:text-lg font-bold text-white tracking-tight">Account Ledger</span>
-                        <span class="text-[10px] text-gray-400 font-mono hidden sm:inline-block">Financial Statement</span>
+                        <span class="text-base sm:text-lg font-bold text-white tracking-tight">EWU Course Portal</span>
+                        <span class="text-[10px] text-gray-400 font-mono hidden sm:inline-block">Student Ledger</span>
                     </div>
                 </a>
                 <div class="hidden md:flex items-center gap-3.5">
@@ -124,8 +124,21 @@
         </div>
     </main>
 
-    <footer class="mt-auto border-t border-white/[0.06] bg-black/40 py-6 text-center w-full">
-        <p class="text-xs text-gray-500">Educational project — not officially affiliated with East West University.</p>
+    <!-- Footer -->
+    <footer class="mt-auto border-t border-white/[0.08] bg-black/40 backdrop-blur-md py-4 text-xs w-full">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
+                <p class="text-[11px] sm:text-xs text-gray-400 max-w-3xl leading-relaxed">
+                    This website is created for educational purposes only. It has no official connection with East West University (EWU). If any authority requests content removal, please contact us.
+                </p>
+                <div class="flex items-center gap-3 flex-shrink-0">
+                    <a href="mailto:contact.aftabkabir@proton.me" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#D86C5A]/10 hover:bg-[#D86C5A]/20 border border-[#D86C5A]/30 text-[#D86C5A] hover:text-[#e07d6d] text-xs font-medium transition-all no-underline" title="Contact Us">
+                        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                        <span>Contact Us</span>
+                    </a>
+                </div>
+            </div>
+        </div>
     </footer>
 
     <script src="assets/js/system-metrics.js" defer></script>

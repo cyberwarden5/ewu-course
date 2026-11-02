@@ -153,9 +153,14 @@ async function handleLogout(event) {
             method: 'POST',
             credentials: 'include'
         });
-    } catch (error) {
-        console.error('Logout error:', error);
-    }
+    } catch (e) {}
+
+    try {
+        localStorage.removeItem('studentId');
+        localStorage.removeItem('ewu_student_id');
+        sessionStorage.clear();
+        sessionStorage.setItem('ewu_just_logged_out', 'true');
+    } catch (e) {}
 
     window.location.href = 'login.html';
 }
@@ -758,6 +763,48 @@ function exportCoursesToPdf() {
     doc.save(`EWU_Department_Courses_${Date.now()}.pdf`);
 }
 
+// Export Table to TXT format
+function exportCoursesToTxt() {
+    if (!filteredCourses || filteredCourses.length === 0) {
+        alert('No courses to export.');
+        return;
+    }
+
+    let lines = [];
+    lines.push('========================================================================================');
+    lines.push(`       EAST WEST UNIVERSITY - OFFERED COURSES (${selectedSemesterName || 'Semester'})`);
+    lines.push('========================================================================================');
+    lines.push(`Generated On : ${new Date().toLocaleString()}`);
+    lines.push(`Total Courses: ${filteredCourses.length}`);
+    lines.push('========================================================================================\n');
+    lines.push('COURSE CODE   SEC  FACULTY   CAP  TAKEN  LEFT  DAYS      TIME SLOT              ROOM');
+    lines.push('----------------------------------------------------------------------------------------');
+
+    filteredCourses.forEach(c => {
+        const code = (c.CourseCode || 'N/A').padEnd(13);
+        const sec = String(c.Section || c.SectionName || '1').padStart(3);
+        const fac = (c.ShortName || 'TBA').padEnd(9);
+        const cap = String(c.SeatCapacity || 0).padStart(4);
+        const taken = String(c.SeatTaken || 0).padStart(6);
+        const left = String(typeof c.SeatsLeft === 'number' ? c.SeatsLeft : Math.max(0, (c.SeatCapacity || 0) - (c.SeatTaken || 0))).padStart(5);
+        const sched = parseSchedule(c.Schedule || c.TimeSlotName);
+        const days = (sched.days || 'TBA').padEnd(9);
+        const time = (sched.time || 'TBA').padEnd(22);
+        const room = c.RoomName || c.RoomCode || 'TBA';
+        lines.push(`${code} ${sec}  ${fac} ${cap} ${taken} ${left}  ${days} ${time} ${room}`);
+    });
+
+    const blob = new Blob([lines.join('\r\n')], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `EWU_Offered_Courses_${(selectedSemesterName || 'Semester').replace(/[^a-zA-Z0-9_-]/g, '_')}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
 // Initialize on DOM load
 document.addEventListener('DOMContentLoaded', () => {
     // Dynamic Year
@@ -839,6 +886,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const exportBtn = document.getElementById('btnExportPdf');
     if (exportBtn) exportBtn.addEventListener('click', exportCoursesToPdf);
+
+    const exportTxtBtn = document.getElementById('btnExportTxt');
+    if (exportTxtBtn) exportTxtBtn.addEventListener('click', exportCoursesToTxt);
 
     // Pagination nav buttons
     document.getElementById('btnPageFirst')?.addEventListener('click', () => {

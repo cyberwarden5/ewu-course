@@ -363,6 +363,8 @@
             localStorage.removeItem('studentId');
             localStorage.removeItem('ewu_student_id');
             localStorage.removeItem('userId');
+            sessionStorage.clear();
+            sessionStorage.setItem('ewu_just_logged_out', 'true');
         } catch (e) {}
         window.location.href = 'login.html';
     }

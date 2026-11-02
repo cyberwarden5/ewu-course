@@ -181,7 +181,7 @@
     </style>
 </head>
 
-<body class="bg-black text-white min-h-screen">
+<body class="bg-black text-white min-h-screen flex flex-col justify-between">
     <!-- Animated background elements -->
     <div class="hero-background"></div>
     <div class="blob blob-1"></div>
@@ -192,11 +192,12 @@
         <div class="container mx-auto px-6 py-4">
             <div class="flex justify-between items-center">
                 <!-- Logo -->
-                <a href="index.html" class="flex items-center gap-3">
-                    <img src="assets/images/ewu.png" alt="EWU Logo" class="h-9 w-auto">
-                    <span class="text-xl font-bold bg-gradient-to-r from-white via-gray-200 to-gray-400 bg-clip-text text-transparent">
-                        EWU Course Schedule
-                    </span>
+                <a href="dashboard.html" class="flex items-center gap-3 hover:opacity-90 transition-opacity no-underline" title="EWU Course Portal">
+                    <img src="assets/images/ewu.png" alt="EWU Logo" class="h-9 sm:h-10 w-auto object-contain">
+                    <div class="flex flex-col">
+                        <span class="text-base sm:text-lg font-bold text-white tracking-tight">EWU Course Portal</span>
+                        <span class="text-[10px] text-gray-400 font-mono hidden sm:inline-block">Academic Hub</span>
+                    </div>
                 </a>
                 <!-- Navigation Links -->
                 <div class="hidden md:flex gap-6 items-center">
@@ -482,18 +483,19 @@
     </section>
 
     <!-- Footer -->
-    <footer class="border-t border-[#D86C5A]/20 py-8 mt-12">
-        <div class="container mx-auto px-6 text-center text-gray-400 text-sm">
-            <div class="mb-6 p-4 rounded-lg bg-[#ffffff]/5 border border-[#D86C5A]/20 max-w-3xl mx-auto inline-block text-center">
-                <p class="mb-3 text-xs md:text-sm text-gray-300">
+    <footer class="mt-auto border-t border-white/[0.08] bg-black/40 backdrop-blur-md py-4 text-xs">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
+                <p class="text-[11px] sm:text-xs text-gray-400 max-w-3xl leading-relaxed">
                     This website is created for educational purposes only. It has no official connection with East West University (EWU). If any authority requests content removal, please contact us.
                 </p>
-                <a href="mailto:contact.aftabkabir@proton.me" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-md bg-[#D86C5A]/10 border border-[#D86C5A]/30 text-[#D86C5A] hover:bg-[#D86C5A]/20 transition-all text-xs">
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
-                    <span>Contact</span>
-                </a>
+                <div class="flex items-center gap-3 flex-shrink-0">
+                    <a href="mailto:contact.aftabkabir@proton.me" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#D86C5A]/10 hover:bg-[#D86C5A]/20 border border-[#D86C5A]/30 text-[#D86C5A] hover:text-[#e07d6d] text-xs font-medium transition-all no-underline" title="Contact Us">
+                        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                        <span>Contact Us</span>
+                    </a>
+                </div>
             </div>
-            <div>&copy; <span id="current-year-lm"></span> East West University. Educational use only.</div>
         </div>
     </footer>
 

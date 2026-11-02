@@ -18,6 +18,8 @@
     let filtered = [];
     let combinations = [];   // [{ id, name, selected: Map(key => card) }]
     let activeComboId = null;
+    let selectedCourseFilter = null;
+    let uniqueCourseCodes = [];
 
     document.addEventListener('DOMContentLoaded', init);
 
@@ -107,6 +109,9 @@
             const data = result.data || {};
             if (data.status === 'error') throw new Error(data.message || 'Failed to load routine');
             catalog = buildCatalog(data.courses || []);
+            const codesSet = new Set(catalog.map(c => c.courseCode));
+            uniqueCourseCodes = Array.from(codesSet).sort((a, b) => a.localeCompare(b));
+            renderCourseFilterButtons();
             onSearch();
             if (manual) showFeatureToast(`Loaded ${catalog.length} course sections`, 'success');
         } catch (e) {
@@ -189,13 +194,51 @@
     const DOW_FULL = { Sun: 'Sunday', Mon: 'Monday', Tue: 'Tuesday', Wed: 'Wednesday', Thu: 'Thursday', Fri: 'Friday', Sat: 'Saturday' };
 
     // -----------------------------------------
+    // Course-based dynamic filtering
+    // -----------------------------------------
+    function renderCourseFilterButtons() {
+        const container = document.getElementById('courseFilterContainer');
+        if (!container) return;
+        if (!uniqueCourseCodes.length) {
+            container.innerHTML = '';
+            return;
+        }
+
+        container.innerHTML = uniqueCourseCodes.map(code => {
+            const isSelected = selectedCourseFilter === code;
+            const btnClass = isSelected
+                ? 'px-2.5 py-1 text-xs font-mono font-bold rounded-lg bg-[#5a8fd8] text-white border border-[#5a8fd8] shadow-sm transition-all cursor-pointer'
+                : 'px-2.5 py-1 text-xs font-mono font-medium rounded-lg bg-white/[0.04] text-gray-300 border border-white/[0.08] hover:bg-white/[0.08] hover:text-white transition-all cursor-pointer';
+
+            return `<button type="button" class="${btnClass}" onclick="toggleCourseFilter('${escapeHtml(code)}')">${escapeHtml(code)}</button>`;
+        }).join('');
+    }
+
+    function toggleCourseFilter(code) {
+        if (selectedCourseFilter === code) {
+            selectedCourseFilter = null;
+        } else {
+            selectedCourseFilter = code;
+        }
+        renderCourseFilterButtons();
+        onSearch();
+    }
+    window.toggleCourseFilter = toggleCourseFilter;
+
+    // -----------------------------------------
     // Catalog rendering & search
     // -----------------------------------------
     function onSearch() {
         const q = (document.getElementById('catalogSearch')?.value || '').toLowerCase().replace(/[\s\-_]/g, '');
-        filtered = !q ? catalog : catalog.filter(c => {
-            const hay = `${c.courseCode} ${c.shortName} ${c.faculty} ${c.section}`.toLowerCase().replace(/[\s\-_]/g, '');
-            return hay.includes(q);
+        filtered = catalog.filter(c => {
+            if (selectedCourseFilter && c.courseCode !== selectedCourseFilter) {
+                return false;
+            }
+            if (q) {
+                const hay = `${c.courseCode} ${c.shortName} ${c.faculty} ${c.section}`.toLowerCase().replace(/[\s\-_]/g, '');
+                if (!hay.includes(q)) return false;
+            }
+            return true;
         });
         renderCatalog();
     }
@@ -449,13 +492,92 @@
     }
 
     // -----------------------------------------
-    // Routine preview
+    // Routine preview & exports (Matches Info/routine.png)
     // -----------------------------------------
-    function buildTimetableModel(cards) {
-        const activeDays = new Set();
-        cards.forEach(card => cardSlots(card).forEach(s => s.days.forEach(d => activeDays.add(d))));
-        const daysToShow = DOW.filter(d => activeDays.has(d));
-        return { daysToShow };
+    const STANDARD_DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday'];
+    const DAY_MAP_SHORT_TO_LONG = {
+        'Sun': 'Sunday', 'Sunday': 'Sunday',
+        'Mon': 'Monday', 'Monday': 'Monday',
+        'Tue': 'Tuesday', 'Tuesday': 'Tuesday',
+        'Wed': 'Wednesday', 'Wednesday': 'Wednesday',
+        'Thu': 'Thursday', 'Thursday': 'Thursday',
+        'Fri': 'Friday', 'Friday': 'Friday',
+        'Sat': 'Saturday', 'Saturday': 'Saturday'
+    };
+
+    function buildPlannerRoutineModel(cards) {
+        // Separate Theory and Lab into distinct columns!
+        const columns = [];
+        cards.forEach(card => {
+            if (card.theorySlots && card.theorySlots.length > 0) {
+                columns.push({
+                    courseCode: card.courseCode,
+                    section: card.section,
+                    slots: card.theorySlots.map(s => ({
+                        ...s,
+                        days: s.days.map(d => DAY_MAP_SHORT_TO_LONG[d] || d)
+                    })),
+                    isLab: false
+                });
+            }
+            if (card.labSlots && card.labSlots.length > 0) {
+                columns.push({
+                    courseCode: `${card.courseCode} Lab`,
+                    section: card.section,
+                    slots: card.labSlots.map(s => ({
+                        ...s,
+                        days: s.days.map(d => DAY_MAP_SHORT_TO_LONG[d] || d)
+                    })),
+                    isLab: true
+                });
+            }
+        });
+
+        // Sort columns: earliest weekly start time, then day index, then code
+        const dayOrder = ['Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+        columns.forEach(col => {
+            let minTime = Infinity, minDay = Infinity;
+            col.slots.forEach(s => {
+                if (s.startMin < minTime) minTime = s.startMin;
+                s.days.forEach(d => {
+                    const idx = dayOrder.indexOf(d);
+                    if (idx !== -1 && idx < minDay) minDay = idx;
+                });
+            });
+            col._minTime = minTime === Infinity ? 9999 : minTime;
+            col._minDay = minDay === Infinity ? 9999 : minDay;
+        });
+
+        columns.sort((a, b) => {
+            if (a._minTime !== b._minTime) return a._minTime - b._minTime;
+            if (a._minDay !== b._minDay) return a._minDay - b._minDay;
+            const c = a.courseCode.localeCompare(b.courseCode);
+            return c !== 0 ? c : String(a.section).localeCompare(String(b.section));
+        });
+
+        let hasSaturday = false, hasFriday = false;
+        columns.forEach(col => {
+            col.slots.forEach(s => {
+                s.days.forEach(d => {
+                    if (d === 'Saturday') hasSaturday = true;
+                    if (d === 'Friday') hasFriday = true;
+                });
+            });
+        });
+
+        const daysToShow = [...STANDARD_DAYS];
+        if (hasSaturday) daysToShow.unshift('Saturday');
+        if (hasFriday) daysToShow.push('Friday');
+
+        return { columns, daysToShow };
+    }
+
+    function findPlannerDaySlots(col, day) {
+        const out = [];
+        col.slots.forEach(s => {
+            if (s.days.includes(day)) out.push(s);
+        });
+        return out.sort((a, b) => a.startMin - b.startMin);
     }
 
     function openPreview() {
@@ -463,30 +585,42 @@
         const cards = [...combo.selected.values()];
         if (!cards.length) { showFeatureToast('Add courses to preview a routine', 'warning'); return; }
 
-        const { daysToShow } = buildTimetableModel(cards);
-        if (!daysToShow.length) { showFeatureToast('No scheduled times available', 'warning'); return; }
+        const model = buildPlannerRoutineModel(cards);
+        const { columns, daysToShow } = model;
+        if (!daysToShow.length || !columns.length) { showFeatureToast('No scheduled times available', 'warning'); return; }
 
-        // Build grid: rows = days, cols = courses
-        let html = '<div style="background:#fff;border-radius:12px;padding:18px;overflow:auto;">';
-        html += '<table class="fp-timetable"><thead><tr><th style="width:86px;">Day</th>';
-        cards.forEach(card => {
-            html += `<th>${escapeHtml(card.courseCode)}<br><span style="font-size:10px;">Sec ${escapeHtml(String(card.section))}</span></th>`;
+        let html = '<div id="plannerRoutineExportArea" style="background:#ffffff;border-radius:14px;padding:24px 20px;box-shadow:0 8px 30px rgba(0,0,0,0.12);max-width:100%;overflow-x:auto;">';
+        html += `<div style="text-align:center;margin-bottom:18px;">
+            <img src="${LOGO_URL}" crossorigin="anonymous" style="max-height:56px;margin:0 auto 8px;display:block;" onerror="this.style.display='none'">
+            <h2 style="margin:0 0 4px;font-size:18px;font-weight:700;color:#222222;letter-spacing:0.5px;font-family:Inter,sans-serif;">CLASS ROUTINE</h2>
+            <p style="margin:0;font-size:13px;color:#555555;font-weight:600;font-family:Inter,sans-serif;">${escapeHtml(combo.name)}</p>
+            ${currentUserId ? `<p style="margin:3px 0 0;font-size:11px;color:#666666;font-family:monospace;">${escapeHtml(currentUserId)}</p>` : ''}
+        </div>`;
+
+        html += '<table style="width:100%;border-collapse:collapse;font-size:13px;border:2px solid #4285F4;margin:0 auto;font-family:Inter,sans-serif;">';
+        html += '<thead><tr><th style="background:#1A73E8;color:#FFFFFF;padding:12px 10px;border:1px solid #4285F4;font-weight:700;text-align:center;min-width:85px;width:85px;white-space:nowrap;">Day</th>';
+        columns.forEach(c => {
+            html += `<th style="background:#1A73E8;color:#FFFFFF;padding:12px 10px;border:1px solid #4285F4;font-weight:700;text-align:center;min-width:115px;white-space:nowrap;">
+                ${escapeHtml(c.courseCode)}<br><span style="font-size:0.85em;opacity:0.92;font-weight:600;">Sec ${escapeHtml(String(c.section))}</span>
+            </th>`;
         });
         html += '</tr></thead><tbody>';
 
         daysToShow.forEach(day => {
-            html += `<tr><td class="tt-day">${escapeHtml(DOW_FULL[day] || day)}</td>`;
-            cards.forEach(card => {
-                const slots = cardSlots(card).filter(s => s.days.includes(day)).sort((a, b) => a.startMin - b.startMin);
-                if (!slots.length) { html += '<td class="tt-cell"></td>'; return; }
-                html += '<td class="tt-cell">';
-                slots.forEach((s, i) => {
-                    if (i > 0) html += '<div style="border-top:1px dashed #d1d5db;margin:4px 0;"></div>';
-                    const accent = s.type === 'lab' ? '#b45309' : '#1d4ed8';
-                    html += `<div style="border-left:3px solid ${accent};padding-left:6px;text-align:left;">
-                        <div style="font-size:11px;font-weight:700;color:${accent};">${escapeHtml(s.startLabel)} – ${escapeHtml(s.endLabel)}</div>
-                        <div style="font-size:10px;color:#4b5563;">${escapeHtml(s.room)}${s.type === 'lab' ? ' (Lab)' : ''}</div>
-                    </div>`;
+            html += `<tr><td style="background:#E8F0FE;color:#111827;padding:14px 10px;border:1px solid #4285F4;font-weight:700;text-align:center;white-space:nowrap;font-size:13px;">${escapeHtml(day)}</td>`;
+            columns.forEach(col => {
+                const slots = findPlannerDaySlots(col, day);
+                if (!slots.length) {
+                    html += '<td style="background:#FAFAFA;padding:14px 10px;border:1px solid #4285F4;"></td>';
+                    return;
+                }
+                html += '<td style="background:#FFFFFF;padding:12px 8px;border:1px solid #4285F4;text-align:center;vertical-align:middle;">';
+                slots.forEach((s, idx) => {
+                    if (idx > 0) html += '<hr style="margin:6px 0;border:none;border-top:1px solid #E2E8F0;">';
+                    html += `<div style="font-size:12.5px;color:#1A73E8;font-weight:700;white-space:nowrap;line-height:1.4;">${escapeHtml(s.startLabel)} – ${escapeHtml(s.endLabel)}</div>`;
+                    if (s.room) {
+                        html += `<div style="font-size:11.5px;color:#444444;margin-top:2px;line-height:1.3;">${escapeHtml(s.room)}</div>`;
+                    }
                 });
                 html += '</td>';
             });
@@ -495,6 +629,8 @@
         html += '</tbody></table></div>';
 
         document.getElementById('previewTitle').textContent = `${combo.name} — Routine Preview`;
+        const sub = document.getElementById('previewSubtitle');
+        if (sub) sub.textContent = `${columns.length} columns • ${cards.length} courses planned`;
         document.getElementById('previewBody').innerHTML = html;
         document.getElementById('previewModal').classList.add('open');
         document.body.style.overflow = 'hidden';
@@ -503,6 +639,312 @@
     function closePreview() {
         document.getElementById('previewModal').classList.remove('open');
         document.body.style.overflow = '';
+    }
+
+    // ---- Routine PNG Export for Course Planner (Matches Info/routine.png) ----
+    async function exportPlannerRoutinePng() {
+        const combo = activeCombo();
+        const cards = [...combo.selected.values()];
+        if (!cards.length) { showFeatureToast('Add courses before exporting', 'warning'); return; }
+
+        const model = buildPlannerRoutineModel(cards);
+        const { columns, daysToShow } = model;
+        if (!daysToShow.length) return;
+
+        const scale = 2;
+        const colWidth = 120;
+        const dayColWidth = 85;
+        const headerH = 100;
+        const theadH = 50;
+        const rowH = 68;
+        const pad = 20;
+
+        const tableWidth = dayColWidth + columns.length * colWidth;
+        const width = tableWidth + pad * 2;
+        const height = headerH + theadH + daysToShow.length * rowH + pad * 2;
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width * scale;
+        canvas.height = height * scale;
+        const ctx = canvas.getContext('2d');
+        ctx.scale(scale, scale);
+
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, width, height);
+
+        let logoDrawn = false;
+        try {
+            const logoImg = new Image();
+            logoImg.crossOrigin = 'anonymous';
+            await new Promise((resolve) => {
+                logoImg.onload = () => {
+                    const lHeight = 44;
+                    const lWidth = (logoImg.width / logoImg.height) * lHeight;
+                    ctx.drawImage(logoImg, width / 2 - lWidth / 2, pad, lWidth, lHeight);
+                    logoDrawn = true;
+                    resolve();
+                };
+                logoImg.onerror = () => resolve();
+                logoImg.src = LOGO_URL;
+                setTimeout(resolve, 350);
+            });
+        } catch (_) {}
+
+        const titleY = pad + (logoDrawn ? 58 : 24);
+        ctx.fillStyle = '#222222';
+        ctx.font = '700 17px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('CLASS ROUTINE', width / 2, titleY);
+
+        ctx.fillStyle = '#555555';
+        ctx.font = '600 13px Inter, sans-serif';
+        ctx.fillText(combo.name, width / 2, titleY + 18);
+
+        if (currentUserId) {
+            ctx.fillStyle = '#666666';
+            ctx.font = '600 11px monospace';
+            ctx.fillText(currentUserId, width / 2, titleY + 34);
+        }
+
+        const startY = pad + headerH;
+        const startX = pad;
+        const borderColor = '#4285F4';
+
+        ctx.fillStyle = '#1A73E8';
+        ctx.fillRect(startX, startY, tableWidth, theadH);
+        ctx.strokeStyle = borderColor;
+        ctx.strokeRect(startX, startY, tableWidth, theadH);
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '700 13px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('Day', startX + dayColWidth / 2, startY + theadH / 2 + 5);
+
+        columns.forEach((c, i) => {
+            const x = startX + dayColWidth + i * colWidth;
+            ctx.strokeRect(x, startY, colWidth, theadH);
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '700 12px Inter, sans-serif';
+            ctx.fillText(c.courseCode, x + colWidth / 2, startY + 22);
+            ctx.font = '600 10.5px Inter, sans-serif';
+            ctx.fillText('Sec ' + c.section, x + colWidth / 2, startY + 38);
+        });
+
+        daysToShow.forEach((day, r) => {
+            const y = startY + theadH + r * rowH;
+
+            ctx.fillStyle = '#E8F0FE';
+            ctx.fillRect(startX, y, dayColWidth, rowH);
+            ctx.strokeStyle = borderColor;
+            ctx.strokeRect(startX, y, dayColWidth, rowH);
+
+            ctx.fillStyle = '#111827';
+            ctx.font = '700 12.5px Inter, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(day, startX + dayColWidth / 2, y + rowH / 2 + 4);
+
+            columns.forEach((col, ci) => {
+                const x = startX + dayColWidth + ci * colWidth;
+                const slots = findPlannerDaySlots(col, day);
+
+                if (!slots.length) {
+                    ctx.fillStyle = '#FAFAFA';
+                    ctx.fillRect(x, y, colWidth, rowH);
+                    ctx.strokeStyle = borderColor;
+                    ctx.strokeRect(x, y, colWidth, rowH);
+                    return;
+                }
+
+                ctx.fillStyle = '#FFFFFF';
+                ctx.fillRect(x, y, colWidth, rowH);
+                ctx.strokeStyle = borderColor;
+                ctx.strokeRect(x, y, colWidth, rowH);
+
+                slots.forEach((s, si) => {
+                    const midY = slots.length > 1 ? y + 20 + si * 30 : y + rowH / 2 - 2;
+                    ctx.fillStyle = '#1A73E8';
+                    ctx.font = '700 11.5px Inter, sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(`${s.startLabel} – ${s.endLabel}`, x + colWidth / 2, midY);
+
+                    if (s.room) {
+                        ctx.fillStyle = '#444444';
+                        ctx.font = '500 11px Inter, sans-serif';
+                        ctx.fillText(truncate(s.room, 16), x + colWidth / 2, midY + 16);
+                    }
+                });
+            });
+        });
+
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = borderColor;
+        ctx.strokeRect(startX, startY, tableWidth, theadH + daysToShow.length * rowH);
+
+        const link = document.createElement('a');
+        link.download = `EWU_Routine_${combo.name.replace(/[^a-z0-9]+/gi, '_')}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+        showFeatureToast('Routine image saved', 'success');
+    }
+
+    // ---- Routine PDF Export for Course Planner ----
+    function exportPlannerRoutinePdf() {
+        const combo = activeCombo();
+        const cards = [...combo.selected.values()];
+        if (!cards.length) { showFeatureToast('Add courses before exporting', 'warning'); return; }
+
+        const model = buildPlannerRoutineModel(cards);
+        const { columns, daysToShow } = model;
+        if (!daysToShow.length) return;
+
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('landscape', 'mm', 'a4');
+        const pageW = doc.internal.pageSize.width;
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(16);
+        doc.setTextColor(34, 34, 34);
+        doc.text('CLASS ROUTINE', pageW / 2, 14, { align: 'center' });
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(10);
+        doc.setTextColor(85, 85, 85);
+        doc.text(`${combo.name}${currentUserId ? '  •  ' + currentUserId : ''}`, pageW / 2, 20, { align: 'center' });
+
+        const head = [['Day', ...columns.map(c => `${c.courseCode}\nSec ${c.section}`)]];
+        const body = daysToShow.map(day => {
+            const row = [day];
+            columns.forEach(col => {
+                const slots = findPlannerDaySlots(col, day);
+                row.push(slots.map(s => `${s.startLabel} – ${s.endLabel}\n${s.room}`).join('\n\n'));
+            });
+            return row;
+        });
+
+        doc.autoTable({
+            head, body, startY: 26,
+            theme: 'grid',
+            styles: { fontSize: 8.5, cellPadding: 4, halign: 'center', valign: 'middle', lineColor: [66, 133, 244], lineWidth: 0.25 },
+            headStyles: { fillColor: [26, 115, 232], textColor: [255, 255, 255], fontStyle: 'bold' },
+            columnStyles: { 0: { cellWidth: 26, fillColor: [232, 240, 254], textColor: [17, 24, 39], fontStyle: 'bold' } }
+        });
+
+        doc.save(`EWU_Routine_${combo.name.replace(/[^a-z0-9]+/gi, '_')}.pdf`);
+        showFeatureToast('Routine PDF saved', 'success');
+    }
+
+    // ---- Routine ICS Export for Course Planner ----
+    async function exportPlannerRoutineIcs() {
+        const combo = activeCombo();
+        const cards = [...combo.selected.values()];
+        if (!cards.length) { showFeatureToast('Add courses before exporting', 'warning'); return; }
+
+        const model = buildPlannerRoutineModel(cards);
+        const { columns } = model;
+        if (!columns.length) return;
+
+        let startDate = new Date();
+        let endDate = new Date(Date.now() + 14 * 7 * 86400000);
+
+        // Live academic calendar holidays (empty unless returned by API)
+        let holidayDates = new Set();
+
+        try {
+            const calRes = await fetch(`${API_BASE_URL}/api/academic-calendar`, { credentials: 'include' }).catch(() => null);
+            if (calRes && calRes.ok) {
+                const calJson = await calRes.json();
+                if (calJson && calJson.classesStart) startDate = new Date(calJson.classesStart);
+                if (calJson && calJson.classesEnd) endDate = new Date(`${calJson.classesEnd}T23:59:59`);
+                if (calJson && Array.isArray(calJson.holidays)) {
+                    holidayDates.clear();
+                    calJson.holidays.forEach(h => {
+                        let cur = new Date(h.start);
+                        const endH = new Date(h.end);
+                        while (cur <= endH) {
+                            holidayDates.add(cur.toISOString().slice(0, 10));
+                            cur.setDate(cur.getDate() + 1);
+                        }
+                    });
+                }
+            }
+        } catch (_) {}
+
+        const icsDayCode = { Sunday: 'SU', Monday: 'MO', Tuesday: 'TU', Wednesday: 'WE', Thursday: 'TH', Friday: 'FR', Saturday: 'SA' };
+        const dayIdxMap = { Sunday: 0, Monday: 1, Tuesday: 2, Wednesday: 3, Thursday: 4, Friday: 5, Saturday: 6 };
+        const pad = n => String(n).padStart(2, '0');
+        const fmt = d => `${d.getUTCFullYear()}${pad(d.getUTCMonth() + 1)}${pad(d.getUTCDate())}T${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}00Z`;
+
+        function firstOccurrence(dayName, startMin) {
+            const target = dayIdxMap[dayName] !== undefined ? dayIdxMap[dayName] : 0;
+            const d = new Date(Date.UTC(startDate.getFullYear(), startDate.getMonth(), startDate.getDate(), 0, 0, 0));
+            const dhakaOffsetHours = 6;
+            const hours = Math.floor(startMin / 60) - dhakaOffsetHours;
+            const minutes = startMin % 60;
+            const diff = (target - d.getUTCDay() + 7) % 7;
+            d.setUTCDate(d.getUTCDate() + diff);
+            d.setUTCHours(hours, minutes, 0, 0);
+            return d;
+        }
+
+        let ics = 'BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//EWU Course Portal//Course Planner Routine//EN\r\nCALSCALE:GREGORIAN\r\n';
+        const until = fmt(endDate);
+        const stamp = fmt(new Date());
+
+        columns.forEach((col, ci) => {
+            col.slots.forEach((s, si) => {
+                s.days.forEach(dayName => {
+                    const occ = firstOccurrence(dayName, s.startMin);
+                    const endOcc = new Date(occ.getTime() + (s.endMin - s.startMin) * 60000);
+                    const uid = `ewu-plan-${col.courseCode.replace(/[^a-zA-Z0-9]/g, '')}-${col.section}-${ci}-${si}-${dayName}@aftabkabir.me`;
+
+                    const exDates = [];
+                    let checkDate = new Date(occ.getTime());
+                    while (checkDate <= endDate) {
+                        const dhakaDate = new Date(checkDate.getTime() + 6 * 3600 * 1000);
+                        const dateStr = dhakaDate.toISOString().slice(0, 10);
+                        if (holidayDates.has(dateStr)) {
+                            exDates.push(fmt(checkDate));
+                        }
+                        checkDate = new Date(checkDate.getTime() + 7 * 24 * 3600 * 1000);
+                    }
+
+                    ics += 'BEGIN:VEVENT\r\n';
+                    ics += `UID:${uid}\r\n`;
+                    ics += `DTSTAMP:${stamp}\r\n`;
+                    ics += `DTSTART:${fmt(occ)}\r\n`;
+                    ics += `DTEND:${fmt(endOcc)}\r\n`;
+                    ics += `RRULE:FREQ=WEEKLY;BYDAY=${icsDayCode[dayName] || 'MO'};UNTIL=${until}\r\n`;
+
+                    if (exDates.length > 0) {
+                        ics += `EXDATE:${exDates.join(',')}\r\n`;
+                    }
+
+                    ics += `SUMMARY:${col.courseCode} Sec ${col.section}\r\n`;
+                    ics += `LOCATION:${s.room || 'East West University'}\r\n`;
+                    ics += `DESCRIPTION:Planned Class Schedule for ${col.courseCode} Section ${col.section}\\nRoom: ${s.room || 'TBA'}\r\n`;
+
+                    // 30-minute reminder
+                    ics += 'BEGIN:VALARM\r\n';
+                    ics += 'TRIGGER:-PT30M\r\n';
+                    ics += 'ACTION:DISPLAY\r\n';
+                    ics += `DESCRIPTION:Reminder: ${col.courseCode} Class in 30 minutes\r\n`;
+                    ics += 'END:VALARM\r\n';
+
+                    ics += 'END:VEVENT\r\n';
+                });
+            });
+        });
+        ics += 'END:VCALENDAR\r\n';
+
+        const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `EWU_Plan_Routine_${combo.name.replace(/[^a-z0-9]+/gi, '_')}.ics`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showFeatureToast('Calendar (.ics) downloaded with holiday exclusions & 30-min reminders', 'success');
     }
 
     // -----------------------------------------
@@ -649,4 +1091,7 @@
     window.closePreview = closePreview;
     window.saveCombinationImage = saveCombinationImage;
     window.saveAllCombinationsImage = saveAllCombinationsImage;
+    window.exportPlannerRoutinePng = exportPlannerRoutinePng;
+    window.exportPlannerRoutinePdf = exportPlannerRoutinePdf;
+    window.exportPlannerRoutineIcs = exportPlannerRoutineIcs;
 })();

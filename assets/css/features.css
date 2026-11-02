@@ -23,6 +23,9 @@
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     background-color: #060609;
     min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
     color: #f3f4f6;
     overflow-x: hidden;
 }

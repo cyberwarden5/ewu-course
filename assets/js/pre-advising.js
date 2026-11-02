@@ -27,6 +27,7 @@
             localStorage.removeItem('ewu_student_id');
             localStorage.removeItem('userId');
             sessionStorage.clear();
+            sessionStorage.setItem('ewu_just_logged_out', 'true');
         } catch (e) {}
         window.location.href = 'login.html';
     }
@@ -142,9 +143,23 @@
             }
 
             const payload = json && json.data ? json.data : json;
-            const courses = (payload && Array.isArray(payload.Result)) ? payload.Result : [];
+            let courses = [];
+            if (payload) {
+                if (Array.isArray(payload.courses)) {
+                    courses = payload.courses;
+                } else if (Array.isArray(payload.Result)) {
+                    courses = payload.Result;
+                } else if (payload.raw && Array.isArray(payload.raw.Result)) {
+                    courses = payload.raw.Result;
+                } else if (Array.isArray(payload)) {
+                    courses = payload;
+                }
+            }
 
-            renderPreAdvising(courses);
+            currentCoursesList = courses;
+            currentPayload = payload;
+
+            renderPreAdvising(courses, payload);
 
             if (loadingEl) loadingEl.classList.add('hidden');
             if (contentEl) contentEl.classList.remove('hidden');
@@ -160,12 +175,20 @@
     }
     window.loadPreAdvising = loadPreAdvising;
 
-    function renderPreAdvising(courses) {
-        const count = courses.length;
+    let currentCoursesList = [];
+    let currentPayload = null;
+
+    function renderPreAdvising(courses, meta = {}) {
+        const count = typeof meta?.totalCourses === 'number' ? meta.totalCourses : courses.length;
         let totalCredits = 0;
-        courses.forEach(c => {
-            totalCredits += parseFloat(c.CreditHour) || 0;
-        });
+        if (typeof meta?.totalCredits === 'number') {
+            totalCredits = meta.totalCredits;
+        } else {
+            courses.forEach(c => {
+                const cr = typeof c.CreditHour === 'number' ? c.CreditHour : (parseFloat(c.CreditHour) || 0);
+                totalCredits += cr;
+            });
+        }
 
         const countEl = document.getElementById('summaryCourseCount');
         const creditsEl = document.getElementById('summaryCreditHours');
@@ -174,8 +197,9 @@
 
         if (countEl) countEl.textContent = count;
         if (creditsEl) creditsEl.textContent = `${totalCredits % 1 === 0 ? totalCredits.toFixed(0) : totalCredits.toFixed(1)} cr`;
-        if (semNameEl && select) {
-            semNameEl.textContent = select.options[select.selectedIndex]?.text || 'Spring-2027';
+        const semName = select?.options[select.selectedIndex]?.text || 'Spring-2027';
+        if (semNameEl) {
+            semNameEl.textContent = semName;
         }
 
         const tableCreditsEl = document.getElementById('tableTotalCredits');
@@ -196,7 +220,7 @@
                     const code = cleanText(course.CourseCode);
                     const courseName = cleanText(course.CourseName || course.CourseTitle);
                     const credits = parseFloat(course.CreditHour) || 0;
-                    const regId = course.PreCourseRegistrationId || '--';
+                    const regId = course.PreCourseRegistrationId || course.RegistrationId || '--';
 
                     return `
                         <div class="relative overflow-hidden rounded-2xl p-5 bg-white/[0.02] hover:bg-white/[0.04] border border-white/[0.08] hover:border-teal-500/40 transition-all duration-200 group shadow-lg">
@@ -240,7 +264,7 @@
                 tableBody.innerHTML = courses.map((course, idx) => {
                     const code = cleanText(course.CourseCode);
                     const credits = parseFloat(course.CreditHour) || 0;
-                    const regId = course.PreCourseRegistrationId || '--';
+                    const regId = course.PreCourseRegistrationId || course.RegistrationId || '--';
 
                     return `
                         <tr class="hover:bg-white/[0.02] transition-colors">
@@ -260,16 +284,120 @@
         }
     }
 
-    function initPreAdvisingPage() {
-        const backBtn = document.getElementById('backToDashBtn');
-        if (backBtn) {
-            backBtn.onclick = (e) => {
-                if (window.history.length > 1 && document.referrer.includes('dashboard')) {
-                    e.preventDefault();
-                    window.history.back();
-                }
-            };
+    // Export: Plain Text
+    function exportPreAdvisingTxt() {
+        if (!currentCoursesList.length) {
+            alert('No courses to export.');
+            return;
         }
+
+        const select = document.getElementById('semesterSelect');
+        const semName = select?.options[select.selectedIndex]?.text || 'Pre-Advising';
+        const studentId = localStorage.getItem('studentId') || localStorage.getItem('userId') || localStorage.getItem('ewu_student_id') || 'Student';
+
+        let totalCredits = 0;
+        currentCoursesList.forEach(c => {
+            totalCredits += parseFloat(c.CreditHour) || 0;
+        });
+
+        let txt = '==================================================\n';
+        txt += 'EAST WEST UNIVERSITY - PRE-ADVISING RECORD\n';
+        txt += '==================================================\n';
+        txt += `Student ID    : ${studentId}\n`;
+        txt += `Semester      : ${semName}\n`;
+        txt += `Generated On  : ${new Date().toLocaleString()}\n`;
+        txt += `Total Courses : ${currentCoursesList.length}\n`;
+        txt += `Total Credits : ${totalCredits.toFixed(1)} Credits\n`;
+        txt += '--------------------------------------------------\n';
+        txt += '#   Course Code   Credits   Registration ID\n';
+        txt += '--------------------------------------------------\n';
+
+        currentCoursesList.forEach((c, idx) => {
+            const num = String(idx + 1).padEnd(4, ' ');
+            const code = cleanText(c.CourseCode).padEnd(14, ' ');
+            const credits = (parseFloat(c.CreditHour) || 0).toFixed(1).padEnd(10, ' ');
+            const regId = '#' + (c.PreCourseRegistrationId || c.RegistrationId || '--');
+            txt += `${num}${code}${credits}${regId}\n`;
+        });
+
+        txt += '==================================================\n';
+        txt += 'Status: Pre-Advising Confirmed in Portal\n';
+
+        const blob = new Blob([txt], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `EWU_PreAdvising_${semName.replace(/[^a-z0-9]+/gi, '_')}.txt`;
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+    window.exportPreAdvisingTxt = exportPreAdvisingTxt;
+
+    // Export: PDF
+    function exportPreAdvisingPdf() {
+        if (!currentCoursesList.length) {
+            alert('No courses to export.');
+            return;
+        }
+
+        if (!window.jspdf || !window.jspdf.jsPDF) {
+            window.print();
+            return;
+        }
+
+        const select = document.getElementById('semesterSelect');
+        const semName = select?.options[select.selectedIndex]?.text || 'Pre-Advising';
+        const studentId = localStorage.getItem('studentId') || localStorage.getItem('userId') || localStorage.getItem('ewu_student_id') || 'Student';
+
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
+
+        doc.setFontSize(16);
+        doc.setTextColor(17, 24, 39);
+        doc.setFont('helvetica', 'bold');
+        doc.text('EAST WEST UNIVERSITY', 40, 48);
+
+        doc.setFontSize(12);
+        doc.setTextColor(13, 148, 136);
+        doc.text('Pre-Advising Record', 40, 68);
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9);
+        doc.setTextColor(107, 114, 128);
+        doc.text(`Semester: ${semName}   |   Student ID: ${studentId}   |   Date: ${new Date().toLocaleDateString()}`, 40, 86);
+
+        let totalCredits = 0;
+        const rows = currentCoursesList.map((c, i) => {
+            const cr = parseFloat(c.CreditHour) || 0;
+            totalCredits += cr;
+            return [
+                i + 1,
+                cleanText(c.CourseCode),
+                cr.toFixed(1),
+                `#${c.PreCourseRegistrationId || c.RegistrationId || '--'}`,
+                'Pre-Advised'
+            ];
+        });
+
+        doc.autoTable({
+            head: [['#', 'Course Code', 'Credit Hours', 'Registration ID', 'Status']],
+            body: rows,
+            foot: [['', 'Total Credit Load', `${totalCredits.toFixed(1)} Credits`, '', 'Confirmed']],
+            startY: 100,
+            styles: { fontSize: 9, cellPadding: 6 },
+            headStyles: { fillColor: [13, 148, 136], textColor: [255, 255, 255], fontStyle: 'bold' },
+            footStyles: { fillColor: [243, 244, 246], textColor: [17, 24, 39], fontStyle: 'bold' },
+            alternateRowStyles: { fillColor: [249, 250, 251] }
+        });
+
+        doc.save(`EWU_PreAdvising_${semName.replace(/[^a-z0-9]+/gi, '_')}.pdf`);
+    }
+    window.exportPreAdvisingPdf = exportPreAdvisingPdf;
+
+    function initPreAdvisingPage() {
+        const uid = localStorage.getItem('studentId') || localStorage.getItem('userId') || localStorage.getItem('ewu_student_id');
+        const uidEl = document.getElementById('userId');
+        if (uidEl && uid) uidEl.textContent = uid;
 
         try {
             const savedView = localStorage.getItem('preadvisingView');

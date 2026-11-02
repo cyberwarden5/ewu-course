@@ -103,9 +103,14 @@ async function handleLogout(event) {
             method: 'POST',
             credentials: 'include'
         });
-    } catch (error) {
-        console.error('Logout error:', error);
-    }
+    } catch (e) {}
+
+    try {
+        localStorage.removeItem('studentId');
+        localStorage.removeItem('ewu_student_id');
+        sessionStorage.clear();
+        sessionStorage.setItem('ewu_just_logged_out', 'true');
+    } catch (e) {}
 
     window.location.href = 'login.html';
 }

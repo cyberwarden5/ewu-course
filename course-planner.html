@@ -33,10 +33,10 @@
     <nav class="fp-nav">
         <div class="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-3.5">
             <div class="flex justify-between items-center">
-                <a href="dashboard.html" class="flex items-center gap-3 hover:opacity-90 transition-opacity no-underline">
+                <a href="dashboard.html" class="flex items-center gap-3 hover:opacity-90 transition-opacity no-underline" title="EWU Course Portal">
                     <img src="assets/images/ewu.png" alt="EWU Logo" class="h-9 sm:h-10 w-auto object-contain">
                     <div class="flex flex-col">
-                        <span class="text-base sm:text-lg font-bold text-white tracking-tight">Course Planner</span>
+                        <span class="text-base sm:text-lg font-bold text-white tracking-tight">EWU Course Portal</span>
                         <span class="text-[10px] text-gray-400 font-mono hidden sm:inline-block">Combination Simulator</span>
                     </div>
                 </a>
@@ -106,6 +106,8 @@
                     <svg class="w-4 h-4 text-gray-500 absolute left-3.5 top-1/2 -translate-y-1/2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                     <input type="text" id="catalogSearch" class="fp-input" style="padding-left:38px;" placeholder="Search by course code or faculty initials…" autocomplete="off">
                 </div>
+                <!-- Dynamic Course Filter Buttons (e.g. CSE207 | CSE209 | ECO101 | ...) -->
+                <div id="courseFilterContainer" class="flex flex-wrap gap-1.5 mb-3 max-h-36 overflow-y-auto fp-scroll p-1"></div>
                 <div class="flex items-center justify-between mb-3 text-[11px] text-gray-500 font-mono" id="catalogCount"></div>
                 <div id="catalogList" class="catalog-scroll fp-scroll flex flex-col gap-2.5 pr-1"></div>
             </section>
@@ -161,12 +163,46 @@
     <div class="fp-modal" id="previewModal">
         <div class="fp-modal-body">
             <div class="flex items-center justify-between px-5 py-4 border-b border-white/[0.08] sticky top-0 bg-[#0b0b13] z-10">
-                <div class="text-white font-bold text-sm" id="previewTitle">Routine Preview</div>
-                <button onclick="closePreview()" class="fp-btn fp-btn-danger"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+                <div>
+                    <div class="text-white font-bold text-sm" id="previewTitle">Routine Preview</div>
+                    <div class="text-[11px] text-gray-400 font-mono" id="previewSubtitle">Plan Combination Preview</div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="exportPlannerRoutinePng()" class="fp-btn fp-btn-ghost" title="Save as PNG">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                        <span class="hidden sm:inline">PNG</span>
+                    </button>
+                    <button onclick="exportPlannerRoutinePdf()" class="fp-btn fp-btn-ghost" title="Save as PDF">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                        <span class="hidden sm:inline">PDF</span>
+                    </button>
+                    <button onclick="exportPlannerRoutineIcs()" class="fp-btn fp-btn-ghost" title="Download .ics calendar">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                        <span class="hidden sm:inline">ICS</span>
+                    </button>
+                    <button onclick="closePreview()" class="fp-btn fp-btn-danger"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+                </div>
             </div>
             <div class="p-5" id="previewBody"></div>
         </div>
     </div>
+
+    <!-- Footer -->
+    <footer class="mt-auto border-t border-white/[0.08] bg-black/40 backdrop-blur-md py-4 text-xs">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
+                <p class="text-[11px] sm:text-xs text-gray-400 max-w-3xl leading-relaxed">
+                    This website is created for educational purposes only. It has no official connection with East West University (EWU). If any authority requests content removal, please contact us.
+                </p>
+                <div class="flex items-center gap-3 flex-shrink-0">
+                    <a href="mailto:contact.aftabkabir@proton.me" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#D86C5A]/10 hover:bg-[#D86C5A]/20 border border-[#D86C5A]/30 text-[#D86C5A] hover:text-[#e07d6d] text-xs font-medium transition-all no-underline" title="Contact Us">
+                        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                        <span>Contact Us</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </footer>
 
     <script src="assets/js/system-metrics.js" defer></script>
     <script src="assets/js/features.js?v=3"></script>

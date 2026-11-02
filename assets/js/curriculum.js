@@ -38,6 +38,7 @@
             localStorage.removeItem('ewu_student_id');
             localStorage.removeItem('userId');
             sessionStorage.clear();
+            sessionStorage.setItem('ewu_just_logged_out', 'true');
         } catch (e) {}
         window.location.href = 'login.html';
     }
@@ -333,7 +334,108 @@
         `).join('');
     }
 
+    let currentCurriculumData = null;
+
+    const _origRenderCurriculumHeader = renderCurriculumHeader;
+    renderCurriculumHeader = function(data) {
+        currentCurriculumData = data;
+        const studentId = localStorage.getItem('studentId') || localStorage.getItem('ewu_student_id') || localStorage.getItem('userId');
+        if (studentId) {
+            const userBadge = document.getElementById('userId');
+            if (userBadge) userBadge.textContent = studentId;
+        }
+        _origRenderCurriculumHeader(data);
+    };
+
+    function exportCurriculumTxt() {
+        if (!currentCurriculumData && allCoursesList.length === 0) {
+            alert('Curriculum data is still loading.');
+            return;
+        }
+        const prog = currentCurriculumData?.program || {};
+        const progName = cleanStr(prog.ProgramCurriculumName) || 'Academic Program Curriculum';
+        const session = cleanStr(prog.EffectiveSessionName) || 'Summer-2018';
+        const minCr = (parseFloat(prog.MinCr) || 140).toFixed(1);
+        const studentId = localStorage.getItem('studentId') || localStorage.getItem('ewu_student_id') || '--';
+
+        let lines = [];
+        lines.push('================================================================');
+        lines.push('             EAST WEST UNIVERSITY - PROGRAM CURRICULUM');
+        lines.push('================================================================');
+        lines.push(`Program           : ${progName}`);
+        lines.push(`Effective Session : ${session}`);
+        lines.push(`Required Credits  : ${minCr} Credits`);
+        lines.push(`Total Courses     : ${allCoursesList.length}`);
+        lines.push(`Student ID        : ${studentId}`);
+        lines.push(`Exported On       : ${new Date().toLocaleString()}`);
+        lines.push('================================================================\n');
+
+        lines.push('----------------------------------------------------------------');
+        lines.push('                     COURSE CATALOG LISTING');
+        lines.push('----------------------------------------------------------------');
+        lines.push('CODE         CR    MIN-CR  PRE-REQUISITES       TITLE');
+        lines.push('----------------------------------------------------------------');
+
+        allCoursesList.forEach(c => {
+            const code = cleanStr(c.CourseCode).padEnd(12);
+            const cr = (parseFloat(c.CreditHour) || 0).toFixed(1).padStart(5);
+            const minPrereq = (parseFloat(c.CreditPass) || 0).toFixed(0).padStart(6);
+            const prereqs = cleanStr(c.PreRequisiteCourses || '--').padEnd(20);
+            const title = cleanStr(c.CourseTitle || c.CourseName);
+            lines.push(`${code} ${cr} ${minPrereq}  ${prereqs} ${title}`);
+        });
+
+        if (majorTracksList.length > 0) {
+            lines.push('\n================================================================');
+            lines.push('                    MAJOR SPECIALIZATIONS');
+            lines.push('================================================================');
+            majorTracksList.forEach(tr => {
+                const trName = cleanStr(tr.MajorAreaName);
+                const trCourses = Array.isArray(tr.Courses) ? tr.Courses : [];
+                lines.push(`\n[ TRACK: ${trName} (${trCourses.length} Courses) ]`);
+                trCourses.forEach(tc => {
+                    lines.push(`  - ${cleanStr(tc.CourseCode).padEnd(10)} ${(parseFloat(tc.CreditHour) || 0).toFixed(1)} cr  : ${cleanStr(tc.CourseTitle || tc.CourseName)}`);
+                });
+            });
+        }
+
+        if (equivalentsList.length > 0) {
+            lines.push('\n================================================================');
+            lines.push('                    COURSE EQUIVALENCIES');
+            lines.push('================================================================');
+            lines.push('STANDARD COURSE                EQUIVALENT COURSE              CREDIT');
+            lines.push('----------------------------------------------------------------');
+            equivalentsList.forEach(eq => {
+                lines.push(`${cleanStr(eq.CourseName).padEnd(30)} ${cleanStr(eq.EquivalentCourseName).padEnd(30)} ${(parseFloat(eq.CreditHour) || 0).toFixed(1)}`);
+            });
+        }
+
+        const blob = new Blob([lines.join('\r\n')], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Curriculum_${progName.replace(/[^a-zA-Z0-9_-]/g, '_').substring(0, 30)}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+    window.exportCurriculumTxt = exportCurriculumTxt;
+
+    function exportCurriculumPdf() {
+        selectTab('courses');
+        setTimeout(() => {
+            window.print();
+        }, 150);
+    }
+    window.exportCurriculumPdf = exportCurriculumPdf;
+
     function initCurriculumPage() {
+        const studentId = localStorage.getItem('studentId') || localStorage.getItem('ewu_student_id') || localStorage.getItem('userId');
+        if (studentId) {
+            const userBadge = document.getElementById('userId');
+            if (userBadge) userBadge.textContent = studentId;
+        }
         const backBtn = document.getElementById('backToDashBtn');
         if (backBtn) {
             backBtn.onclick = (e) => {
