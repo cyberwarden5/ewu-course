@@ -293,18 +293,13 @@ async function performLogin(username, password, formData) {
 async function handleLogin(request, env) {
   try {
     const body = await request.json();
-    let { username, password } = body;
+    const { username, password } = body;
 
     if (!username || !password) {
       return jsonResponse({
         status: 'error',
         message: 'Username and password are required'
       }, 400, request);
-    }
-
-    username = username.trim();
-    if (/^\d{4}-\d-\d-\d{3}$/.test(username)) {
-      username = username.replace(/^(\d{4}-\d)-(\d)-(\d{3})$/, '$1-$20-$3');
     }
 
     // Check User ID Blocklist

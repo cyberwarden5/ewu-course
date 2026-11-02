@@ -51,10 +51,6 @@ function showAlert(message, type = 'error') {
 
 // Login attempt function (will be wrapped with retry logic)
 async function attemptLogin(username, password) {
-    let cleanUsername = (username || '').trim();
-    if (/^\d{4}-\d-\d-\d{3}$/.test(cleanUsername)) {
-        cleanUsername = cleanUsername.replace(/^(\d{4}-\d)-(\d)-(\d{3})$/, '$1-$20-$3');
-    }
     let response;
     let data;
 
@@ -66,7 +62,7 @@ async function attemptLogin(username, password) {
             },
             credentials: 'include',
             body: JSON.stringify({
-                username: cleanUsername,
+                username: (username || '').trim(),
                 password: password
             })
         });
