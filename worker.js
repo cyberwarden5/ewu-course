@@ -1042,18 +1042,60 @@ async function handleGetProfilePhoto(request) {
   const sessionId = getCookieValue(cookieHeader, 'ASP.NET_SessionId');
   const url = new URL(request.url);
   const photoPath = url.searchParams.get('url');
+  let studentId = url.searchParams.get('studentId') || url.searchParams.get('id');
 
-  if (!photoPath) {
-    return new Response('Photo URL parameter required', { status: 400 });
+  // If studentId wasn't explicitly provided, extract it from photoPath if possible
+  if (!studentId && photoPath) {
+    const idMatch = photoPath.match(/([0-9]{4}-[0-9]-[0-9]{1,3}-[0-9]{1,4})/);
+    if (idMatch) {
+      studentId = idMatch[1];
+    } else {
+      const cleanPath = photoPath.split('?')[0];
+      const filename = cleanPath.split('/').pop().replace(/\.[^.]+$/, '');
+      if (filename && !filename.includes(' ') && filename.length >= 6) {
+        studentId = filename;
+      }
+    }
+  }
+
+  if (!studentId && !photoPath) {
+    return new Response('Photo URL or Student ID parameter required', { status: 400 });
   }
 
   try {
-    const fullUrl = photoPath.startsWith('http') ? photoPath : `${PORTAL_URL}${photoPath.startsWith('/') ? '' : '/'}${photoPath}`;
-    const headers = sessionId ? buildPortalHeaders(sessionId, 'https://portal.ewubd.edu/Home/Profile') : { 'User-Agent': 'Mozilla/5.0' };
-    const response = await fetchWithRetry(fullUrl, { headers });
+    const headers = sessionId
+      ? buildPortalHeaders(sessionId, 'https://portal.ewubd.edu/Home/Profile')
+      : {
+          'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'referer': 'https://portal.ewubd.edu/Home/Profile'
+        };
 
-    if (!response.ok) {
-      return new Response('Photo not found', { status: response.status });
+    let response = null;
+
+    // 1. Primary method: Fetch dynamic photo via portal API: /api/StudentProfile/GetStudentPhoto/{studentId}
+    if (studentId) {
+      const studentPhotoUrl = `${PORTAL_URL}/api/StudentProfile/GetStudentPhoto/${encodeURIComponent(studentId)}`;
+      try {
+        response = await fetchWithRetry(studentPhotoUrl, { headers });
+      } catch (err) {
+        console.warn('GetStudentPhoto attempt failed:', err);
+      }
+    }
+
+    // 2. Secondary fallback: Fetch via static document path if primary failed or not found
+    if ((!response || !response.ok) && photoPath) {
+      const fullUrl = photoPath.startsWith('http')
+        ? photoPath
+        : `${PORTAL_URL}${photoPath.startsWith('/') ? '' : '/'}${photoPath}`;
+      try {
+        response = await fetchWithRetry(fullUrl, { headers });
+      } catch (err2) {
+        console.warn('Static photo path attempt failed:', err2);
+      }
+    }
+
+    if (!response || !response.ok) {
+      return new Response('Photo not found', { status: response ? response.status : 404 });
     }
 
     const contentType = response.headers.get('Content-Type') || 'image/jpeg';

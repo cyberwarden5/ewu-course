@@ -143,17 +143,44 @@
 
         const photoEl = document.getElementById('studentPhoto');
         const avatarFallback = document.getElementById('studentAvatarFallback');
-        if (data.ProfilePictureUrl) {
-            const photoUrl = `${API_BASE_URL}/api/profile/photo?url=${encodeURIComponent(data.ProfilePictureUrl)}`;
-            photoEl.src = photoUrl;
-            photoEl.onload = () => {
-                photoEl.classList.remove('hidden');
-                if (avatarFallback) avatarFallback.classList.add('hidden');
-            };
-            photoEl.onerror = () => {
-                photoEl.classList.add('hidden');
-                if (avatarFallback) avatarFallback.classList.remove('hidden');
-            };
+        const photoStudentId = studentId || (data.StudentId ? String(data.StudentId).trim() : '');
+
+        if (photoStudentId || data.ProfilePictureUrl) {
+            const params = new URLSearchParams();
+            if (photoStudentId) params.append('studentId', photoStudentId);
+            if (data.ProfilePictureUrl) params.append('url', data.ProfilePictureUrl);
+
+            const photoUrl = `${API_BASE_URL}/api/profile/photo?${params.toString()}`;
+
+            // Fetch with credentials to ensure session cookies are sent, then display as blob object URL
+            fetch(photoUrl, { credentials: 'include' })
+                .then(res => {
+                    if (!res.ok) throw new Error('Photo fetch failed');
+                    return res.blob();
+                })
+                .then(blob => {
+                    if (blob && blob.type.startsWith('image/')) {
+                        const objectUrl = URL.createObjectURL(blob);
+                        photoEl.src = objectUrl;
+                        photoEl.classList.remove('hidden');
+                        if (avatarFallback) avatarFallback.classList.add('hidden');
+                    } else {
+                        throw new Error('Not an image blob');
+                    }
+                })
+                .catch(() => {
+                    // Fallback to direct img src with crossOrigin
+                    photoEl.crossOrigin = 'use-credentials';
+                    photoEl.src = photoUrl;
+                    photoEl.onload = () => {
+                        photoEl.classList.remove('hidden');
+                        if (avatarFallback) avatarFallback.classList.add('hidden');
+                    };
+                    photoEl.onerror = () => {
+                        photoEl.classList.add('hidden');
+                        if (avatarFallback) avatarFallback.classList.remove('hidden');
+                    };
+                });
         } else {
             if (photoEl) photoEl.classList.add('hidden');
             if (avatarFallback) avatarFallback.classList.remove('hidden');
