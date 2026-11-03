@@ -94,7 +94,7 @@ async function checkAuth() {
         const response = await fetch(`${API_BASE_URL}/api/auth/status`, { credentials: 'include' });
         const data = await response.json();
         if (!data || !data.loggedIn) {
-            window.location.href = 'login.html';
+            window.location.href = 'login';
             return false;
         }
         if (data.userId && data.userId !== 'User' && data.userId !== 'Student') {
@@ -110,7 +110,7 @@ async function checkAuth() {
         return true;
     } catch (error) {
         console.warn('Auth status check failed, redirecting to login:', error);
-        window.location.href = 'login.html';
+        window.location.href = 'login';
         return false;
     }
 }
@@ -131,7 +131,7 @@ async function handleLogout(event) {
         sessionStorage.clear();
         sessionStorage.setItem('ewu_just_logged_out', 'true');
     } catch (e) { }
-    window.location.href = 'login.html';
+    window.location.href = 'login';
 }
 window.handleLogout = handleLogout;
 
@@ -169,15 +169,15 @@ const DASHBOARD_FEATURES = [
 const FALLBACK_FEATURES = {
     recommended: { name: 'Recommended Courses', page: 'advise', color: 'coral', icon: '', description: 'Personalized course offerings from your advising routine.' },
     department: { name: 'Department-Wise Courses', page: 'department-courses', color: 'blue', icon: '', description: 'Search and filter course offerings across all departments.' },
-    preadvising: { name: 'Pre-Advising', page: 'pre-advising.html', color: 'teal', icon: '', description: 'Review your pre-advised courses, total credit load, and upcoming semester offerings.' },
-    degreereview: { name: 'Degree Review', page: 'degree-review.html', color: 'indigo', icon: '', description: 'Degree audit, earned credits, remaining graduation requirements and course areas.' },
-    curriculum: { name: 'Curriculum', page: 'curriculum.html', color: 'amber', icon: '', description: 'Explore full academic curriculum structure, major tracks, prerequisites, and courses.' },
-    schedule: { name: 'Class Schedule', page: 'class-schedule.html', color: 'cyan', icon: '', description: 'Personalized weekly timetable grid and registered credits.' },
-    planner: { name: 'Course Planner', page: 'course-planner.html', color: 'violet', icon: '', description: 'Build and validate multiple course combinations.' },
-    ledger: { name: 'Account Ledger', page: 'account-ledger.html', color: 'emerald', icon: '', description: 'Track tuition balances, payments and scholarships.' },
-    grades: { name: 'Grade Report', page: 'grade-report.html', color: 'amber', icon: '', description: 'Academic transcript with term-by-term GPA history.' },
-    cgpa: { name: 'CGPA Planner', page: 'cgpa-planner.html', color: 'rose', icon: '', description: 'Project target GPA and required grades.' },
-    profile: { name: 'Student Profile', page: 'profile.html', color: 'coral', icon: '', description: 'Personal, academic, advisor contact information and institutional records.' }
+    preadvising: { name: 'Pre-Advising', page: 'pre-advising', color: 'teal', icon: '', description: 'Review your pre-advised courses, total credit load, and upcoming semester offerings.' },
+    degreereview: { name: 'Degree Review', page: 'degree-review', color: 'indigo', icon: '', description: 'Degree audit, earned credits, remaining graduation requirements and course areas.' },
+    curriculum: { name: 'Curriculum', page: 'curriculum', color: 'amber', icon: '', description: 'Explore full academic curriculum structure, major tracks, prerequisites, and courses.' },
+    schedule: { name: 'Class Schedule', page: 'class-schedule', color: 'cyan', icon: '', description: 'Personalized weekly timetable grid and registered credits.' },
+    planner: { name: 'Course Planner', page: 'course-planner', color: 'violet', icon: '', description: 'Build and validate multiple course combinations.' },
+    ledger: { name: 'Account Ledger', page: 'account-ledger', color: 'emerald', icon: '', description: 'Track tuition balances, payments and scholarships.' },
+    grades: { name: 'Grade Report', page: 'grade-report', color: 'amber', icon: '', description: 'Academic transcript with term-by-term GPA history.' },
+    cgpa: { name: 'CGPA Planner', page: 'cgpa-planner', color: 'rose', icon: '', description: 'Project target GPA and required grades.' },
+    profile: { name: 'Student Profile', page: 'profile', color: 'coral', icon: '', description: 'Personal, academic, advisor contact information and institutional records.' }
 };
 
 function getFeatureMeta(key) {
@@ -347,7 +347,10 @@ function cleanupPreviousPage() {
     }
     // Stop recurring timers registered by other feature pages
     if (typeof window.stopDepartmentClock === 'function') {
-        try { window.stopDepartmentClock(); } catch (e) { }
+        try { window.stopDepartmentClock(); } catch (e) {}
+    }
+    if (typeof window.stopAdviseClock === 'function') {
+        try { window.stopAdviseClock(); } catch (e) {}
     }
     // Remove page-scoped styles injected during the previous navigation
     document.querySelectorAll('style[data-subpage-style]').forEach(el => el.remove());
@@ -385,20 +388,48 @@ function invokePageLifecycle(url) {
     }
 }
 
+// Normalize a link/URL to a clean route slug (no leading slash, no .html).
+function cleanRouteSlug(url) {
+    if (!url) return '';
+    let slug = String(url).split('?')[0].split('#')[0];
+    slug = slug.replace(/^\.\//, '').replace(/^\/+/, '');
+    slug = slug.replace(/\.html$/i, '');
+    return slug.toLowerCase();
+}
+
+// Fetch a subpage by its clean URL, falling back to the .html file on hosts
+// that do not implement extensionless rewrites (e.g. a bare static server).
+async function fetchPageHtml(slug) {
+    const cached = pageCache.get(slug);
+    if (cached) return cached;
+    let res = await fetch('/' + slug);
+    if (!res.ok) res = await fetch('/' + slug + '.html');
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const html = await res.text();
+    pageCache.set(slug, html);
+    return html;
+}
+
 async function navigateToPage(url, pushState = true) {
     const homeView = document.getElementById('dashboardHomeView');
     const pageView = document.getElementById('dashboardPageView');
     const loadingView = document.getElementById('dashboardPageLoading');
 
+    const slug = cleanRouteSlug(url);
+    if (!slug || slug === 'dashboard' || slug === 'index') {
+        restoreDashboardHome(pushState);
+        return;
+    }
+
     if (!homeView || !pageView) {
-        window.location.href = url;
+        window.location.href = '/' + slug;
         return;
     }
 
     cleanupPreviousPage();
 
     if (pushState) {
-        history.pushState({ page: url }, '', url);
+        history.pushState({ page: slug }, '', '/' + slug);
     }
 
     homeView.classList.add('hidden');
@@ -406,13 +437,7 @@ async function navigateToPage(url, pushState = true) {
     if (loadingView) loadingView.classList.remove('hidden');
 
     try {
-        let htmlText = pageCache.get(url);
-        if (!htmlText) {
-            const res = await fetch(url);
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            htmlText = await res.text();
-            pageCache.set(url, htmlText);
-        }
+        const htmlText = await fetchPageHtml(slug);
 
         const parser = new DOMParser();
         const doc = parser.parseFromString(htmlText, 'text/html');
@@ -477,13 +502,13 @@ async function navigateToPage(url, pushState = true) {
         window.scrollTo({ top: 0, behavior: 'smooth' });
 
         // Invoke page lifecycle initializer
-        invokePageLifecycle(url);
+        invokePageLifecycle(slug);
 
         // Bind all Back to Dashboard links in the newly rendered view
         bindSubpageBackButtons();
     } catch (err) {
         console.error('AJAX navigation fallback to full load:', err);
-        window.location.href = url;
+        window.location.href = '/' + slug;
     }
 }
 
@@ -497,7 +522,7 @@ function restoreDashboardHome(pushState = true) {
     cleanupPreviousPage();
 
     if (pushState) {
-        history.pushState({ page: 'dashboard' }, '', 'dashboard.html');
+        history.pushState({ page: 'dashboard' }, '', '/dashboard');
     }
 
     if (pageView) pageView.classList.add('hidden');
@@ -509,9 +534,12 @@ function restoreDashboardHome(pushState = true) {
 }
 
 function bindSubpageBackButtons() {
-    const backLinks = document.querySelectorAll('a[href="dashboard.html"], a[href="/dashboard.html"], a[href="./dashboard.html"], #backToDashBtn, [data-back-dashboard]');
-    backLinks.forEach(link => {
-        link.onclick = (e) => {
+    // Anchor links to the dashboard are handled by the global router below;
+    // only bind non-anchor [data-back-dashboard] controls here to avoid the
+    // same click being handled twice.
+    document.querySelectorAll('[data-back-dashboard]').forEach(el => {
+        if (el.tagName === 'A' && el.getAttribute('href')) return;
+        el.onclick = (e) => {
             e.preventDefault();
             restoreDashboardHome(true);
         };
@@ -519,6 +547,23 @@ function bindSubpageBackButtons() {
 }
 
 function initAjaxRouter() {
+    // Subpages reachable through the in-memory AJAX router (clean slugs).
+    const targetRoutes = [
+        'advise',
+        'department-courses',
+        'pre-advising',
+        'degree-review',
+        'curriculum',
+        'class-schedule',
+        'course-planner',
+        'account-ledger',
+        'grade-report',
+        'cgpa-planner',
+        'profile',
+        'documentation',
+        'learn-more'
+    ];
+
     // Intercept clicks on links globally
     document.addEventListener('click', (e) => {
         const link = e.target.closest('a');
@@ -529,55 +574,41 @@ function initAjaxRouter() {
             return;
         }
 
+        // Leave the legacy V2 sub-app and truly external URLs to the browser
+        if (/^v2\//i.test(href) || href.startsWith('/V2/')) return;
+        if (/^https?:\/\//i.test(href) && !href.startsWith(window.location.origin)) return;
+
+        const homeView = document.getElementById('dashboardHomeView');
+        if (!homeView) return;
+
+        const slug = cleanRouteSlug(href);
+        if (!slug || slug === 'index') return;
+
         // Return to dashboard
-        if (href === 'dashboard.html' || href === '/dashboard.html' || href === './dashboard.html') {
-            const homeView = document.getElementById('dashboardHomeView');
-            if (homeView) {
-                e.preventDefault();
-                restoreDashboardHome(true);
-                return;
-            }
+        if (slug === 'dashboard') {
+            e.preventDefault();
+            restoreDashboardHome(true);
+            return;
         }
 
-        // All connected dashboard subpages supported for instant AJAX navigation
-        const targetPages = [
-            'advise.html',
-            'department-courses.html',
-            'pre-advising.html',
-            'degree-review.html',
-            'curriculum.html',
-            'class-schedule.html',
-            'course-planner.html',
-            'account-ledger.html',
-            'grade-report.html',
-            'cgpa-planner.html',
-            'profile.html',
-            'documentation.html',
-            'learn-more.html'
-        ];
-
-        const cleanHref = href.split('?')[0].split('#')[0];
-        const matchingPage = targetPages.find(p => cleanHref === p || cleanHref.endsWith('/' + p));
-        if (matchingPage) {
-            const homeView = document.getElementById('dashboardHomeView');
-            if (homeView) {
-                e.preventDefault();
-                navigateToPage(href, true);
-            }
+        // Instant in-memory navigation for connected dashboard subpages
+        if (targetRoutes.includes(slug)) {
+            e.preventDefault();
+            navigateToPage(slug, true);
         }
     });
 
     // Handle browser Back / Forward buttons
     window.addEventListener('popstate', (e) => {
         const state = e.state;
-        if (state && state.page && state.page !== 'dashboard' && !state.page.includes('dashboard.html')) {
+        if (state && state.page && state.page !== 'dashboard') {
             navigateToPage(state.page, false);
         } else {
             restoreDashboardHome(false);
         }
     });
 
-    history.replaceState({ page: 'dashboard' }, '', window.location.pathname);
+    history.replaceState({ page: 'dashboard' }, '', '/dashboard');
 }
 
 // Initialize on DOM load

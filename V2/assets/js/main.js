@@ -152,7 +152,7 @@ async function handleLogin(event) {
 
             // Redirect to courses page after brief delay
             setTimeout(() => {
-                window.location.href = 'courses.html';
+                window.location.href = 'courses';
             }, 1000);
         } else {
             // Show error message
@@ -199,11 +199,11 @@ async function handleLogout() {
         });
 
         // Redirect to login page
-        window.location.href = 'login.html';
+        window.location.href = 'login';
     } catch (error) {
         console.error('Logout error:', error);
         // Redirect anyway
-        window.location.href = 'login.html';
+        window.location.href = 'login';
     }
 }
 

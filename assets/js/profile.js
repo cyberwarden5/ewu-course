@@ -66,7 +66,7 @@
             sessionStorage.clear();
             sessionStorage.setItem('ewu_just_logged_out', 'true');
         } catch (e) {}
-        window.location.href = 'login.html';
+        window.location.href = 'login';
     }
     window.handleLogout = handleLogout;
 
@@ -82,7 +82,7 @@
         try {
             const res = await fetch(`${API_BASE_URL}/api/profile`, { credentials: 'include' });
             if (res.status === 401 || res.status === 403) {
-                window.location.href = 'login.html';
+                window.location.href = 'login';
                 return;
             }
 

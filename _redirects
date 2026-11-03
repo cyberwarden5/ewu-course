@@ -1,0 +1,6 @@
+# Cloudflare Pages / Netlify clean URLs.
+# Permanently redirect legacy .html requests to extensionless URLs.
+# Cloudflare Pages serves /advise from /advise.html automatically, so no
+# rewrite entry is required for clean -> file resolution.
+/index.html  /        308!
+/*.html      /:splat  308!

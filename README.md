@@ -48,9 +48,29 @@ aftabkabir.me/
 │     ├─ retry-handler.js     Retry widget used by login/advise/department
 │     └─ <page>.js            One initializer per feature page
 ├─ worker.js                  Cloudflare Worker (API proxy + admin endpoints)
+├─ .htaccess                  Apache clean-URL rewrites + cache headers
+├─ _redirects                 Cloudflare Pages/Netlify .html -> clean redirects
+├─ _headers                   Cloudflare Pages cache/security headers
 ├─ sui7/                      Admin panel (static SPA)
 └─ V2/                        Legacy alternate UI
 ```
+
+### Clean URLs
+
+Every page is served **without the `.html` extension** (e.g.
+`https://aftabkabir.me/advise`, not `/advise.html`). This works for direct
+access, internal links, refresh, and the AJAX router:
+
+- On Apache, `.htaccess` 301-redirects `*.html` to the clean URL and internally
+  serves the matching `.html` file for clean requests.
+- On Cloudflare Pages / Netlify, `_redirects` 308-redirects `*.html` to the
+  clean URL; the platforms resolve `/advise` from `/advise.html` automatically.
+- The homepage is `/` (from `index.html`).
+- All internal links, redirects, canonical/OG tags, and the feature registry use
+  clean slugs. The dashboard router reads/writes clean paths and falls back to
+  fetching `/slug.html` only if the clean URL is unavailable (e.g. a bare local
+  static server without rewrites).
+
 
 ### Shared helpers (`assets/js/features.js`)
 Wrapped in an IIFE and exposed on `window` so it can coexist with legacy page

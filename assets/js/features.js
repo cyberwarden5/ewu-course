@@ -18,7 +18,7 @@
         recommended: {
             key: 'recommended',
             name: 'Recommended Courses',
-            page: 'advise.html',
+            page: 'advise',
             icon: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path><line x1="12" y1="6" x2="16" y2="6"></line><line x1="12" y1="10" x2="16" y2="10"></line></svg>',
             color: 'coral',
             active: true,
@@ -27,7 +27,7 @@
         department: {
             key: 'department',
             name: 'Department-Wise Courses',
-            page: 'department-courses.html',
+            page: 'department-courses',
             icon: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>',
             color: 'blue',
             active: true,
@@ -36,7 +36,7 @@
         schedule: {
             key: 'schedule',
             name: 'Class Schedule',
-            page: 'class-schedule.html',
+            page: 'class-schedule',
             icon: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>',
             color: 'cyan',
             active: true,
@@ -45,7 +45,7 @@
         planner: {
             key: 'planner',
             name: 'Course Planner',
-            page: 'course-planner.html',
+            page: 'course-planner',
             icon: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>',
             color: 'violet',
             active: true,
@@ -54,7 +54,7 @@
         ledger: {
             key: 'ledger',
             name: 'Account Ledger',
-            page: 'account-ledger.html',
+            page: 'account-ledger',
             icon: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"></rect><line x1="2" y1="10" x2="22" y2="10"></line></svg>',
             color: 'emerald',
             active: true,
@@ -63,7 +63,7 @@
         grades: {
             key: 'grades',
             name: 'Grade Report',
-            page: 'grade-report.html',
+            page: 'grade-report',
             icon: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>',
             color: 'amber',
             active: true,
@@ -72,7 +72,7 @@
         cgpa: {
             key: 'cgpa',
             name: 'CGPA Planner',
-            page: 'cgpa-planner.html',
+            page: 'cgpa-planner',
             icon: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10"></path><path d="M12 20V4"></path><path d="M6 20v-6"></path></svg>',
             color: 'rose',
             active: true,
@@ -81,7 +81,7 @@
         preadvising: {
             key: 'preadvising',
             name: 'Pre-Advising',
-            page: 'pre-advising.html',
+            page: 'pre-advising',
             icon: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="9" y1="15" x2="15" y2="15"></line><line x1="9" y1="11" x2="15" y2="11"></line><line x1="9" y1="7" x2="11" y2="7"></line></svg>',
             color: 'teal',
             active: true,
@@ -90,7 +90,7 @@
         degreereview: {
             key: 'degreereview',
             name: 'Degree Review',
-            page: 'degree-review.html',
+            page: 'degree-review',
             icon: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></svg>',
             color: 'indigo',
             active: true,
@@ -99,7 +99,7 @@
         curriculum: {
             key: 'curriculum',
             name: 'Curriculum',
-            page: 'curriculum.html',
+            page: 'curriculum',
             icon: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>',
             color: 'amber',
             active: true,
@@ -108,7 +108,7 @@
         profile: {
             key: 'profile',
             name: 'Student Profile',
-            page: 'profile.html',
+            page: 'profile',
             icon: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>',
             color: 'coral',
             active: true,
@@ -206,7 +206,7 @@
                 <div style="display:inline-block;font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;padding:3px 12px;border-radius:20px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:#9ca3af;margin-bottom:14px;">${meta.label}</div>
                 <h2 style="font-size:20px;font-weight:800;color:#fff;margin:0 0 10px;">${feature.name}</h2>
                 <p style="font-size:14px;line-height:1.7;color:#9ca3af;margin:0 0 22px;">${messages[status] || messages.under_work}</p>
-                <a href="dashboard.html" class="btn-card-action" style="display:inline-flex;width:auto;padding:12px 26px;text-decoration:none;">
+                <a href="dashboard" class="btn-card-action" style="display:inline-flex;width:auto;padding:12px 26px;text-decoration:none;">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
                     <span>Back to Dashboard</span>
                 </a>
@@ -343,13 +343,13 @@
             const res = await fetch(`${API_BASE_URL}/api/auth/status`, { credentials: 'include' });
             const data = await res.json();
             if (!data || !data.loggedIn) {
-                window.location.href = 'login.html';
+                window.location.href = 'login';
                 return null;
             }
             const id = (data.userId && data.userId !== 'User') ? data.userId : (localStorage.getItem('studentId') || localStorage.getItem('ewu_student_id') || null);
             return { userId: id };
         } catch (e) {
-            window.location.href = 'login.html';
+            window.location.href = 'login';
             return null;
         }
     }
@@ -366,7 +366,7 @@
             sessionStorage.clear();
             sessionStorage.setItem('ewu_just_logged_out', 'true');
         } catch (e) {}
-        window.location.href = 'login.html';
+        window.location.href = 'login';
     }
 
     // Simple retrying JSON fetch for feature pages (auto retry on transient failures).

@@ -127,7 +127,7 @@ async function checkAuth() {
         const data = await response.json();
 
         if (!data || !data.loggedIn) {
-            window.location.href = 'login.html';
+            window.location.href = 'login';
             return false;
         }
 
@@ -142,7 +142,7 @@ async function checkAuth() {
         return true;
     } catch (error) {
         console.warn('Auth check error:', error);
-        window.location.href = 'login.html';
+        window.location.href = 'login';
         return false;
     }
 }
@@ -165,7 +165,7 @@ async function handleLogout(event) {
         sessionStorage.setItem('ewu_just_logged_out', 'true');
     } catch (e) {}
 
-    window.location.href = 'login.html';
+    window.location.href = 'login';
 }
 window.handleLogout = handleLogout;
 
@@ -186,7 +186,7 @@ async function loadInitialOptions() {
         });
 
         if (response.status === 401) {
-            window.location.href = 'login.html';
+            window.location.href = 'login';
             return;
         }
 
@@ -405,7 +405,7 @@ async function startDepartmentFetchQueue(selectedDepts, semesterId) {
                     },
                     onInvalidCredentials: (result) => {
                         showAlert(result.message || 'Session expired. Redirecting to login...', 'error');
-                        setTimeout(() => window.location.href = 'login.html', 1500);
+                        setTimeout(() => window.location.href = 'login', 1500);
                     },
                     onRetryAttempt: (attemptNum, elapsed, reason) => {
                         showAlert(`Portal busy while fetching ${dept.name}. Auto retrying (Attempt ${attemptNum + 1})...`, 'info');

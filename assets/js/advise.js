@@ -51,8 +51,10 @@ function parseDayTime(timeSlotName) {
     return { day: dayNames, time: time };
 }
 
-// BD Time Update
+// BD Time Update (null-safe: #currentTime only exists while Advise is mounted)
 function updateBDTime() {
+    const el = document.getElementById('currentTime');
+    if (!el) return;
     const now = new Date();
     const options = {
         timeZone: 'Asia/Dhaka',
@@ -63,11 +65,24 @@ function updateBDTime() {
         minute: '2-digit',
         hour12: true
     };
-    const bdTime = now.toLocaleString('en-US', options);
-    document.getElementById('currentTime').textContent = bdTime;
+    el.textContent = now.toLocaleString('en-US', options);
 }
-setInterval(updateBDTime, 1000);
-updateBDTime();
+
+// Live clock is started by initAdvisePage and stopped on navigation so it does
+// not keep firing against a removed DOM node.
+let adviseClockInterval = null;
+function startAdviseClock() {
+    stopAdviseClock();
+    updateBDTime();
+    adviseClockInterval = setInterval(updateBDTime, 1000);
+}
+function stopAdviseClock() {
+    if (adviseClockInterval) {
+        clearInterval(adviseClockInterval);
+        adviseClockInterval = null;
+    }
+}
+window.stopAdviseClock = stopAdviseClock;
 
 // Check authentication status on page load
 async function checkAuth() {
@@ -79,7 +94,7 @@ async function checkAuth() {
         const data = await response.json();
 
         if (!data.loggedIn) {
-            window.location.href = 'login.html';
+            window.location.href = 'login';
             return false;
         }
 
@@ -92,7 +107,7 @@ async function checkAuth() {
         return true;
     } catch (error) {
         console.error('Auth check failed:', error);
-        window.location.href = 'login.html';
+        window.location.href = 'login';
         return false;
     }
 }
@@ -115,7 +130,7 @@ async function handleLogout(event) {
         sessionStorage.setItem('ewu_just_logged_out', 'true');
     } catch (e) {}
 
-    window.location.href = 'login.html';
+    window.location.href = 'login';
 }
 
 // Course fetch attempt function (will be wrapped with retry logic)
@@ -157,7 +172,7 @@ async function loadCourses(maintainScroll = false, useRetry = false) {
             const result = await attemptFetchCourses();
 
             if (result.status === 'invalid_credentials') {
-                window.location.href = 'login.html';
+                window.location.href = 'login';
                 return;
             }
 
@@ -192,7 +207,7 @@ async function loadCourses(maintainScroll = false, useRetry = false) {
                     showToast('Courses refreshed successfully', 2000);
                 },
                 onInvalidCredentials: (result) => {
-                    window.location.href = 'login.html';
+                    window.location.href = 'login';
                 },
                 onRetryAttempt: (attemptNum, elapsedTime) => {
                     console.log(`Course fetch attempt ${attemptNum} failed. Elapsed time: ${elapsedTime}s`);
@@ -991,6 +1006,7 @@ function truncateForPDF(text, maxLength) {
 // Initialize on page load
 async function initAdvisePage() {
     // Initialize all UI components
+    startAdviseClock();
     initializeSearch();
     initializeToggle();
     initializeCourseFilterDropdown();

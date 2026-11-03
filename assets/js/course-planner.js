@@ -110,7 +110,7 @@
         list.innerHTML = '<div class="fp-empty"><div class="fp-spinner"></div>Loading course routine…</div>';
         try {
             const result = await fetchJsonWithRetry(`${API_BASE_URL}/api/routine`);
-            if (result.__unauthorized) { window.location.href = 'login.html'; return; }
+            if (result.__unauthorized) { window.location.href = 'login'; return; }
             const data = result.data || {};
             if (data.status === 'error') throw new Error(data.message || 'Failed to load routine');
             catalog = buildCatalog(data.courses || []);

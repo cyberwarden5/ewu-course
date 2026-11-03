@@ -164,7 +164,7 @@
             }
             showFeatureToast('Fetching live grade report from EWU portal…', 'info');
             const result = await fetchJsonWithRetry(`${API_BASE_URL}/api/grades`);
-            if (result.__unauthorized) { window.location.href = 'login.html'; return; }
+            if (result.__unauthorized) { window.location.href = 'login'; return; }
             const data = result.data || {};
             if (data.status === 'error') throw new Error(data.message || 'Failed to fetch live grades');
             const parsed = (typeof window.parseGradeReportHtml === 'function')

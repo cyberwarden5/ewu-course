@@ -1,0 +1,60 @@
+# Cloudflare Pages caching and security headers
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+
+# Never cache HTML so script/style updates apply immediately
+/*.html
+  Cache-Control: public, max-age=0, must-revalidate
+
+/
+  Cache-Control: public, max-age=0, must-revalidate
+
+/dashboard
+  Cache-Control: public, max-age=0, must-revalidate
+
+/login
+  Cache-Control: public, max-age=0, must-revalidate
+
+/advise
+  Cache-Control: public, max-age=0, must-revalidate
+
+/department-courses
+  Cache-Control: public, max-age=0, must-revalidate
+
+/pre-advising
+  Cache-Control: public, max-age=0, must-revalidate
+
+/degree-review
+  Cache-Control: public, max-age=0, must-revalidate
+
+/curriculum
+  Cache-Control: public, max-age=0, must-revalidate
+
+/class-schedule
+  Cache-Control: public, max-age=0, must-revalidate
+
+/course-planner
+  Cache-Control: public, max-age=0, must-revalidate
+
+/account-ledger
+  Cache-Control: public, max-age=0, must-revalidate
+
+/grade-report
+  Cache-Control: public, max-age=0, must-revalidate
+
+/cgpa-planner
+  Cache-Control: public, max-age=0, must-revalidate
+
+/profile
+  Cache-Control: public, max-age=0, must-revalidate
+
+/documentation
+  Cache-Control: public, max-age=0, must-revalidate
+
+/learn-more
+  Cache-Control: public, max-age=0, must-revalidate
+
+# Static assets can be cached aggressively
+/assets/*
+  Cache-Control: public, max-age=86400
