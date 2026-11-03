@@ -453,19 +453,28 @@ async function navigateToPage(url, pushState = true) {
             }
         }
 
-        const sourceEl = doc.querySelector('main') || doc.body;
+        // Inject the whole page body minus its own chrome (top-level
+        // nav/header/footer), the ambient background and scripts. Using the
+        // body rather than just <main> keeps sibling elements that live
+        // outside <main> (e.g. routine/preview modals, toasts) working under
+        // AJAX navigation.
         const fragment = document.createElement('div');
-        fragment.innerHTML = sourceEl.innerHTML;
+        fragment.innerHTML = doc.body.innerHTML;
         // Never inject <script> tags via innerHTML: they are inert (do not run)
         // and would falsely satisfy the "already loaded" check in
         // loadScriptAsync, preventing the real scripts from ever loading.
         // Feature scripts are loaded explicitly in the loop below instead.
         fragment.querySelectorAll('script').forEach(s => s.remove());
-        // If a page has no <main>, strip its own page chrome so the dashboard
-        // header/footer are not duplicated inside the view.
-        if (sourceEl === doc.body) {
-            fragment.querySelectorAll('nav, header, footer').forEach(el => el.remove());
-        }
+        // Remove only top-level page chrome and the duplicate background layer;
+        // inner <header>/<nav> inside the content are preserved.
+        Array.from(fragment.children).forEach(child => {
+            const tag = child.tagName;
+            if (tag === 'NAV' || tag === 'HEADER' || tag === 'FOOTER' || child.classList.contains('fp-bg')) {
+                child.remove();
+            }
+        });
+        // Unwrap a nested <main> so we don't create a <main> inside <main>.
+        Array.from(fragment.querySelectorAll('main')).forEach(m => m.replaceWith(...m.childNodes));
 
         pageView.innerHTML = fragment.innerHTML;
 
