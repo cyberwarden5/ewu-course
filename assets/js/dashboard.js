@@ -37,7 +37,7 @@ function getStoredStudentName() {
         if (name && name !== 'User' && name !== 'Student') {
             return name;
         }
-    } catch (e) {}
+    } catch (e) { }
     return null;
 }
 
@@ -75,9 +75,9 @@ async function loadStudentProfileName() {
                     .trim();
 
                 if (cleanName) {
-                    try { localStorage.setItem('studentName', cleanName); } catch (e) {}
+                    try { localStorage.setItem('studentName', cleanName); } catch (e) { }
                     if (prof.StudentId) {
-                        try { localStorage.setItem('studentId', prof.StudentId); } catch (e) {}
+                        try { localStorage.setItem('studentId', prof.StudentId); } catch (e) { }
                     }
                     updateStudentIdDisplay(prof.StudentId, cleanName);
                 }
@@ -98,7 +98,7 @@ async function checkAuth() {
             return false;
         }
         if (data.userId && data.userId !== 'User' && data.userId !== 'Student') {
-            try { localStorage.setItem('studentId', data.userId); } catch (e) {}
+            try { localStorage.setItem('studentId', data.userId); } catch (e) { }
             updateStudentIdDisplay(data.userId);
         } else {
             updateStudentIdDisplay(getStoredStudentId());
@@ -130,7 +130,7 @@ async function handleLogout(event) {
         localStorage.removeItem('userId');
         sessionStorage.clear();
         sessionStorage.setItem('ewu_just_logged_out', 'true');
-    } catch (e) {}
+    } catch (e) { }
     window.location.href = 'login.html';
 }
 window.handleLogout = handleLogout;
@@ -139,24 +139,24 @@ window.handleLogout = handleLogout;
 // Dynamic feature rendering
 // ========================================
 const CARD_THEME = {
-    coral:   { accent: '#D86C5A', bg: 'linear-gradient(135deg, rgba(216,108,90,0.2) 0%, rgba(216,108,90,0.05) 100%)', border: 'rgba(216,108,90,0.35)', btn: 'linear-gradient(135deg,#D86C5A,#c5584a)', glow: 'rgba(216,108,90,0.35)' },
-    blue:    { accent: '#5a8fd8', bg: 'linear-gradient(135deg, rgba(90,143,216,0.2) 0%, rgba(90,143,216,0.05) 100%)', border: 'rgba(90,143,216,0.35)', btn: 'linear-gradient(135deg,#5a8fd8,#4075c0)', glow: 'rgba(90,143,216,0.35)' },
-    cyan:    { accent: '#06b6d4', bg: 'linear-gradient(135deg, rgba(6,182,212,0.2) 0%, rgba(6,182,212,0.05) 100%)', border: 'rgba(6,182,212,0.35)', btn: 'linear-gradient(135deg,#06b6d4,#0891b2)', glow: 'rgba(6,182,212,0.35)' },
-    violet:  { accent: '#8b5cf6', bg: 'linear-gradient(135deg, rgba(139,92,246,0.2) 0%, rgba(139,92,246,0.05) 100%)', border: 'rgba(139,92,246,0.35)', btn: 'linear-gradient(135deg,#8b5cf6,#7c3aed)', glow: 'rgba(139,92,246,0.35)' },
+    coral: { accent: '#D86C5A', bg: 'linear-gradient(135deg, rgba(216,108,90,0.2) 0%, rgba(216,108,90,0.05) 100%)', border: 'rgba(216,108,90,0.35)', btn: 'linear-gradient(135deg,#D86C5A,#c5584a)', glow: 'rgba(216,108,90,0.35)' },
+    blue: { accent: '#5a8fd8', bg: 'linear-gradient(135deg, rgba(90,143,216,0.2) 0%, rgba(90,143,216,0.05) 100%)', border: 'rgba(90,143,216,0.35)', btn: 'linear-gradient(135deg,#5a8fd8,#4075c0)', glow: 'rgba(90,143,216,0.35)' },
+    cyan: { accent: '#06b6d4', bg: 'linear-gradient(135deg, rgba(6,182,212,0.2) 0%, rgba(6,182,212,0.05) 100%)', border: 'rgba(6,182,212,0.35)', btn: 'linear-gradient(135deg,#06b6d4,#0891b2)', glow: 'rgba(6,182,212,0.35)' },
+    violet: { accent: '#8b5cf6', bg: 'linear-gradient(135deg, rgba(139,92,246,0.2) 0%, rgba(139,92,246,0.05) 100%)', border: 'rgba(139,92,246,0.35)', btn: 'linear-gradient(135deg,#8b5cf6,#7c3aed)', glow: 'rgba(139,92,246,0.35)' },
     emerald: { accent: '#10b981', bg: 'linear-gradient(135deg, rgba(16,185,129,0.2) 0%, rgba(16,185,129,0.05) 100%)', border: 'rgba(16,185,129,0.35)', btn: 'linear-gradient(135deg,#10b981,#059669)', glow: 'rgba(16,185,129,0.35)' },
-    amber:   { accent: '#f59e0b', bg: 'linear-gradient(135deg, rgba(245,158,11,0.2) 0%, rgba(245,158,11,0.05) 100%)', border: 'rgba(245,158,11,0.35)', btn: 'linear-gradient(135deg,#f59e0b,#d97706)', glow: 'rgba(245,158,11,0.35)' },
-    rose:    { accent: '#f43f5e', bg: 'linear-gradient(135deg, rgba(244,63,94,0.2) 0%, rgba(244,63,94,0.05) 100%)', border: 'rgba(244,63,94,0.35)', btn: 'linear-gradient(135deg,#f43f5e,#e11d48)', glow: 'rgba(244,63,94,0.35)' },
-    teal:    { accent: '#0d9488', bg: 'linear-gradient(135deg, rgba(13,148,136,0.2) 0%, rgba(13,148,136,0.05) 100%)', border: 'rgba(13,148,136,0.35)', btn: 'linear-gradient(135deg,#0d9488,#0f766e)', glow: 'rgba(13,148,136,0.35)' },
-    indigo:  { accent: '#6366f1', bg: 'linear-gradient(135deg, rgba(99,102,241,0.2) 0%, rgba(99,102,241,0.05) 100%)', border: 'rgba(99,102,241,0.35)', btn: 'linear-gradient(135deg,#6366f1,#4f46e5)', glow: 'rgba(99,102,241,0.35)' }
+    amber: { accent: '#f59e0b', bg: 'linear-gradient(135deg, rgba(245,158,11,0.2) 0%, rgba(245,158,11,0.05) 100%)', border: 'rgba(245,158,11,0.35)', btn: 'linear-gradient(135deg,#f59e0b,#d97706)', glow: 'rgba(245,158,11,0.35)' },
+    rose: { accent: '#f43f5e', bg: 'linear-gradient(135deg, rgba(244,63,94,0.2) 0%, rgba(244,63,94,0.05) 100%)', border: 'rgba(244,63,94,0.35)', btn: 'linear-gradient(135deg,#f43f5e,#e11d48)', glow: 'rgba(244,63,94,0.35)' },
+    teal: { accent: '#0d9488', bg: 'linear-gradient(135deg, rgba(13,148,136,0.2) 0%, rgba(13,148,136,0.05) 100%)', border: 'rgba(13,148,136,0.35)', btn: 'linear-gradient(135deg,#0d9488,#0f766e)', glow: 'rgba(13,148,136,0.35)' },
+    indigo: { accent: '#6366f1', bg: 'linear-gradient(135deg, rgba(99,102,241,0.2) 0%, rgba(99,102,241,0.05) 100%)', border: 'rgba(99,102,241,0.35)', btn: 'linear-gradient(135deg,#6366f1,#4f46e5)', glow: 'rgba(99,102,241,0.35)' }
 };
 
 const STATUS_PILL = {
-    active:      { label: 'Active',      cls: 'bg-emerald-500/15 border-emerald-500/30 text-emerald-300', dot: 'bg-emerald-400' },
-    beta:        { label: 'Beta',        cls: 'bg-sky-500/15 border-sky-500/30 text-sky-300', dot: 'bg-sky-400' },
+    active: { label: 'Active', cls: 'bg-emerald-500/15 border-emerald-500/30 text-emerald-300', dot: 'bg-emerald-400' },
+    beta: { label: 'Beta', cls: 'bg-sky-500/15 border-sky-500/30 text-sky-300', dot: 'bg-sky-400' },
     maintenance: { label: 'Maintenance', cls: 'bg-amber-500/15 border-amber-500/30 text-amber-300', dot: 'bg-amber-400' },
-    under_work:  { label: 'Under Work',  cls: 'bg-amber-500/15 border-amber-500/30 text-amber-300', dot: 'bg-amber-400' },
+    under_work: { label: 'Under Work', cls: 'bg-amber-500/15 border-amber-500/30 text-amber-300', dot: 'bg-amber-400' },
     coming_soon: { label: 'Coming Soon', cls: 'bg-violet-500/15 border-violet-500/30 text-violet-300', dot: 'bg-violet-400' },
-    off:         { label: 'Disabled',    cls: 'bg-gray-500/15 border-gray-500/30 text-gray-300', dot: 'bg-gray-400' }
+    off: { label: 'Disabled', cls: 'bg-gray-500/15 border-gray-500/30 text-gray-300', dot: 'bg-gray-400' }
 };
 
 // Feature display order + lightweight dashboard copy
@@ -167,8 +167,8 @@ const DASHBOARD_FEATURES = [
 // Local fallback registry so the dashboard still renders even if the shared
 // features.js fails to load (e.g. stale cache or blocked asset).
 const FALLBACK_FEATURES = {
-    recommended: { name: 'Recommended Courses', page: 'advise.html', color: 'coral', icon: '', description: 'Personalized course offerings from your advising routine.' },
-    department: { name: 'Department-Wise Courses', page: 'department-courses.html', color: 'blue', icon: '', description: 'Search and filter course offerings across all departments.' },
+    recommended: { name: 'Recommended Courses', page: 'advise', color: 'coral', icon: '', description: 'Personalized course offerings from your advising routine.' },
+    department: { name: 'Department-Wise Courses', page: 'department-courses', color: 'blue', icon: '', description: 'Search and filter course offerings across all departments.' },
     preadvising: { name: 'Pre-Advising', page: 'pre-advising.html', color: 'teal', icon: '', description: 'Review your pre-advised courses, total credit load, and upcoming semester offerings.' },
     degreereview: { name: 'Degree Review', page: 'degree-review.html', color: 'indigo', icon: '', description: 'Degree audit, earned credits, remaining graduation requirements and course areas.' },
     curriculum: { name: 'Curriculum', page: 'curriculum.html', color: 'amber', icon: '', description: 'Explore full academic curriculum structure, major tracks, prerequisites, and courses.' },
@@ -343,11 +343,11 @@ function loadStyleAsync(href) {
 function cleanupPreviousPage() {
     // Stop auto-refresh intervals from advise.js if active
     if (typeof window.stopAutoRefresh === 'function') {
-        try { window.stopAutoRefresh(); } catch (e) {}
+        try { window.stopAutoRefresh(); } catch (e) { }
     }
     // Stop recurring timers registered by other feature pages
     if (typeof window.stopDepartmentClock === 'function') {
-        try { window.stopDepartmentClock(); } catch (e) {}
+        try { window.stopDepartmentClock(); } catch (e) { }
     }
     // Remove page-scoped styles injected during the previous navigation
     document.querySelectorAll('style[data-subpage-style]').forEach(el => el.remove());
@@ -595,7 +595,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const cachedStatuses = JSON.parse(cachedStatusesStr);
             renderFeatureCards(cachedStatuses);
         }
-    } catch (e) {}
+    } catch (e) { }
 
     const mobileMenuBtn = document.getElementById('mobileMenuBtn');
     const mobileMenu = document.getElementById('mobileMenu');
@@ -615,7 +615,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         renderFeatureCards(statuses);
         try {
             sessionStorage.setItem('ewu_dashboard_statuses', JSON.stringify(statuses));
-        } catch (err) {}
+        } catch (err) { }
     } catch (e) {
         renderFeatureCards({});
     }
