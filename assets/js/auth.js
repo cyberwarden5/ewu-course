@@ -1,7 +1,9 @@
 // ========================================
 // Authentication JavaScript with Intelligent Retry
+// Wrapped in an IIFE to avoid leaking top-level globals.
 // ========================================
 
+(() => {
 // **IMPORTANT:** Update this to your actual Worker API domain
 const API_BASE_URL = 'https://api.aftabkabir.me';
 
@@ -197,4 +199,9 @@ document.getElementById('password')?.addEventListener('keypress', function(e) {
         }
     }
 });
+
+// Expose inline-handler functions on window
+window.togglePassword = togglePassword;
+window.showAlert = showAlert;
+})();
 

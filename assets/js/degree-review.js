@@ -432,8 +432,8 @@
     window.initDegreeReviewPage = initDegreeReviewPage;
 
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initDegreeReviewPage);
-    } else {
+        document.addEventListener('DOMContentLoaded', () => { if (!window.__EWU_AJAX_NAV__) initDegreeReviewPage(); });
+    } else if (!window.__EWU_AJAX_NAV__) {
         initDegreeReviewPage();
     }
 })();

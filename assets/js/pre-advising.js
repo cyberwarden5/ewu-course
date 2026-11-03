@@ -419,8 +419,8 @@
     window.initPreAdvisingPage = initPreAdvisingPage;
 
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initPreAdvisingPage);
-    } else {
+        document.addEventListener('DOMContentLoaded', () => { if (!window.__EWU_AJAX_NAV__) initPreAdvisingPage(); });
+    } else if (!window.__EWU_AJAX_NAV__) {
         initPreAdvisingPage();
     }
 })();

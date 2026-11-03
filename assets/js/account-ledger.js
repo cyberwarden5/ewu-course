@@ -6,8 +6,8 @@
     let transactions = [];
 
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', init);
-    } else {
+        document.addEventListener('DOMContentLoaded', () => { if (!window.__EWU_AJAX_NAV__) init(); });
+    } else if (!window.__EWU_AJAX_NAV__) {
         init();
     }
     window.initAccountLedgerPage = init;

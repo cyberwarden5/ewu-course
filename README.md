@@ -1,29 +1,207 @@
-# EWU Course Schedule Tool By AftabKabir
+# EWU Course Schedule Tool — by Aftab Kabir
 
-Welcome to the **EWU Course Schedule Tool**! This web application, developed by **Aftab Kabir** (also known online as **aftabkabir** or **aftabkabiir me**), is a streamlined, user-friendly platform designed to help students at East West University elegantly view, filter, and plan their course routines and schedules.
+A lightweight, mobile-first academic dashboard for **East West University (EWU)**
+students. It provides course advising routines, department-wise offerings,
+pre-advising, degree audit, curriculum, class schedules, a course planner,
+account ledger, grade report, and a CGPA planner.
 
-## 🎯 Purpose of the Website
-The main objective of this tool is to provide an accessible, fast, and highly responsive dashboard for checking the availability, timing, and classroom allocations of your **ewu course schedule**. It optimizes the advising process and reduces friction when students are planning their semesters, making it easy to check the **ewu faculty**, **ewu faculty list**, and the complete **ewu department faculty list**.
+> **Disclaimer:** This is an independent educational project. It has **no
+> official connection** with East West University. All logos and course data
+> belong to their respective owners. If any authority requests removal, please
+> contact `contact.aftabkabir@proton.me`.
 
-## ✨ Key Features
-- **Modern Dashboard (Main & V2)**: Choose between our classic experience and the enhanced V2 dashboard designed with a premium Glassmorphism UI.
-- **Low-End Device & Mobile Performance**: Optimized CSS hardware acceleration (`transform: translateZ(0)`), reduced motion fallbacks (`@media (prefers-reduced-motion)`), and lightweight blur calculations for smooth, lag-free performance on budget smartphones and devices.
-- **Smart Multi-Token & Normalized Search**: Advanced search capabilities across V1 and V2 dashboards supporting space and hyphen normalization (e.g., searching `CSE 101`, `CSE-101`, or `CSE101` produces identical results) along with multi-keyword matching.
-- **Streamlined V2 PDF Export**: Export your course routine to a beautifully aligned PDF featuring a ultra-compact 6mm header/footer layout to maximize data rows per page.
-- **Real-Time Notice System**: Instant deployment of Whole Page Banners and Upper Notice Banners with live edge synchronization, toast notifications, and dismiss capabilities.
-- **Auto-Refresh System**: A robust, built-in auto-refresh feature allowing students to automatically poll for the latest course seat capacities without manually reloading the page. Includes custom delay intervals (5–300s) and state persistence.
-- **Secure Sessions**: Directly hooks into portal authentication to fetch individual advisements and course routines securely.
+---
 
-## 📖 Basic Usage Instructions
-1. Navigate to the homepage.
-2. Click the **"Explore V2 version"** or standard **"Login"** prompt based on your preferred browsing experience.
-3. Use your standard student credentials (Student ID format: `YYYY-S-XX-XXX`) to authenticate.
-4. Once logged in, use the global search bar or dropdown filters to narrow down your desired **ewu course** or search through the **ewu faculty list**.
-5. Watch the dashboard update seamlessly. Select the **Available Only** toggle to only see classes with remaining seat capacity. 
-6. (Optional) Toggle **Auto Refresh** and use the settings gear to specify a refresh interval (5-300 seconds).
-7. Choose the **Export PDF** action if you wish to save your plan locally.
-8. Don't forget to **Logout** when finished!
+## Architecture
 
-## ⚠️ Disclaimer
-**This website is created and maintained entirely for educational purposes.** 
-It is an independent student initiative by **Aftab Kabir** and has **no official connection** with East West University (EWU). All logos, course structures, and related properties represent the university strictly for internal student utility. If any university authority wishes for the takedown, modification, or removal of this application, please reach out via the provided contact coordinates on the footer, and it will be actioned immediately.
+The site is a **static frontend** (HTML/CSS/vanilla JS) that talks to a
+**Cloudflare Worker** acting as an authenticated proxy to the EWU student
+portal. No frontend build step is required.
+
+```
+aftabkabir.me/
+├─ index.html                 Landing page
+├─ login.html                 Portal login
+├─ dashboard.html             Authenticated hub (AJAX navigation shell)
+├─ advise.html                Recommended courses (advise.js — legacy IIFE)
+├─ department-courses.html    Department-wise offerings
+├─ pre-advising.html          Pre-advising record
+├─ degree-review.html         Degree audit
+├─ curriculum.html            Curriculum explorer
+├─ class-schedule.html        Weekly timetable + routine export
+├─ course-planner.html        Multi-combination planner
+├─ account-ledger.html        Tuition ledger
+├─ grade-report.html          Transcript + GPA/CGPA
+├─ cgpa-planner.html          CGPA projection
+├─ profile.html               Student profile
+├─ documentation.html         Docs
+├─ learn-more.html            Marketing page
+├─ assets/
+│  ├─ css/styles.css          Global base styles + shared header/responsive rules
+│  ├─ css/features.css        Feature-page component styles
+│  └─ js/
+│     ├─ features.js          Shared registry/helpers (feature status, auth,
+│     │                       formatting, grade parsing). IIFE → window.*
+│     ├─ dashboard.js         Auth + dynamic cards + AJAX router
+│     ├─ main.js              Mobile menu helper (static pages)
+│     ├─ system-metrics.js    Site status closure/notice + analytics
+│     ├─ retry-handler.js     Retry widget used by login/advise/department
+│     └─ <page>.js            One initializer per feature page
+├─ worker.js                  Cloudflare Worker (API proxy + admin endpoints)
+├─ sui7/                      Admin panel (static SPA)
+└─ V2/                        Legacy alternate UI
+```
+
+### Shared helpers (`assets/js/features.js`)
+Wrapped in an IIFE and exposed on `window` so it can coexist with legacy page
+scripts:
+
+- `window.API_BASE_URL` — single source of truth for the Worker origin.
+- `window.FEATURES`, `window.FEATURE_STATUS_META`, `window.fetchFeatureStatuses()`
+  — feature gating driven by `GET /api/status`.
+- `window.gateFeaturePage(key)`, `window.requireAuth()`, `window.performLogout()`
+- Formatting/parsing helpers (`escapeHtml`, `parsePortalSlot`, `timeToMinutes`,
+  `parseGradeReportHtml`, …).
+
+---
+
+## Navigation & AJAX routing (dashboard)
+
+`dashboard.html` is a persistent shell: it keeps its own header/footer and swaps
+the page body into `#dashboardPageView` without a full reload.
+
+`dashboard.js` implements the router (`navigateToPage` / `restoreDashboardHome`):
+
+1. Fetches the target HTML (cached in memory per URL) and parses it with
+   `DOMParser`.
+2. Extracts the `<main>` content (or the body for pages without `<main>`) into a
+   detached fragment.
+3. **Removes all `<script>` tags from the fragment** — scripts injected via
+   `innerHTML` are inert and would otherwise make the loader think the real
+   scripts were already present.
+4. Copies page-scoped `<style>` blocks (e.g. print styles), tagged for cleanup.
+5. Loads the page's external scripts in order, skipping the shell scripts
+   (`tailwind`, `system-metrics.js`, `dashboard.js`, `main.js`).
+6. Calls the page initializer explicitly (`window.initXxxPage()`).
+
+### Initialization contract for every page script
+
+Each feature script exposes a `window.initXxxPage` function and guards its own
+auto-init with `window.__EWU_AJAX_NAV__`:
+
+```js
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+        if (!window.__EWU_AJAX_NAV__) initPage();
+    });
+} else if (!window.__EWU_AJAX_NAV__) {
+    initPage();
+}
+window.initXxxPage = initPage;
+```
+
+- **Direct load / refresh:** the script initializes itself once.
+- **AJAX navigation:** the router sets `__EWU_AJAX_NAV__ = true` while loading
+  scripts (so they don't self-init) and then calls the initializer once. This
+  guarantees exactly one initialization and one API request per navigation.
+- **Revisiting a page:** the script is already loaded, so the router still calls
+  the initializer, which refetches fresh data.
+
+Legacy scripts (`advise.js`, `department-courses.js`, `auth.js`) are wrapped in
+IIFEs and publish their inline-handler functions (`handleLogout`, `loadCourses`,
+`togglePassword`, …) on `window`. This prevents top-level `const` collisions with
+`dashboard.js` that previously threw `SyntaxError: Identifier 'API_BASE_URL' has
+already been declared` and silently blocked all API calls.
+
+`cleanupPreviousPage()` stops page timers (`stopAutoRefresh`,
+`stopDepartmentClock`) and removes injected page styles when leaving a view.
+
+---
+
+## API integration
+
+- Base URL: `https://api.aftabkabir.me` (`window.API_BASE_URL`).
+- All requests use `credentials: 'include'` so the Worker session cookie is sent.
+- Feature pages retry transient failures via `fetchJsonWithRetry()` and treat
+  `401` as a redirect to `login.html`.
+
+Endpoints consumed by the frontend:
+
+| Endpoint | Purpose |
+|---|---|
+| `GET /api/status` | Site/feature status, ETag-cached (drives cards & gates) |
+| `GET /api/auth/status`, `POST /api/auth/login`, `POST /api/auth/logout` | Session |
+| `GET /api/profile`, `GET /api/profile/photo` | Student profile & photo |
+| `GET /api/semesters` | Semester list |
+| `GET /api/preadvising` | Pre-advising courses |
+| `GET /api/degree-review` | Degree audit |
+| `GET /api/curriculum` | Curriculum catalog |
+| `GET /api/schedule/semesters`, `GET /api/schedule` | Class schedule |
+| `GET /api/routine` | Advising routine |
+| `GET /api/ledger` | Account ledger |
+| `GET /api/grades` | Grade report |
+| `GET /api/courses`, `GET /api/options`, `GET/POST /api/department-courses` | Course offerings |
+| `GET /api/academic-calendar` | Holidays (ICS export) |
+| `POST /api/analytics` | Anonymous usage analytics |
+
+---
+
+## Cloudflare Worker (`worker.js`)
+
+A single-module Worker (`export default { fetch }`) that proxies the portal.
+
+### Routes
+Student routes: `/api/auth/*`, `/api/profile`, `/api/profile/photo`,
+`/api/semesters`, `/api/preadvising`, `/api/degree-review`, `/api/curriculum`,
+`/api/schedule(/semesters)`, `/api/routine`, `/api/ledger`, `/api/grades`,
+`/api/courses`, `/api/department-courses`, `/api/options`, `/api/academic-calendar`,
+`/api/status`, `/api/analytics`.
+
+Admin routes (Bearer token): `/api/admin/login`, `/dashboard`, `/config`,
+`/features`, `/ip`, `/block-userid`, `/clear-logs`, `/portal-ping`.
+
+### CORS & cookies
+- Allowed origins: `https://aftabkabir.me`, `https://www.aftabkabir.me`, plus
+  localhost/127.0.0.1 for development. The request `Origin` is reflected (never
+  `*`) so `Access-Control-Allow-Credentials: true` works with `credentials:
+  include`. Responses send `Vary: Origin`.
+- The portal `ASP.NET_SessionId` is stored as a host-only
+  `Secure; HttpOnly; SameSite=None` cookie on the API host and forwarded to the
+  portal on each request.
+
+### Required bindings / secrets (configure in Cloudflare, not in git)
+- KV namespace binding: `ADMIN_KV`
+- Vars/secrets: `ADMIN_USERNAME`, `ADMIN_PASSWORD_HASH` (SHA-256 hex)
+
+### Local development
+The frontend is plain static files, so serve the project root with any static
+server (e.g. `python -m http.server`) and open `index.html`. The Worker can be
+run separately with Wrangler; **this repository does not deploy automatically**.
+
+---
+
+## Responsive behaviour
+
+- The top navigation is **pinned to the viewport on every page except the index
+  hero** (`position: sticky`, with `body > header` made sticky when pages wrap
+  the nav in a `<header>`). Positioning lives in the shared `styles.css` so it
+  does not depend on the Tailwind CDN.
+- `overflow-x` on `body` uses `clip` (with a `hidden` fallback) so genuine
+  horizontal overflow is contained without breaking sticky headers.
+- On phones the header row wraps instead of clipping controls; wide tables live
+  inside horizontal-scroll wrappers; fixed widgets shrink to the viewport.
+- Layouts are optimised for low-end devices (hardware-accelerated transforms,
+  `prefers-reduced-motion` fallbacks, light blur usage).
+
+---
+
+## Basic usage
+1. Open the site and log in with your EWU student credentials
+   (`YYYY-S-XX-XXX`).
+2. The dashboard lists available tools based on the administrator-controlled
+   feature status.
+3. Open any tool — data loads automatically without a manual refresh.
+4. Use each page's export (PDF/TXT/PNG/ICS) and refresh controls as needed.
+
+## License / contact
+Educational project by **Aftab Kabir** — `contact.aftabkabir@proton.me`.

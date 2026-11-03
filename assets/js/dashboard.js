@@ -345,6 +345,12 @@ function cleanupPreviousPage() {
     if (typeof window.stopAutoRefresh === 'function') {
         try { window.stopAutoRefresh(); } catch (e) {}
     }
+    // Stop recurring timers registered by other feature pages
+    if (typeof window.stopDepartmentClock === 'function') {
+        try { window.stopDepartmentClock(); } catch (e) {}
+    }
+    // Remove page-scoped styles injected during the previous navigation
+    document.querySelectorAll('style[data-subpage-style]').forEach(el => el.remove());
 }
 
 function invokePageLifecycle(url) {
@@ -422,21 +428,48 @@ async function navigateToPage(url, pushState = true) {
             }
         }
 
-        const mainEl = doc.querySelector('main');
-        const pageContent = mainEl ? mainEl.innerHTML : doc.body.innerHTML;
+        const sourceEl = doc.querySelector('main') || doc.body;
+        const fragment = document.createElement('div');
+        fragment.innerHTML = sourceEl.innerHTML;
+        // Never inject <script> tags via innerHTML: they are inert (do not run)
+        // and would falsely satisfy the "already loaded" check in
+        // loadScriptAsync, preventing the real scripts from ever loading.
+        // Feature scripts are loaded explicitly in the loop below instead.
+        fragment.querySelectorAll('script').forEach(s => s.remove());
+        // If a page has no <main>, strip its own page chrome so the dashboard
+        // header/footer are not duplicated inside the view.
+        if (sourceEl === doc.body) {
+            fragment.querySelectorAll('nav, header, footer').forEach(el => el.remove());
+        }
 
-        pageView.innerHTML = pageContent;
+        pageView.innerHTML = fragment.innerHTML;
 
-        // Dynamically load vendor & feature scripts needed
+        // Copy page-scoped <style> blocks (e.g. print styles) so behaviour on
+        // AJAX-opened pages matches a full page load. Tagged for cleanup.
+        Array.from(doc.querySelectorAll('style')).forEach(st => {
+            const clone = document.createElement('style');
+            clone.setAttribute('data-subpage-style', 'true');
+            clone.textContent = st.textContent;
+            document.head.appendChild(clone);
+        });
+
+        // Dynamically load vendor & feature scripts needed. While these execute,
+        // set a flag so page scripts skip their own auto-init (the router calls
+        // the page initializer explicitly to avoid duplicate requests).
         const scripts = Array.from(doc.querySelectorAll('script'));
-        for (const s of scripts) {
-            const src = s.getAttribute('src');
-            if (src) {
-                if (src.includes('tailwind') || src.includes('styles.css') || src.includes('dashboard.js') || src.includes('system-metrics.js')) {
-                    continue;
+        window.__EWU_AJAX_NAV__ = true;
+        try {
+            for (const s of scripts) {
+                const src = s.getAttribute('src');
+                if (src) {
+                    if (src.includes('tailwind') || src.includes('styles.css') || src.includes('dashboard.js') || src.includes('system-metrics.js') || src.includes('main.js')) {
+                        continue;
+                    }
+                    await loadScriptAsync(src);
                 }
-                await loadScriptAsync(src);
             }
+        } finally {
+            window.__EWU_AJAX_NAV__ = false;
         }
 
         if (loadingView) loadingView.classList.add('hidden');

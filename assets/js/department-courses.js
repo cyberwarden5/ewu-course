@@ -1,8 +1,11 @@
 // ========================================
 // Department-Wise Course Fetch Logic
 // Main Website Integration with Intelligent Retry
+// Wrapped in an IIFE to avoid top-level global collisions when the script is
+// injected dynamically by the dashboard AJAX router (see dashboard.js).
 // ========================================
 
+(() => {
 const API_BASE_URL = 'https://api.aftabkabir.me';
 const retryHandler = new RetryHandler();
 
@@ -165,6 +168,15 @@ async function handleLogout(event) {
     window.location.href = 'login.html';
 }
 window.handleLogout = handleLogout;
+
+// Recurring Bangladesh-time clock; tracked so navigation can clear it.
+function stopDepartmentClock() {
+    if (window.__ewuDeptClock) {
+        clearInterval(window.__ewuDeptClock);
+        window.__ewuDeptClock = null;
+    }
+}
+window.stopDepartmentClock = stopDepartmentClock;
 
 // Load department and semester options
 async function loadInitialOptions() {
@@ -812,8 +824,9 @@ function initDepartmentCoursesPage() {
     if (yearEl) yearEl.textContent = new Date().getFullYear();
 
     // Clock
+    stopDepartmentClock();
     updateBDTime();
-    setInterval(updateBDTime, 1000);
+    window.__ewuDeptClock = setInterval(updateBDTime, 1000);
 
     // Mobile menu toggle
     const mobBtn = document.getElementById('mobileMenuBtn');
@@ -964,8 +977,11 @@ function initDepartmentCoursesPage() {
 }
 
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initDepartmentCoursesPage);
-} else {
+    document.addEventListener('DOMContentLoaded', () => { if (!window.__EWU_AJAX_NAV__) initDepartmentCoursesPage(); });
+} else if (!window.__EWU_AJAX_NAV__) {
     initDepartmentCoursesPage();
 }
 window.initDepartmentCoursesPage = initDepartmentCoursesPage;
+window.exportCoursesToPdf = exportCoursesToPdf;
+window.exportCoursesToTxt = exportCoursesToTxt;
+})();

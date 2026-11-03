@@ -485,8 +485,8 @@
     window.initCurriculumPage = initCurriculumPage;
 
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initCurriculumPage);
-    } else {
+        document.addEventListener('DOMContentLoaded', () => { if (!window.__EWU_AJAX_NAV__) initCurriculumPage(); });
+    } else if (!window.__EWU_AJAX_NAV__) {
         initCurriculumPage();
     }
 })();

@@ -265,8 +265,8 @@
     window.initProfilePage = initProfilePage;
 
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initProfilePage);
-    } else {
+        document.addEventListener('DOMContentLoaded', () => { if (!window.__EWU_AJAX_NAV__) initProfilePage(); });
+    } else if (!window.__EWU_AJAX_NAV__) {
         initProfilePage();
     }
 })();

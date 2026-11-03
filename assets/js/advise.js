@@ -1,8 +1,11 @@
 // ========================================
 // Advise Page JavaScript - Enhanced Version
 // Premium UI with Advanced Search & PDF Export
+// Wrapped in an IIFE to avoid top-level global collisions when the script is
+// injected dynamically by the dashboard AJAX router (see dashboard.js).
 // ========================================
 
+(() => {
 // **IMPORTANT:** Update this to your actual Worker API domain
 const API_BASE_URL = 'https://api.aftabkabir.me';
 
@@ -1005,11 +1008,16 @@ async function initAdvisePage() {
 }
 
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initAdvisePage);
-} else {
+    document.addEventListener('DOMContentLoaded', () => { if (!window.__EWU_AJAX_NAV__) initAdvisePage(); });
+} else if (!window.__EWU_AJAX_NAV__) {
     initAdvisePage();
 }
 window.initAdvisePage = initAdvisePage;
+window.loadCourses = loadCourses;
+window.selectCourseFilter = selectCourseFilter;
+window.selectSearchSuggestion = selectSearchSuggestion;
+window.exportToPDF = exportToPDF;
+window.handleLogout = handleLogout;
 
 // Initialize sort select
 function initializeSortSelect() {
@@ -1121,3 +1129,5 @@ function stopAutoRefresh() {
 window.stopAutoRefresh = stopAutoRefresh;
 
 // initAutoRefresh is initialized inside the main DOMContentLoaded above
+
+})();

@@ -46,7 +46,10 @@ body {
     background-attachment: fixed;
     min-height: 100vh;
     color: #f3f4f6;
+    /* `clip` avoids creating a scroll container (which can break sticky
+       headers), while the hidden fallback keeps older browsers safe. */
     overflow-x: hidden;
+    overflow-x: clip;
 }
 
 /* Modern Sleek Scrollbars */
@@ -1017,6 +1020,47 @@ select.glass-select option,
     40% { transform: scale(1); opacity: 1; }
 }
 
+/* ===== APP HEADER =====
+   The top navigation must stay pinned to the viewport on every page except the
+   index hero. Positioning is declared here (shared by all pages) so headers
+   remain sticky even if the Tailwind CDN is unavailable or blocked. */
+.nav-glass,
+.fp-nav {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+}
+
+/* Some pages wrap the nav in a <header>. Without this, the sticky nav can only
+   travel within the header's own (single-row) box and scrolls away. Making the
+   top-level header sticky keeps the whole bar pinned to the viewport. */
+body > header {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+}
+
+.fp-nav {
+    background: rgba(8, 8, 12, 0.82);
+    -webkit-backdrop-filter: blur(24px);
+    backdrop-filter: blur(24px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+/* advise.html uses the premium glass nav */
+nav.glass-premium {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+}
+
+/* Solid fallback when backdrop-filter is unsupported */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .nav-glass,
+    .fp-nav,
+    nav.glass-premium { background: rgba(8, 8, 12, 0.97); }
+}
+
 /* ===== RESPONSIVE MEDIA QUERIES ===== */
 @media (max-width: 1024px) {
     .table-scroll-container { max-height: calc(100vh - 350px); }
@@ -1060,6 +1104,47 @@ select.glass-select option,
     .btn-learn-more,
     .btn-login {
         width: 100%;
+    }
+
+    /* Header: allow controls to wrap instead of being clipped on phones */
+    .fp-nav > div,
+    .nav-glass > div,
+    nav.glass-premium > div {
+        padding-left: 0.75rem;
+        padding-right: 0.75rem;
+    }
+
+    .fp-nav .max-w-7xl > div,
+    .nav-glass .max-w-7xl > div,
+    nav.glass-premium .max-w-7xl > div {
+        flex-wrap: wrap;
+        row-gap: 0.5rem;
+    }
+
+    .fp-nav .max-w-7xl > div > *,
+    .nav-glass .max-w-7xl > div > * {
+        min-width: 0;
+    }
+
+    .fp-nav button,
+    .nav-glass button,
+    nav.glass-premium button {
+        flex-shrink: 0;
+    }
+}
+
+@media (max-width: 480px) {
+    /* Fixed-width retry widget must never exceed the viewport */
+    .retry-widget {
+        width: auto !important;
+        left: 1rem !important;
+        right: 1rem !important;
+    }
+
+    /* Hero CTAs sized with inline min-width can overflow very narrow screens */
+    .btn-get-started,
+    .btn-learn-more {
+        min-width: 0 !important;
     }
 }
 

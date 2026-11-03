@@ -111,17 +111,18 @@ function getCorsHeaders(request) {
     /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)
   );
 
+  // Always vary on Origin so shared caches never mix reflected-origin responses.
+  const headers = { 'Vary': 'Origin' };
+
   if (isAllowed) {
-    return {
-      'Access-Control-Allow-Origin': origin,
-      'Access-Control-Allow-Credentials': 'true',
-      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Cookie, Authorization, X-Requested-With',
-      'Access-Control-Max-Age': '86400',
-    };
+    headers['Access-Control-Allow-Origin'] = origin;
+    headers['Access-Control-Allow-Credentials'] = 'true';
+    headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS';
+    headers['Access-Control-Allow-Headers'] = 'Content-Type, Cookie, Authorization, X-Requested-With';
+    headers['Access-Control-Max-Age'] = '86400';
   }
 
-  return {};
+  return headers;
 }
 
 // Helper: Create JSON response with CORS
@@ -1059,7 +1060,7 @@ async function handleGetProfilePhoto(request) {
   }
 
   if (!studentId && !photoPath) {
-    return new Response('Photo URL or Student ID parameter required', { status: 400 });
+    return new Response('Photo URL or Student ID parameter required', { status: 400, headers: getCorsHeaders(request) });
   }
 
   try {
@@ -1095,7 +1096,7 @@ async function handleGetProfilePhoto(request) {
     }
 
     if (!response || !response.ok) {
-      return new Response('Photo not found', { status: response ? response.status : 404 });
+      return new Response('Photo not found', { status: response ? response.status : 404, headers: getCorsHeaders(request) });
     }
 
     const contentType = response.headers.get('Content-Type') || 'image/jpeg';
@@ -1110,7 +1111,7 @@ async function handleGetProfilePhoto(request) {
       }
     });
   } catch (error) {
-    return new Response('Failed to fetch photo', { status: 500 });
+    return new Response('Failed to fetch photo', { status: 500, headers: getCorsHeaders(request) });
   }
 }
 
@@ -1734,6 +1735,7 @@ async function recordAdminAudit(env, request, action, target, details) {
 }
 
 async function handlePortalPing(request, env) {
+  if (!(await verifyAdminAuth(request, env))) return jsonResponse({ error: 'Unauthorized' }, 401, request);
   const startTime = Date.now();
   try {
     const controller = new AbortController();
