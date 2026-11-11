@@ -10,8 +10,8 @@
 // ===== CONFIGURATION =====
 const CONFIG = {
     ALLOWED_ORIGINS: [
-        'https://aftabkabir.me',
-        'https://www.aftabkabir.me'
+        'https://aftabx.tech',
+        'https://www.aftabx.tech'
     ],
     PORTAL_BASE_URL: 'https://portal.ewubd.edu',
     SESSION_COOKIE_NAME: 'ASP.NET_SessionId',
@@ -481,7 +481,7 @@ async function logV2Event(request, type, details = {}) {
     
     // Always forward telemetry to central analytics endpoint
     try {
-        fetch('https://api.aftabkabir.me/api/analytics', {
+        fetch('https://api.aftabx.tech/api/analytics', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

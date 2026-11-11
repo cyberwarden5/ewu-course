@@ -8,8 +8,8 @@ const PORTAL_API_URL = 'https://portal.ewubd.edu/api/Advising/GetAllRoutine';
 
 // **CONFIGURATION**: Allowed origins for CORS
 const ALLOWED_ORIGINS = [
-  'https://aftabkabir.me',
-  'https://www.aftabkabir.me'
+  'https://aftabx.tech',
+  'https://www.aftabx.tech'
 ];
 
 // **CONFIGURATION**: Feature registry defaults (admin can override per-feature via KV)
@@ -356,7 +356,7 @@ async function handleLogin(request, env) {
       }
 
       // Set cookie on the browser with secure attributes
-      // **IMPORTANT**: Cookie must be set on api.aftabkabir.me domain
+      // **IMPORTANT**: Cookie must be set on api.aftabx.tech domain
       const cookieHeader = `ASP.NET_SessionId=${loginResult.sessionId}; Path=/; Secure; HttpOnly; SameSite=None; Max-Age=3600`;
 
       return new Response(JSON.stringify({
