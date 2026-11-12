@@ -47,12 +47,13 @@ aftabx.tech/
 │     ├─ system-metrics.js    Site status closure/notice + analytics
 │     ├─ retry-handler.js     Retry widget used by login/advise/department
 │     └─ <page>.js            One initializer per feature page
-├─ worker.js                  Cloudflare Worker (API proxy + admin endpoints)
+├─ worker.js                  Cloudflare Worker V1 (API proxy + admin endpoints)
+├─ SETUP.md                   Full Cloudflare Pages, DNS, KV & Workers setup guide
 ├─ .htaccess                  Apache clean-URL rewrites + cache headers
 ├─ _redirects                 Cloudflare Pages/Netlify .html -> clean redirects
 ├─ _headers                   Cloudflare Pages cache/security headers
 ├─ sui7/                      Admin panel (static SPA)
-└─ V2/                        Legacy alternate UI
+└─ V2/                        Legacy alternate UI + workerV2.js (V2 API proxy)
 ```
 
 ### Clean URLs
@@ -166,9 +167,10 @@ Endpoints consumed by the frontend:
 
 ---
 
-## Cloudflare Worker (`worker.js`)
+## Cloudflare Workers (`worker.js` & `V2/workerV2.js`)
 
-A single-module Worker (`export default { fetch }`) that proxies the portal.
+- **`api-proxy` (`worker.js`)**: ES Module Worker (`export default { fetch }`) routed on `https://api.aftabx.tech/api/*` that proxies the portal and serves SUI7 admin endpoints.
+- **`api-proxy-v2` (`V2/workerV2.js`)**: Service Worker routed on `https://api.aftabx.tech/V2/api/*` for the legacy V2 UI.
 
 ### Routes
 Student routes: `/api/auth/*`, `/api/profile`, `/api/profile/photo`,
@@ -193,10 +195,10 @@ Admin routes (Bearer token): `/api/admin/login`, `/dashboard`, `/config`,
 - KV namespace binding: `ADMIN_KV`
 - Vars/secrets: `ADMIN_USERNAME`, `ADMIN_PASSWORD_HASH` (SHA-256 hex)
 
-### Local development
-The frontend is plain static files, so serve the project root with any static
-server (e.g. `python -m http.server`) and open `index.html`. The Worker can be
-run separately with Wrangler; **this repository does not deploy automatically**.
+### Deployment & Local development
+The static frontend is deployed via **Cloudflare Pages** (`https://aftabx.tech/`) connected to `cyberwarden5/ewu-course`, while the Workers and `ADMIN_KV` are deployed via Cloudflare Workers / Wrangler (see [SETUP.md](SETUP.md) for the complete setup guide).
+
+For local frontend testing, serve the project root with any static server (e.g. `python -m http.server`) and open `index.html`. Workers can be tested separately with `npx wrangler dev`.
 
 ---
 
@@ -210,6 +212,9 @@ run separately with Wrangler; **this repository does not deploy automatically**.
   horizontal overflow is contained without breaking sticky headers.
 - On phones the header row wraps instead of clipping controls; wide tables live
   inside horizontal-scroll wrappers; fixed widgets shrink to the viewport.
+- On mobile (`< 768px`), the dashboard switches active feature cards to a compact
+  2-column tile grid with stretched card links so all active tools fit on a
+  single screen without scrolling (desktop `md:`+ cards remain unchanged).
 - Layouts are optimised for low-end devices (hardware-accelerated transforms,
   `prefers-reduced-motion` fallbacks, light blur usage).
 
