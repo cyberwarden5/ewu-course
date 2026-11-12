@@ -99,6 +99,19 @@ function bindLoginEvents() {
     const form = document.getElementById('loginForm');
     if (!form) return;
 
+    const toggleBtn = document.getElementById('togglePasswordBtn');
+    const passInput = document.getElementById('password');
+    const toggleIcon = document.getElementById('togglePasswordIcon');
+    if (toggleBtn && passInput) {
+        toggleBtn.addEventListener('click', () => {
+            const show = passInput.type === 'password';
+            passInput.type = show ? 'text' : 'password';
+            if (toggleIcon) {
+                toggleIcon.className = show ? 'ph ph-eye-slash text-lg' : 'ph ph-eye text-lg';
+            }
+        });
+    }
+
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
         const btn = document.getElementById('loginBtn');
@@ -110,8 +123,8 @@ function bindLoginEvents() {
         btn.disabled = true;
         btn.classList.add('opacity-80', 'cursor-not-allowed');
 
-        const user = document.getElementById('username').value;
-        const pass = document.getElementById('password').value;
+        const user = document.getElementById('username').value.trim();
+        const pass = document.getElementById('password').value.trim();
 
         try {
             const res = await fetch(`${API_URL}/admin/login`, {
