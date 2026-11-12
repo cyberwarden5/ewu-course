@@ -4,7 +4,7 @@
 
 (function () {
     // Determine the API URL based on where the app is hosted
-    const API_URL = 'https://api.aftabkabir.me/api';
+    const API_URL = 'https://api.aftabx.tech/api';
 
     function injectScreen(type, config = {}) {
         let contentHtml = '', bgGradient = '', themeGlow = '';

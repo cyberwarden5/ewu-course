@@ -640,7 +640,7 @@
                 s.days.forEach(dayName => {
                     const occ = firstOccurrence(dayName, s.startMin);
                     const endOcc = new Date(occ.getTime() + (s.endMin - s.startMin) * 60000);
-                    const uid = `ewu-${course.courseCode.replace(/[^a-zA-Z0-9]/g, '')}-${course.section}-${ci}-${si}-${dayName}@aftabkabir.me`;
+                    const uid = `ewu-${course.courseCode.replace(/[^a-zA-Z0-9]/g, '')}-${course.section}-${ci}-${si}-${dayName}@aftabx.tech`;
 
                     // Generate EXDATE for every holiday occurrence
                     const exDates = [];

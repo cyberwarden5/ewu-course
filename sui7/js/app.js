@@ -2,7 +2,7 @@
 // SUI7 Admin Command Center - Core Engine
 // ==========================================
 
-const API_URL = 'https://api.aftabkabir.me/api';
+const API_URL = 'https://api.aftabx.tech/api';
 let trafficChartInstance = null;
 let overviewHourlyChartInstance = null;
 let portalPingInterval = null;

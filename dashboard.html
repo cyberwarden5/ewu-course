@@ -11,13 +11,13 @@
     <meta name="keywords" content="EWU Dashboard, EWU course fetching, East West University, course advising, department courses, faculty list, seat availability, EWU student portal">
     <meta name="author" content="Aftab Kabir">
     <meta name="robots" content="index, follow">
-    <link rel="canonical" href="https://aftabkabir.me/dashboard">
+    <link rel="canonical" href="https://aftabx.tech/dashboard">
 
     <!-- Open Graph for Social Media -->
     <meta property="og:title" content="Academic Dashboard | EWU Course Fetching">
     <meta property="og:description" content="Central academic dashboard for East West University students. Access advising routines and department-wise course offerings.">
     <meta property="og:type" content="website">
-    <meta property="og:url" content="https://aftabkabir.me/dashboard">
+    <meta property="og:url" content="https://aftabx.tech/dashboard">
 
     <!-- Twitter Cards -->
     <meta name="twitter:card" content="summary">
@@ -301,6 +301,95 @@
             from { opacity: 0; transform: translateY(12px); }
             to { opacity: 1; transform: translateY(0); }
         }
+
+        /* Dashboard Feature Cards - Desktop default + Compact Single-Screen Mobile Layout */
+        .feature-tile-card {
+            border-radius: 20px;
+        }
+        .feature-tile-bar {
+            height: 3px;
+        }
+        .feature-tile-icon {
+            width: 52px;
+            height: 52px;
+            border-radius: 14px;
+        }
+        .feature-tile-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            padding: 13px 20px;
+            font-size: 0.925rem;
+            font-weight: 600;
+            border-radius: 12px;
+        }
+        .feature-locked-card {
+            min-height: 190px;
+            border-radius: 18px;
+        }
+        .feature-locked-icon {
+            width: 46px;
+            height: 46px;
+            border-radius: 12px;
+        }
+
+        @media (max-width: 767px) {
+            .feature-tile-card {
+                border-radius: 14px;
+                min-height: 76px;
+                cursor: pointer;
+                transition: transform 0.15s ease, border-color 0.2s ease;
+            }
+            .feature-tile-card:active {
+                transform: scale(0.97);
+            }
+            .feature-tile-bar {
+                height: 2.5px;
+            }
+            .feature-tile-icon {
+                width: 30px;
+                height: 30px;
+                border-radius: 9px;
+            }
+            .feature-tile-icon svg {
+                width: 15px;
+                height: 15px;
+            }
+            .feature-tile-footer {
+                position: static;
+                padding: 0 !important;
+                margin: 0 !important;
+                height: 0;
+                overflow: visible;
+            }
+            .feature-tile-btn {
+                position: absolute;
+                inset: 0;
+                width: 100%;
+                height: 100%;
+                padding: 0;
+                background: transparent !important;
+                box-shadow: none !important;
+                border-radius: 14px;
+                opacity: 0;
+                z-index: 2;
+            }
+            .feature-locked-card {
+                min-height: 76px;
+                border-radius: 14px;
+            }
+            .feature-locked-icon {
+                width: 30px;
+                height: 30px;
+                border-radius: 9px;
+            }
+            .feature-locked-icon svg {
+                width: 15px;
+                height: 15px;
+            }
+        }
     </style>
 </head>
 
@@ -311,7 +400,7 @@
     <!-- Main Navigation Header -->
     <header class="w-full">
         <nav class="nav-glass sticky top-0 z-50">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5">
+            <div class="max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 py-2.5 md:py-3.5">
                 <div class="flex justify-between items-center">
                     <!-- Brand -->
                     <a href="dashboard" class="flex items-center gap-3 hover:opacity-90 transition-opacity" style="text-decoration: none;">
@@ -379,35 +468,35 @@
     </header>
 
     <!-- Main Content Container -->
-    <main class="flex-grow w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
+    <main class="flex-grow w-full max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 py-3 md:py-10">
         <!-- Dashboard Home View Container (Preserved in memory during AJAX navigation) -->
         <div id="dashboardHomeView">
         <!-- Hero Header -->
-        <div class="mb-8 sm:mb-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-white/[0.08] pb-6">
+        <div class="mb-3 md:mb-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 md:gap-4 border-b border-white/[0.08] pb-2.5 md:pb-6">
             <div class="fade-in">
-                <div class="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-white/[0.04] border border-white/[0.06] text-[11px] font-mono text-gray-400 mb-2">
+                <div class="inline-flex items-center gap-2 px-2 py-0.5 md:px-2.5 md:py-1 rounded-md bg-white/[0.04] border border-white/[0.06] text-[10px] md:text-[11px] font-mono text-gray-400 mb-1 md:mb-2">
                     <span class="w-1.5 h-1.5 rounded-full bg-[#D86C5A]"></span>
                     East West University Advising System
                 </div>
-                <h1 class="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white tracking-tight">
+                <h1 class="text-xl md:text-3xl lg:text-4xl font-extrabold text-white tracking-tight">
                     Academic Dashboard
                 </h1>
-                <p class="text-gray-400 text-xs sm:text-sm mt-1.5 max-w-2xl">
+                <p class="hidden md:block text-gray-400 text-xs sm:text-sm mt-1.5 max-w-2xl">
                     Select a tool below to view your personalized advising routine or search course offerings across all academic departments.
                 </p>
             </div>
         </div>
 
         <!-- Section 1: Active Features -->
-        <section class="mb-10 sm:mb-12" id="activeSection">
-            <div class="flex items-center justify-between mb-5">
-                <div class="flex items-center gap-2.5">
-                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.6)]"></span>
-                    <h2 class="text-lg sm:text-xl font-bold text-white tracking-tight">Available Features</h2>
+        <section class="mb-4 md:mb-12" id="activeSection">
+            <div class="flex items-center justify-between mb-2.5 md:mb-5">
+                <div class="flex items-center gap-2 md:gap-2.5">
+                    <span class="w-2 h-2 md:w-2.5 md:h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.6)]"></span>
+                    <h2 class="text-sm md:text-xl font-bold text-white tracking-tight">Available Features</h2>
                 </div>
-                <span id="activeCount" class="text-xs text-emerald-400/90 font-mono font-medium px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">—</span>
+                <span id="activeCount" class="text-[10px] md:text-xs text-emerald-400/90 font-mono font-medium px-2 md:px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">—</span>
             </div>
-            <div id="activeGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
+            <div id="activeGrid" class="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-2.5 md:gap-5 lg:gap-6">
                 <div class="glass-card p-6 sm:p-7 fade-in" style="grid-column:1/-1;">
                     <div class="flex items-center justify-center py-10 text-gray-400 text-sm">
                         <svg class="w-5 h-5 animate-spin mr-3 text-[#D86C5A]" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" opacity="0.25"></circle><path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
@@ -418,15 +507,15 @@
         </section>
 
         <!-- Section 2: Coming Soon / Unavailable Features -->
-        <section class="mb-12 hidden" id="comingSection">
-            <div class="flex items-center justify-between mb-5">
-                <div class="flex items-center gap-2.5">
-                    <span class="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.5)]"></span>
-                    <h2 class="text-lg sm:text-xl font-bold text-white tracking-tight">Unavailable Features</h2>
+        <section class="mb-6 md:mb-12 hidden" id="comingSection">
+            <div class="flex items-center justify-between mb-2.5 md:mb-5">
+                <div class="flex items-center gap-2 md:gap-2.5">
+                    <span class="w-2 h-2 md:w-2.5 md:h-2.5 rounded-full bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.5)]"></span>
+                    <h2 class="text-sm md:text-xl font-bold text-white tracking-tight">Unavailable Features</h2>
                 </div>
-                <span id="comingCount" class="text-xs text-amber-400/90 font-mono font-medium px-2.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20">0</span>
+                <span id="comingCount" class="text-[10px] md:text-xs text-amber-400/90 font-mono font-medium px-2 md:px-2.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20">0</span>
             </div>
-            <div id="comingGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6"></div>
+            <div id="comingGrid" class="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-2.5 md:gap-5 lg:gap-6"></div>
         </section>
         </div><!-- /#dashboardHomeView -->
 

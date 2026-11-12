@@ -6,7 +6,7 @@
 // ========================================
 
 (() => {
-const API_BASE_URL = 'https://api.aftabkabir.me';
+const API_BASE_URL = 'https://api.aftabx.tech';
 const retryHandler = new RetryHandler();
 
 // Application State

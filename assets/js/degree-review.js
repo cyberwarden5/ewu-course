@@ -5,7 +5,7 @@
 // ========================================
 
 (() => {
-    const API_BASE_URL = window.API_BASE_URL || 'https://api.aftabkabir.me';
+    const API_BASE_URL = window.API_BASE_URL || 'https://api.aftabx.tech';
 
     function cleanStr(s) {
         if (s == null) return '';

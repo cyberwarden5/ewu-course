@@ -8,7 +8,7 @@
  */
 
 // ===== CONFIGURATION =====
-const API_BASE_URL = 'https://api.aftabkabir.me/V2/api';
+const API_BASE_URL = 'https://api.aftabx.tech/V2/api';
 
 // ===== GLOBAL ERROR HANDLER =====
 
@@ -1564,7 +1564,7 @@ function exportToPDF() {
         doc.save(fileName);
 
         // Emit analytics telemetry
-        fetch(`https://api.aftabkabir.me/api/analytics`, {
+        fetch(`https://api.aftabx.tech/api/analytics`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

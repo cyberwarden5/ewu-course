@@ -8,7 +8,7 @@
 
 (function () {
     // Shared API base; legacy pages keep their own identical declaration.
-    const API_BASE_URL = 'https://api.aftabkabir.me';
+    const API_BASE_URL = 'https://api.aftabx.tech';
 
     /**
      * Feature metadata registry. The `key` must match the Worker's FEATURE_DEFAULTS keys.

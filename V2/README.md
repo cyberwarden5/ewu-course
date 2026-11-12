@@ -4,7 +4,7 @@ A modern, static website with Cloudflare Worker backend for viewing and filterin
 
 ## 📋 Overview
 
-This is a **converted version** of the PHP-based V2 site into a **static frontend + Cloudflare Worker** architecture. The site is deployed under `https://aftabkabir.me/V2/`.
+This is a **converted version** of the PHP-based V2 site into a **static frontend + Cloudflare Worker** architecture. The site is deployed under `https://aftabx.tech/V2/`.
 
 ### Key Features
 
@@ -91,8 +91,8 @@ main = "src/index.js"
 compatibility_date = "2025-01-01"
 
 [[routes]]
-pattern = "api.aftabkabir.me/V2/api/*"
-zone_name = "aftabkabir.me"
+pattern = "api.aftabx.tech/V2/api/*"
+zone_name = "aftabx.tech"
 ```
 
 6. Deploy the Worker:
@@ -101,13 +101,13 @@ zone_name = "aftabkabir.me"
 wrangler deploy
 ```
 
-### Step 4: Configure DNS for `api.aftabkabir.me`
+### Step 4: Configure DNS for `api.aftabx.tech`
 
 1. Go to **Cloudflare Dashboard** → **DNS**
 2. Add a CNAME record:
    - **Type**: `CNAME`
    - **Name**: `api`
-   - **Target**: `aftabkabir.me` (or your Worker's URL)
+   - **Target**: `aftabx.tech` (or your Worker's URL)
    - **Proxy status**: ✅ Proxied (orange cloud)
 
 ### Step 5: Configure Worker Routes
@@ -115,24 +115,24 @@ wrangler deploy
 1. Go to **Workers & Pages** → **ewu-worker-v2**
 2. Go to **Settings** → **Triggers**
 3. Add route:
-   - **Route**: `api.aftabkabir.me/V2/api/*`
-   - **Zone**: `aftabkabir.me`
+   - **Route**: `api.aftabx.tech/V2/api/*`
+   - **Zone**: `aftabx.tech`
 
 ### Step 6: Configure Custom Domain for Pages
 
 1. In Cloudflare Pages project settings
 2. Go to **Custom domains**
-3. Add custom domain: `aftabkabir.me/V2`
+3. Add custom domain: `aftabx.tech/V2`
    - Note: Cloudflare Pages supports path-based routing through the root domain
 
 **Alternative Approach**: If path-based routing is not directly supported, you can:
-- Deploy the static site to `aftabkabir.me` (root)
+- Deploy the static site to `aftabx.tech` (root)
 - Access V2 via a subfolder structure in your GitHub repo
 
 ### Step 7: Verify CORS Configuration
 
 Ensure the Worker has proper CORS headers:
-- `Access-Control-Allow-Origin: https://aftabkabir.me`
+- `Access-Control-Allow-Origin: https://aftabx.tech`
 - `Access-Control-Allow-Credentials: true`
 
 These are already configured in `workerV2.js`.
@@ -187,7 +187,7 @@ All endpoints are prefixed with `/V2/api/`:
 
 **Login:**
 ```bash
-POST https://api.aftabkabir.me/V2/api/login
+POST https://api.aftabx.tech/V2/api/login
 Content-Type: application/json
 
 {
@@ -205,7 +205,7 @@ Content-Type: application/json
 
 **Fetch Options:**
 ```bash
-GET https://api.aftabkabir.me/V2/api/options
+GET https://api.aftabx.tech/V2/api/options
 Cookie: ASP.NET_SessionId=...
 
 # Response:
@@ -218,7 +218,7 @@ Cookie: ASP.NET_SessionId=...
 
 **Fetch Courses:**
 ```bash
-POST https://api.aftabkabir.me/V2/api/courses
+POST https://api.aftabx.tech/V2/api/courses
 Cookie: ASP.NET_SessionId=...
 Content-Type: application/json
 

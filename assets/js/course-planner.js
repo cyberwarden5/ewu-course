@@ -899,7 +899,7 @@
                 s.days.forEach(dayName => {
                     const occ = firstOccurrence(dayName, s.startMin);
                     const endOcc = new Date(occ.getTime() + (s.endMin - s.startMin) * 60000);
-                    const uid = `ewu-plan-${col.courseCode.replace(/[^a-zA-Z0-9]/g, '')}-${col.section}-${ci}-${si}-${dayName}@aftabkabir.me`;
+                    const uid = `ewu-plan-${col.courseCode.replace(/[^a-zA-Z0-9]/g, '')}-${col.section}-${ci}-${si}-${dayName}@aftabx.tech`;
 
                     const exDates = [];
                     let checkDate = new Date(occ.getTime());

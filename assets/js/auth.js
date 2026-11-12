@@ -5,7 +5,7 @@
 
 (() => {
 // **IMPORTANT:** Update this to your actual Worker API domain
-const API_BASE_URL = 'https://api.aftabkabir.me';
+const API_BASE_URL = 'https://api.aftabx.tech';
 
 // Initialize retry handler
 const retryHandler = new RetryHandler();

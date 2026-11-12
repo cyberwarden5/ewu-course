@@ -7,7 +7,7 @@
 // ========================================
 
 // Resolve API base defensively (features.js exposes window.API_BASE_URL).
-const API_BASE_URL = window.API_BASE_URL || 'https://api.aftabkabir.me';
+const API_BASE_URL = window.API_BASE_URL || 'https://api.aftabx.tech';
 
 // Safe HTML escape fallback if features.js did not load.
 const esc = (typeof window.escapeHtml === 'function')
@@ -236,23 +236,27 @@ function activeCardHtml(key, status) {
     const isBeta = status === 'beta';
 
     return `
-        <div class="fade-in" style="position:relative;background:linear-gradient(145deg, rgba(22,22,32,0.75) 0%, rgba(14,14,20,0.85) 100%);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);border:1px solid ${theme.border};border-radius:20px;box-shadow:0 10px 30px rgba(0,0,0,0.4);display:flex;flex-direction:column;justify-content:space-between;overflow:hidden;">
-            <div style="position:absolute;top:0;left:0;right:0;height:3px;background:${theme.btn};"></div>
-            <div class="p-6 sm:p-7">
-                <div class="flex items-start justify-between gap-3 mb-4">
-                    <div style="width:52px;height:52px;border-radius:14px;background:${theme.bg};border:1px solid ${theme.border};display:flex;align-items:center;justify-content:center;color:${theme.accent};">
+        <div class="fade-in feature-tile-card" style="position:relative;background:linear-gradient(145deg, rgba(22,22,32,0.75) 0%, rgba(14,14,20,0.85) 100%);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);border:1px solid ${theme.border};box-shadow:0 10px 30px rgba(0,0,0,0.4);display:flex;flex-direction:column;justify-content:space-between;overflow:hidden;">
+            <div class="feature-tile-bar" style="position:absolute;top:0;left:0;right:0;background:${theme.btn};"></div>
+            <div class="p-3 md:p-6 lg:p-7">
+                <div class="flex items-center md:items-start justify-between gap-2 md:gap-3 mb-2 md:mb-4">
+                    <div class="feature-tile-icon" style="background:${theme.bg};border:1px solid ${theme.border};display:flex;align-items:center;justify-content:center;color:${theme.accent};flex-shrink:0;">
                         ${f.icon}
                     </div>
-                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-semibold ${pill.cls}">
+                    <span class="inline-flex items-center gap-1 md:gap-1.5 px-1.5 py-0.5 md:px-2.5 md:py-1 rounded-full border text-[10px] md:text-xs font-semibold ${pill.cls}">
                         <span class="w-1.5 h-1.5 rounded-full ${pill.dot}"></span>
-                        ${pill.label}
+                        <span class="hidden md:inline">${pill.label}</span>
+                        <span class="md:hidden">${isBeta ? 'Beta' : 'Live'}</span>
                     </span>
                 </div>
-                <h3 class="text-lg sm:text-xl font-bold text-white mb-2">${esc(f.name)}</h3>
-                <p class="text-gray-300 text-xs sm:text-sm leading-relaxed mb-6">${esc(f.description)}</p>
+                <div class="flex items-center justify-between gap-1 md:block">
+                    <h3 class="text-[12.5px] leading-tight md:text-lg lg:text-xl font-bold text-white md:mb-2">${esc(f.name)}</h3>
+                    <svg class="w-3.5 h-3.5 md:hidden flex-shrink-0 opacity-85" style="color:${theme.accent};" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                </div>
+                <p class="hidden md:block text-gray-300 text-xs sm:text-sm leading-relaxed mb-6">${esc(f.description)}</p>
             </div>
-            <div class="px-6 sm:px-7 pb-6 sm:pb-7 pt-0">
-                <a href="${f.page}" class="no-underline ajax-nav-link" style="display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:13px 20px;font-size:0.925rem;font-weight:600;border-radius:12px;background:${theme.btn};color:#fff;box-shadow:0 4px 18px ${theme.glow};">
+            <div class="feature-tile-footer px-6 sm:px-7 pb-6 sm:pb-7 pt-0">
+                <a href="${f.page}" class="no-underline ajax-nav-link feature-tile-btn" style="background:${theme.btn};color:#fff;box-shadow:0 4px 18px ${theme.glow};">
                     <span>${isBeta ? 'Open (Beta)' : 'Open'}</span>
                     <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
                 </a>
@@ -264,21 +268,21 @@ function lockedCardHtml(key, status) {
     const f = getFeatureMeta(key);
     const pill = STATUS_PILL[status] || STATUS_PILL.coming_soon;
     return `
-        <div style="position:relative;background:linear-gradient(145deg, rgba(16,16,24,0.5) 0%, rgba(10,10,16,0.65) 100%);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,0.08);border-radius:18px;display:flex;flex-direction:column;justify-content:space-between;min-height:190px;overflow:hidden;">
-            <div class="p-5 sm:p-6">
-                <div class="flex items-start justify-between gap-3 mb-4">
-                    <div style="width:46px;height:46px;border-radius:12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.45);">
+        <div class="feature-locked-card" style="position:relative;background:linear-gradient(145deg, rgba(16,16,24,0.5) 0%, rgba(10,10,16,0.65) 100%);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,0.08);display:flex;flex-direction:column;justify-content:space-between;overflow:hidden;">
+            <div class="p-3 md:p-5 lg:p-6">
+                <div class="flex items-center md:items-start justify-between gap-2 md:gap-3 mb-2 md:mb-4">
+                    <div class="feature-locked-icon" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.45);flex-shrink:0;">
                         ${f.icon}
                     </div>
-                    <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border text-[11px] font-medium ${pill.cls}">
-                        <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                    <span class="inline-flex items-center gap-1 md:gap-1.5 px-1.5 md:px-2.5 py-0.5 rounded-full border text-[10px] md:text-[11px] font-medium ${pill.cls}">
+                        <svg class="w-2.5 h-2.5 md:w-3 md:h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
                         ${pill.label}
                     </span>
                 </div>
-                <h3 class="text-base font-bold text-gray-200 mb-1.5">${esc(f.name)}</h3>
-                <p class="text-gray-400 text-xs leading-relaxed">${esc(f.description)}</p>
+                <h3 class="text-[12.5px] leading-tight md:text-base font-bold text-gray-200 md:mb-1.5">${esc(f.name)}</h3>
+                <p class="hidden md:block text-gray-400 text-xs leading-relaxed">${esc(f.description)}</p>
             </div>
-            <div class="mt-2 px-5 sm:px-6 pb-5 sm:pb-6 pt-3.5 border-t border-white/[0.06] flex items-center justify-between text-[11px] text-gray-500 font-mono">
+            <div class="hidden md:flex mt-2 px-5 sm:px-6 pb-5 sm:pb-6 pt-3.5 border-t border-white/[0.06] items-center justify-between text-[11px] text-gray-500 font-mono">
                 <span class="flex items-center gap-1.5">
                     <span class="w-1.5 h-1.5 rounded-full ${pill.dot}"></span>
                     ${pill.label}

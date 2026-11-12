@@ -19,7 +19,7 @@ The site is a **static frontend** (HTML/CSS/vanilla JS) that talks to a
 portal. No frontend build step is required.
 
 ```
-aftabkabir.me/
+aftabx.tech/
 ├─ index.html                 Landing page
 ├─ login.html                 Portal login
 ├─ dashboard.html             Authenticated hub (AJAX navigation shell)
@@ -58,7 +58,7 @@ aftabkabir.me/
 ### Clean URLs
 
 Every page is served **without the `.html` extension** (e.g.
-`https://aftabkabir.me/advise`, not `/advise.html`). This works for direct
+`https://aftabx.tech/advise`, not `/advise.html`). This works for direct
 access, internal links, refresh, and the AJAX router:
 
 - On Apache, `.htaccess` 301-redirects `*.html` to the clean URL and internally
@@ -140,7 +140,7 @@ already been declared` and silently blocked all API calls.
 
 ## API integration
 
-- Base URL: `https://api.aftabkabir.me` (`window.API_BASE_URL`).
+- Base URL: `https://api.aftabx.tech` (`window.API_BASE_URL`).
 - All requests use `credentials: 'include'` so the Worker session cookie is sent.
 - Feature pages retry transient failures via `fetchJsonWithRetry()` and treat
   `401` as a redirect to `login.html`.
@@ -181,7 +181,7 @@ Admin routes (Bearer token): `/api/admin/login`, `/dashboard`, `/config`,
 `/features`, `/ip`, `/block-userid`, `/clear-logs`, `/portal-ping`.
 
 ### CORS & cookies
-- Allowed origins: `https://aftabkabir.me`, `https://www.aftabkabir.me`, plus
+- Allowed origins: `https://aftabx.tech`, `https://www.aftabx.tech`, plus
   localhost/127.0.0.1 for development. The request `Origin` is reflected (never
   `*`) so `Access-Control-Allow-Credentials: true` works with `credentials:
   include`. Responses send `Vary: Origin`.
