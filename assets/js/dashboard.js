@@ -60,37 +60,35 @@ function updateStudentIdDisplay(id, name) {
 }
 
 // ========================================
-// Student Quotes 
+// Student Quotes (Clean, dignified, mixture of famous thoughts & relatable EWU student humor)
 // ========================================
 const STUDENT_QUOTES = [
-    { quote: "Ki bochor toh sesh, comeback diba kobe?", category: "Comeback Era" },
-    { quote: "Buke hat diye bol toh, CGPA koto?", category: "CGPA Realities" },
-    { quote: "Ki vai, business suru korben na?", category: "Career Goals" },
-    { quote: "Varsity te bondhu hoyna, sob shap! 🐍", category: "Campus Truth" },
-    { quote: "Midterm er age: 'Eibar A+ confirm.' Midterm er pore: 'Pass korlei shanti!'", category: "Exam Panic" },
-    { quote: "Assignment submission at 11:59 PM. Sent at 11:58:59 PM. Pure adrenaline!", category: "Deadline Rush" },
-    { quote: "Advising er din EWU portal er server: 'Ami toh mori nai, tobe beche o nai!'", category: "Advising Rush" },
-    { quote: "Group project e 4 jon member: 1 jon kaj kore, 2 jon dekhe, ar 4 number jon submission er shomoy name spell kore dey!", category: "Group Projects" },
-    { quote: "Attendance 80% maintain korte giye ghum 20% e neme ashe.", category: "EWU Life" },
-    { quote: "CGPA is temporary, but 'Mama, canteen e chol ek cup cha khai' is permanent.", category: "Canteen Chronicles" },
-    { quote: "Faculty: 'Question standard hoise.' Students: 'Amader standard neme gese sir!'", category: "Exam Realities" },
-    { quote: "Retake is an investment in self-improvement... Santona...", category: "EWU Humor" },
-    { quote: "Class er gap e ki korbo? Canteen e boshe existential crisis e bhogbo.", category: "Campus Life" },
-    { quote: "Shob semester er shurute bhabi ekta daily routine banabo. Calendar e sudhu exam er date daag thake.", category: "Semester Goals" },
-    { quote: "Final exam er age: 'Dua koro bondhu.' Exam seshe: 'Mama kobe treat dibi?'", category: "Friendship" },
-    { quote: "Course drop korar por je shukher shanti pawa jay, seta Nirvana er cheyeo beshi.", category: "Inner Peace" },
-    { quote: "Syllabus dekhe mone hoy, 4 mash er moddhe PhD sesh korte hobe.", category: "Academic Pressure" },
-    { quote: "Bondhu jokhon 3.9 peye bole 'Kisu pari na vai', tokhon khub kosto hoy.", category: "Pain & Sorrow" },
-    { quote: "Sleep schedule? What is that? Amar schedule to Registrar Office decide kore.", category: "Sleep Deprived" },
-    { quote: "Bhalo group mate pawa mane lottery jeeta!", category: "University Lore" },
-    { quote: "First week: 'Sob class notes nibo.' Midterm: 'Bhai keu ektu note gula dis!'", category: "Student Evolution" },
-    { quote: "Advising slot shokal 8 tay, sleep cycle shokal 9 tay shuru.", category: "Advising Struggles" },
-    { quote: "University library te shobai porashona kore na, Keo Keo AC er thanda hawa khete ashe.", category: "Library Secrets" },
-    { quote: "GPA 4.00 chilo dream, 3.50 chilo goal, 3.00 chilo hope, pass marks holo reality.", category: "Student Journey" },
-    { quote: "Prerequisite clear howar pore je anondo, ta kono festival eo nei.", category: "Milestone" },
-    { quote: "East West er bridge paar howar shomoy haway sob porashona ure jay!", category: "EWU Campus" },
-    { quote: "Life update: Survived advising rush, now waiting for graduation miracle.", category: "Survival Mode" },
-    { quote: "Bhai lab report copy korte giye student ID ta o copy kore felio na aber!", category: "Pro Tips" }
+    { quote: "It always seems impossible until it's done.", author: "Nelson Mandela" },
+    { quote: "Ki bochor toh sesh, comeback diba kobe?", author: "EWU Student Lore" },
+    { quote: "The beautiful thing about learning is that no one can take it away from you.", author: "B.B. King" },
+    { quote: "Buke hat diye bol toh, CGPA koto?", author: "Campus Reality" },
+    { quote: "Success is the sum of small efforts, repeated day in and day out.", author: "Robert Collier" },
+    { quote: "Ki vai, business suru korben na?", author: "Senior Advice" },
+    { quote: "You don't have to be great to start, but you have to start to be great.", author: "Zig Ziglar" },
+    { quote: "Varsity te bondhu hoyna, sob shap!", author: "Campus Lore" },
+    { quote: "Midterm er age: 'Eibar A+ confirm.' Midterm er pore: 'Pass korlei shanti!'", author: "Exam Chronicles" },
+    { quote: "Assignment submission at 11:59 PM. Sent at 11:58:59 PM. Pure adrenaline!", author: "Deadline Adrenaline" },
+    { quote: "Don't count the days, make the days count.", author: "Muhammad Ali" },
+    { quote: "Advising er din EWU portal er server: 'Ami toh mori nai, tobe beche o nai!'", author: "Advising Chronicles" },
+    { quote: "Group project e 4 jon member: 1 jon kaj kore, 2 jon dekhe, ar 4 number jon submission er shomoy name spell kore dey!", author: "Group Project Lore" },
+    { quote: "Consistency is what transforms average into excellence.", author: "Tony Dungy" },
+    { quote: "Attendance 80% maintain korte giye ghum 20% e neme ashe.", author: "EWU Life" },
+    { quote: "CGPA is temporary, but 'Mama, canteen e chol ek cup cha khai' is permanent.", author: "Canteen Chronicles" },
+    { quote: "Faculty: 'Question standard hoise.' Students: 'Amader standard neme gese sir!'", author: "Exam Realities" },
+    { quote: "Retake is an investment in self-improvement... santona...", author: "Student Hope" },
+    { quote: "Focus on progress, not perfection.", author: "Bill Phillips" },
+    { quote: "Class er gap e ki korbo? Canteen e boshe existential crisis e bhogbo.", author: "Campus Life" },
+    { quote: "Course drop korar por je shukher shanti pawa jay, seta Nirvana er cheyeo beshi.", author: "Inner Peace" },
+    { quote: "East West er bridge paar howar shomoy haway sob porashona ure jay!", author: "EWU Campus" },
+    { quote: "Life update: Survived advising rush, now waiting for graduation miracle.", author: "Survival Mode" },
+    { quote: "Advising slot shokal 8 tay, sleep cycle shokal 9 tay shuru.", author: "Advising Struggles" },
+    { quote: "First week: 'Sob class notes nibo.' Midterm: 'Bhai keu ektu note gula dis!'", author: "Student Evolution" },
+    { quote: "Believe you can and you're halfway there.", author: "Theodore Roosevelt" }
 ];
 
 let quoteIntervalId = null;
@@ -98,8 +96,8 @@ let currentQuoteIndex = -1;
 
 function displayQuote(index) {
     const textEl = document.getElementById('studentQuoteText');
-    const catEl = document.getElementById('studentQuoteCategory');
-    if (!textEl || !catEl) return;
+    const authorEl = document.getElementById('studentQuoteAuthor');
+    if (!textEl || !authorEl) return;
 
     if (index == null || index < 0 || index >= STUDENT_QUOTES.length) {
         index = Math.floor(Math.random() * STUDENT_QUOTES.length);
@@ -109,12 +107,14 @@ function displayQuote(index) {
 
     textEl.style.opacity = '0';
     textEl.style.transform = 'translateY(4px)';
+    authorEl.style.opacity = '0';
 
     setTimeout(() => {
         textEl.textContent = item.quote;
-        catEl.textContent = item.category;
+        authorEl.textContent = `— ${item.author}`;
         textEl.style.opacity = '1';
         textEl.style.transform = 'translateY(0)';
+        authorEl.style.opacity = '1';
     }, 180);
 }
 
@@ -148,74 +148,104 @@ function initStudentQuotes() {
 }
 
 // ========================================
-// Personalised Student Welcome & Avatar
+// Personalised Sequential Name Animation
 // ========================================
-function getInitials(name) {
-    if (!name) return 'EWU';
-    const parts = name.trim().split(/\s+/).filter(Boolean);
-    if (parts.length === 0) return 'EWU';
-    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-}
+let nameParts = ['Student'];
+let nameIndex = 0;
+let nameIntervalId = null;
 
-async function loadDashboardAvatar(profile) {
-    const photoEl = document.getElementById('dashboardStudentPhoto');
-    const fallbackEl = document.getElementById('dashboardStudentAvatarFallback');
-    const initialsEl = document.getElementById('dashboardAvatarInitials');
-    if (!photoEl || !fallbackEl) return;
-
-    const studentId = profile.StudentId || getStoredStudentId() || '';
-    const cleanName = [profile.FirstName, profile.MiddleName, profile.LastName]
-        .filter(Boolean)
-        .join(' ')
+function initNameAnimation(fullName) {
+    if (!fullName) return;
+    const tokens = fullName
         .replace(/[\r\n\t]+/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim();
+        .split(/\s+/)
+        .map(s => s.trim())
+        .filter(s => s.length > 0 && !/^(mr|ms|mrs|dr|engr)\.?$/i.test(s));
 
-    if (initialsEl) {
-        initialsEl.textContent = getInitials(cleanName) || 'EWU';
+    if (tokens.length === 0) return;
+    nameParts = tokens;
+    nameIndex = 0;
+
+    const el = document.getElementById('animatedStudentName');
+    if (!el) return;
+    el.textContent = nameParts[0];
+
+    if (nameIntervalId) {
+        clearInterval(nameIntervalId);
+        nameIntervalId = null;
     }
 
-    if (profile.ProfilePictureUrl || studentId) {
-        const params = new URLSearchParams();
-        if (studentId) params.append('studentId', studentId);
-        if (profile.ProfilePictureUrl) params.append('url', profile.ProfilePictureUrl);
-        const photoUrl = `${API_BASE_URL}/api/profile/photo?${params.toString()}`;
+    if (nameParts.length <= 1) return;
 
-        try {
-            const res = await fetch(photoUrl, { credentials: 'include' });
-            if (res.ok) {
-                const blob = await res.blob();
-                if (blob && blob.type.startsWith('image/')) {
-                    const objectUrl = URL.createObjectURL(blob);
-                    photoEl.src = objectUrl;
-                    photoEl.classList.remove('hidden');
-                    fallbackEl.classList.add('hidden');
-                    return;
+    nameIntervalId = setInterval(() => {
+        if (document.hidden) return;
+        const target = document.getElementById('animatedStudentName');
+        if (!target) return;
+
+        // Animate upward and fade out
+        target.style.transition = 'transform 0.4s ease-in, opacity 0.4s ease-in';
+        target.style.transform = 'translateY(-100%)';
+        target.style.opacity = '0';
+
+        setTimeout(() => {
+            nameIndex = (nameIndex + 1) % nameParts.length;
+            target.textContent = nameParts[nameIndex];
+            target.style.transition = 'none';
+            target.style.transform = 'translateY(100%)';
+
+            void target.offsetHeight; // force reflow
+
+            target.style.transition = 'transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.45s ease-out';
+            target.style.transform = 'translateY(0)';
+            target.style.opacity = '1';
+        }, 400);
+    }, 2800);
+}
+
+// ========================================
+// Current Semester Detection
+// ========================================
+let currentSemesterGlobal = null;
+
+function detectCurrentSemester(semesters) {
+    if (!Array.isArray(semesters) || semesters.length === 0) return null;
+    const now = new Date();
+
+    // 1. Try finding one where now is between StartingDate and EndingDate
+    for (const sem of semesters) {
+        if (sem.StartingDate && sem.EndingDate) {
+            const start = new Date(sem.StartingDate);
+            const end = new Date(sem.EndingDate);
+            if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
+                if (now >= start && now <= end) {
+                    return sem;
                 }
             }
-        } catch (e) {
-            // Graceful fallback to SVG initials
         }
     }
 
-    photoEl.classList.add('hidden');
-    fallbackEl.classList.remove('hidden');
+    // 2. Fallback to IsActive flag
+    const active = semesters.find(s => s.IsActive === true);
+    if (active) return active;
+
+    // 3. Fallback to first available semester
+    return semesters[0];
 }
 
+function updateCurrentSemesterDisplay(sem) {
+    if (!sem) return;
+    currentSemesterGlobal = sem;
+    const el = document.getElementById('welcomeSemester');
+    if (el) {
+        el.textContent = sem.SemesterName || 'Current Term';
+    }
+}
+
+// ========================================
+// Personalised Student Welcome Rendering
+// ========================================
 function renderStudentWelcome(profile) {
     if (!profile) return;
-
-    // Time of day greeting
-    const hour = new Date().getHours();
-    let timeGreeting = 'Welcome';
-    if (hour >= 5 && hour < 12) timeGreeting = 'Good morning';
-    else if (hour >= 12 && hour < 17) timeGreeting = 'Good afternoon';
-    else if (hour >= 17 && hour < 22) timeGreeting = 'Good evening';
-    else timeGreeting = 'Welcome back';
-
-    const greetingTimeBadge = document.getElementById('greetingTimeBadge');
-    if (greetingTimeBadge) greetingTimeBadge.textContent = timeGreeting;
 
     const cleanName = [profile.FirstName, profile.MiddleName, profile.LastName]
         .filter(Boolean)
@@ -224,10 +254,7 @@ function renderStudentWelcome(profile) {
         .replace(/\s+/g, ' ')
         .trim();
 
-    const welcomeStudentName = document.getElementById('welcomeStudentName');
-    if (welcomeStudentName) {
-        welcomeStudentName.textContent = cleanName || 'Student';
-    }
+    initNameAnimation(cleanName || 'Student');
 
     const studentId = profile.StudentId || getStoredStudentId();
     const welcomeStudentId = document.getElementById('welcomeStudentId');
@@ -241,8 +268,9 @@ function renderStudentWelcome(profile) {
         welcomeProgram.textContent = programName.replace(/[\r\n\t]+/g, ' ').replace(/\s+/g, ' ').trim();
     }
 
+    // Current semester (will be refined by detectCurrentSemester)
     const welcomeSemester = document.getElementById('welcomeSemester');
-    if (welcomeSemester) {
+    if (welcomeSemester && !currentSemesterGlobal) {
         welcomeSemester.textContent = profile.SemesterName || 'Current Term';
     }
 
@@ -255,30 +283,97 @@ function renderStudentWelcome(profile) {
         welcomeAdvisor.textContent = mentor;
         welcomeAdvisor.title = mentor;
     }
+}
 
-    const standingBadge = document.getElementById('studentStandingBadge');
-    if (standingBadge) {
-        const prob = Number(profile.ProbationNumber) || 0;
-        const cgpa = Number(profile.CGPA) || 0;
-        if (prob > 0) {
-            standingBadge.textContent = `Probation (${prob})`;
-            standingBadge.className = 'text-[10px] md:text-xs font-semibold px-2.5 py-0.5 rounded-full bg-rose-500/15 text-rose-300 border border-rose-500/30';
-        } else if (cgpa >= 3.75) {
-            standingBadge.textContent = "Dean's Honor Roll";
-            standingBadge.className = 'text-[10px] md:text-xs font-semibold px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30';
-        } else {
-            standingBadge.textContent = 'Good Standing';
-            standingBadge.className = 'text-[10px] md:text-xs font-semibold px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30';
-        }
+// ========================================
+// Scholarship Extraction from Account Ledger
+// ========================================
+function parseScholarshipFromLedger(ledgerData) {
+    if (!ledgerData || !Array.isArray(ledgerData.transactions)) {
+        return { hasScholarship: false, title: 'None', details: 'No active waiver or award' };
+    }
+    const txns = ledgerData.transactions;
+    const keywords = ['scholarship', 'waiver', 'medha', 'merit', 'financial aid', 'fellowship', 'stipend', 'dean'];
+
+    const scholarshipTxns = txns.filter(t => {
+        const desc = (t.Description || '').toLowerCase();
+        const ref = (t.AccountsReferance || '').toLowerCase();
+        const vtype = (t.VoucherType || '').toLowerCase();
+        return keywords.some(k => desc.includes(k) || ref.includes(k) || vtype.includes(k));
+    });
+
+    if (scholarshipTxns.length === 0) {
+        return { hasScholarship: false, title: 'None', details: 'No active waiver or award' };
     }
 
-    loadDashboardAvatar(profile);
+    const latest = scholarshipTxns[scholarshipTxns.length - 1];
+    const desc = (latest.Description || latest.AccountsReferance || 'Scholarship')
+        .replace(/[\r\n\t]+/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+    let title = 'Scholarship';
+    if (/dean/i.test(desc)) title = "Dean's Scholarship";
+    else if (/merit/i.test(desc)) title = 'Merit Scholarship';
+    else if (/waiver/i.test(desc)) title = 'Tuition Waiver';
+    else if (/medha/i.test(desc)) title = 'Medha Lalon';
+
+    let adjustedText = '';
+    const adjMatch = desc.match(/(?:tk\.?|bdt)?\s*([\d,]+)\s*(?:\/-)?\s*adjusted/i)
+        || desc.match(/adjusted\s*(?:tk\.?|bdt)?\s*([\d,]+)/i);
+    if (adjMatch) {
+        adjustedText = `Tk. ${adjMatch[1]} adjusted`;
+    } else if (latest.AmountCr > 0) {
+        adjustedText = `Tk. ${latest.AmountCr.toLocaleString()} adjusted`;
+    }
+
+    let subDetails = '';
+    const balMatch = desc.match(/balance:?\s*([\d,]+)\/?-?\s*(?:till\s*([^.]+))?/i);
+    const durationMatch = desc.match(/from\s*([A-Za-z0-9\s–\-]+?)(?:\.|$)/i);
+
+    if (balMatch) {
+        const balAmt = balMatch[1];
+        const balTill = balMatch[2] ? ` till ${balMatch[2].trim()}` : '';
+        subDetails = `${adjustedText ? adjustedText + ' • ' : ''}Bal: ${balAmt}${balTill}`;
+    } else if (durationMatch) {
+        subDetails = `${adjustedText ? adjustedText + ' • ' : ''}${durationMatch[1].trim()}`;
+    } else if (latest.SemesterName) {
+        subDetails = `${adjustedText ? adjustedText + ' • ' : ''}${latest.SemesterName}`;
+    } else {
+        subDetails = adjustedText || desc.slice(0, 45);
+    }
+
+    return {
+        hasScholarship: true,
+        title,
+        details: subDetails,
+        raw: desc
+    };
+}
+
+function renderScholarshipCard(scholarshipInfo) {
+    const titleEl = document.getElementById('statScholarshipTitle');
+    const subEl = document.getElementById('statScholarshipSub');
+    if (!titleEl || !subEl) return;
+
+    if (!scholarshipInfo) {
+        titleEl.textContent = 'None';
+        subEl.textContent = 'No active waiver or award';
+        return;
+    }
+
+    titleEl.textContent = scholarshipInfo.title || 'None';
+    subEl.textContent = scholarshipInfo.details || (scholarshipInfo.hasScholarship ? 'Active scholarship' : 'No active waiver or award');
+    if (scholarshipInfo.hasScholarship) {
+        titleEl.title = scholarshipInfo.raw || scholarshipInfo.title;
+        subEl.title = scholarshipInfo.raw || scholarshipInfo.details;
+    }
 }
 
 // ========================================
 // Academic Overview & Key Statistics
 // ========================================
-function renderAcademicStats(profile, degreeReview) {
+function renderAcademicStats(profile, degreeReview, ledgerData) {
     const analysis = (degreeReview && degreeReview.analysis) ? degreeReview.analysis : null;
 
     // 1. CGPA
@@ -346,59 +441,245 @@ function renderAcademicStats(profile, degreeReview) {
         }
     }
 
-    // 4. Completed Courses Count
-    const statCoursesCompleted = document.getElementById('statCoursesCompleted');
-    const statCoursesSub = document.getElementById('statCoursesSub');
-    if (statCoursesCompleted) {
-        let completedCoursesCount = 0;
-        let areaCount = 0;
-        if (degreeReview && Array.isArray(degreeReview.courseAreas)) {
-            degreeReview.courseAreas.forEach(area => {
-                let hasPassedInArea = false;
-                if (Array.isArray(area.CourseView)) {
-                    area.CourseView.forEach(course => {
-                        const grade = (course.Grade || '').trim().toUpperCase();
-                        if (grade && grade !== 'F' && grade !== 'W' && grade !== 'I') {
-                            completedCoursesCount++;
-                            hasPassedInArea = true;
-                        }
-                    });
-                }
-                if (hasPassedInArea) areaCount++;
-            });
-        }
-
-        if (completedCoursesCount > 0) {
-            statCoursesCompleted.textContent = completedCoursesCount;
-            if (statCoursesSub) {
-                statCoursesSub.textContent = `Across ${areaCount} Areas`;
-            }
-        } else if (earnedCredits != null && earnedCredits > 0) {
-            const estimated = Math.round(earnedCredits / 3);
-            statCoursesCompleted.textContent = `~${estimated}`;
-            if (statCoursesSub) statCoursesSub.textContent = 'Estimated Completed';
-        } else {
-            statCoursesCompleted.textContent = '—';
-        }
+    // 4. Scholarship Card
+    if (ledgerData) {
+        renderScholarshipCard(parseScholarshipFromLedger(ledgerData));
     }
 }
 
+// ========================================
+// Upcoming Class Routine Engine
+// ========================================
+const EWU_DAY_MAP = {
+    'S': 0, // Sunday
+    'M': 1, // Monday
+    'T': 2, // Tuesday
+    'W': 3, // Wednesday
+    'R': 4, // Thursday
+    'F': 5, // Friday
+    'A': 6  // Saturday
+};
+
+const EWU_DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+function parseTimeMinutes(tStr) {
+    if (!tStr) return null;
+    const match = tStr.trim().match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+    if (!match) return null;
+    let h = parseInt(match[1], 10);
+    const m = parseInt(match[2], 10);
+    const ampm = match[3].toUpperCase();
+    if (ampm === 'PM' && h < 12) h += 12;
+    if (ampm === 'AM' && h === 12) h = 0;
+    return h * 60 + m;
+}
+
+function parseCourseSlotOccurrences(course) {
+    const slot = course.TimeSlotName || '';
+    const match = slot.match(/^([SMTWTRFA]+)\s+(\d{1,2}:\d{2}\s*(?:AM|PM))\s*-\s*(\d{1,2}:\d{2}\s*(?:AM|PM))/i);
+    if (!match) return [];
+
+    const daysPart = match[1].toUpperCase();
+    const startTimeStr = match[2];
+    const endTimeStr = match[3];
+
+    const startMinutes = parseTimeMinutes(startTimeStr);
+    const endMinutes = parseTimeMinutes(endTimeStr);
+    if (startMinutes == null || endMinutes == null) return [];
+
+    const occurrences = [];
+    for (const char of daysPart) {
+        if (EWU_DAY_MAP[char] !== undefined) {
+            occurrences.push({
+                course,
+                day: EWU_DAY_MAP[char],
+                dayName: EWU_DAY_NAMES[EWU_DAY_MAP[char]],
+                startMinutes,
+                endMinutes,
+                startTimeStr,
+                endTimeStr,
+                timeRange: `${startTimeStr} - ${endTimeStr}`
+            });
+        }
+    }
+    return occurrences;
+}
+
+function getUpcomingClassInfo(courses) {
+    if (!Array.isArray(courses) || courses.length === 0) return null;
+
+    const activeCourses = courses.filter(c => !c.IsDrop && !c.IsWithdraw && c.DropStatus !== 'Yes' && c.WithDrawStatus !== 'Yes');
+    if (activeCourses.length === 0) return null;
+
+    const occurrences = [];
+    activeCourses.forEach(c => occurrences.push(...parseCourseSlotOccurrences(c)));
+    if (occurrences.length === 0) return null;
+
+    const now = new Date();
+    const nowDay = now.getDay();
+    const nowMinutes = now.getHours() * 60 + now.getMinutes();
+
+    // 1. Ongoing / In Session
+    const ongoing = occurrences.find(o => o.day === nowDay && nowMinutes >= o.startMinutes && nowMinutes < o.endMinutes);
+    if (ongoing) {
+        const leftM = ongoing.endMinutes - nowMinutes;
+        return {
+            status: 'ongoing',
+            badgeText: 'In Session',
+            badgeCls: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
+            pulse: true,
+            occ: ongoing,
+            note: `Ends in ${leftM}m (${ongoing.endTimeStr})`
+        };
+    }
+
+    // 2. Next class today
+    const todayUpcoming = occurrences
+        .filter(o => o.day === nowDay && o.startMinutes > nowMinutes)
+        .sort((a, b) => a.startMinutes - b.startMinutes);
+
+    if (todayUpcoming.length > 0) {
+        const next = todayUpcoming[0];
+        const diffM = next.startMinutes - nowMinutes;
+        const diffText = diffM >= 60 ? `${Math.floor(diffM / 60)}h ${diffM % 60}m` : `${diffM}m`;
+        return {
+            status: 'today',
+            badgeText: 'Today',
+            badgeCls: 'bg-sky-500/15 text-sky-300 border-sky-500/30',
+            pulse: false,
+            occ: next,
+            note: `Starts in ${diffText} (${next.startTimeStr})`
+        };
+    }
+
+    // 3. Earliest class on upcoming days
+    let best = null;
+    let minMinutesTill = Infinity;
+
+    occurrences.forEach(o => {
+        let dayDiff = o.day - nowDay;
+        if (dayDiff <= 0) dayDiff += 7;
+        const minutesTill = dayDiff * 24 * 60 + (o.startMinutes - nowMinutes);
+        if (minutesTill < minMinutesTill) {
+            minMinutesTill = minutesTill;
+            best = { occ: o, dayDiff };
+        }
+    });
+
+    if (best) {
+        const isTomorrow = best.dayDiff === 1;
+        return {
+            status: isTomorrow ? 'tomorrow' : 'upcoming',
+            badgeText: isTomorrow ? 'Tomorrow' : best.occ.dayName,
+            badgeCls: 'bg-amber-500/15 text-amber-300 border-amber-500/30',
+            pulse: false,
+            occ: best.occ,
+            note: `${isTomorrow ? 'Tomorrow' : 'Next ' + best.occ.dayName} at ${best.occ.startTimeStr}`
+        };
+    }
+
+    return null;
+}
+
+function renderUpcomingClassCard(classInfo) {
+    const badgeEl = document.getElementById('upcomingClassStatusBadge');
+    const container = document.getElementById('upcomingClassContent');
+    if (!container) return;
+
+    if (!classInfo) {
+        if (badgeEl) {
+            badgeEl.textContent = 'No Classes';
+            badgeEl.className = 'text-[10px] font-mono font-medium px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-gray-400';
+        }
+        container.innerHTML = `
+            <div class="py-2 flex items-center gap-2.5 text-gray-400">
+                <div class="w-8 h-8 rounded-lg bg-white/[0.04] border border-white/[0.08] flex items-center justify-center text-gray-500 flex-shrink-0">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                </div>
+                <div>
+                    <div class="text-xs font-semibold text-gray-300">No classes scheduled</div>
+                    <div class="text-[10px] text-gray-500">Enjoy your break or check advising routine.</div>
+                </div>
+            </div>
+        `;
+        return;
+    }
+
+    const { occ, badgeText, badgeCls, pulse, note } = classInfo;
+    const c = occ.course;
+
+    if (badgeEl) {
+        badgeEl.textContent = badgeText;
+        badgeEl.className = `text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full border ${badgeCls} ${pulse ? 'animate-pulse' : ''}`;
+    }
+
+    const facultyDisplay = c.FacultyName || c.ShortName || 'Faculty';
+    const roomDisplay = c.RoomName ? `Room ${c.RoomName}` : 'Room TBD';
+    const sectionDisplay = c.SectionName ? `Sec ${c.SectionName}` : '';
+
+    container.innerHTML = `
+        <div class="space-y-1.5">
+            <div class="flex items-start justify-between gap-2">
+                <div class="min-w-0">
+                    <div class="flex items-center gap-1.5 flex-wrap">
+                        <span class="text-sm sm:text-base font-black text-white font-mono tracking-tight">${esc(c.CourseCode)}</span>
+                        ${sectionDisplay ? `<span class="text-[10px] font-mono font-semibold px-1.5 py-0.2 rounded bg-[#D86C5A]/15 border border-[#D86C5A]/30 text-[#D86C5A]">${esc(sectionDisplay)}</span>` : ''}
+                    </div>
+                    <div class="text-[11px] text-gray-400 truncate mt-0.5" title="${esc(facultyDisplay)}">
+                        ${esc(facultyDisplay)}
+                    </div>
+                </div>
+                <div class="text-right flex-shrink-0">
+                    <span class="text-xs sm:text-sm font-bold text-white font-mono block">${esc(occ.startTimeStr)}</span>
+                    <span class="text-[10px] text-gray-400 block">${esc(roomDisplay)}</span>
+                </div>
+            </div>
+
+            <div class="pt-1.5 border-t border-white/[0.06] flex items-center justify-between text-[10px] font-mono text-gray-400">
+                <span class="flex items-center gap-1.5">
+                    <span class="w-1.5 h-1.5 rounded-full ${pulse ? 'bg-emerald-400 animate-ping' : 'bg-[#5a8fd8]'}"></span>
+                    <span>${esc(note)}</span>
+                </span>
+                <span class="text-gray-500">${esc(occ.dayName)}</span>
+            </div>
+        </div>
+    `;
+}
+
+// Hydrate cached data on initial render
 function hydrateCachedAcademicData() {
     try {
         const p = sessionStorage.getItem('_ewu_profile_cache');
         const d = sessionStorage.getItem('_ewu_degree_cache');
+        const l = sessionStorage.getItem('_ewu_ledger_cache');
+        const s = sessionStorage.getItem('_ewu_semesters_cache');
+        const r = sessionStorage.getItem('_ewu_routine_cache');
+
         const prof = p ? JSON.parse(p) : null;
         const deg = d ? JSON.parse(d) : null;
+        const led = l ? JSON.parse(l) : null;
+        const sem = s ? JSON.parse(s) : null;
+        const routine = r ? JSON.parse(r) : null;
+
+        if (sem && Array.isArray(sem)) {
+            const detected = detectCurrentSemester(sem);
+            if (detected) updateCurrentSemesterDisplay(detected);
+        }
         if (prof) renderStudentWelcome(prof);
-        if (prof || deg) renderAcademicStats(prof, deg);
+        if (prof || deg || led) renderAcademicStats(prof, deg, led);
+        if (routine && Array.isArray(routine)) {
+            renderUpcomingClassCard(getUpcomingClassInfo(routine));
+        }
     } catch (e) { }
 }
 
 async function fetchStudentAcademicData() {
     try {
-        const [profRes, degRes] = await Promise.all([
+        const [profRes, degRes, ledRes, semRes] = await Promise.all([
             fetch(`${API_BASE_URL}/api/profile`, { credentials: 'include' }).catch(() => null),
-            fetch(`${API_BASE_URL}/api/degree-review`, { credentials: 'include' }).catch(() => null)
+            fetch(`${API_BASE_URL}/api/degree-review`, { credentials: 'include' }).catch(() => null),
+            fetch(`${API_BASE_URL}/api/ledger`, { credentials: 'include' }).catch(() => null),
+            fetch(`${API_BASE_URL}/api/semesters`, { credentials: 'include' }).catch(() => null)
         ]);
 
         let profData = null;
@@ -425,53 +706,192 @@ async function fetchStudentAcademicData() {
             }
         }
 
+        let ledgerData = null;
+        if (ledRes && ledRes.ok) {
+            const j = await ledRes.json();
+            ledgerData = j;
+            if (ledgerData) {
+                try { sessionStorage.setItem('_ewu_ledger_cache', JSON.stringify(ledgerData)); } catch (e) { }
+            }
+        } else {
+            renderScholarshipCard({ hasScholarship: false, title: 'None', details: 'No active waiver or award' });
+        }
+
+        let semestersList = null;
+        let activeSem = null;
+        if (semRes && semRes.ok) {
+            const j = await semRes.json();
+            if (j && Array.isArray(j.semesters)) {
+                semestersList = j.semesters;
+                try { sessionStorage.setItem('_ewu_semesters_cache', JSON.stringify(semestersList)); } catch (e) { }
+                activeSem = detectCurrentSemester(semestersList);
+                if (activeSem) updateCurrentSemesterDisplay(activeSem);
+            }
+        }
+
         if (profData) renderStudentWelcome(profData);
-        if (profData || degData) renderAcademicStats(profData, degData);
+        if (profData || degData || ledgerData) renderAcademicStats(profData, degData, ledgerData);
+
+        // Fetch class schedule for upcoming class card
+        const targetSemesterId = activeSem ? activeSem.SemesterId : (profData ? profData.SemesterId : null);
+        if (targetSemesterId) {
+            try {
+                const schedRes = await fetch(`${API_BASE_URL}/api/schedule?semesterId=${encodeURIComponent(targetSemesterId)}`, { credentials: 'include' });
+                if (schedRes.ok) {
+                    const schedJson = await schedRes.json();
+                    if (schedJson && Array.isArray(schedJson.courses)) {
+                        try { sessionStorage.setItem('_ewu_routine_cache', JSON.stringify(schedJson.courses)); } catch (e) { }
+                        renderUpcomingClassCard(getUpcomingClassInfo(schedJson.courses));
+                    } else {
+                        renderUpcomingClassCard(null);
+                    }
+                } else {
+                    renderUpcomingClassCard(null);
+                }
+            } catch (err) {
+                renderUpcomingClassCard(null);
+            }
+        } else {
+            renderUpcomingClassCard(null);
+        }
     } catch (err) {
         console.warn('Academic data fetch error:', err);
     }
 }
 
 // ========================================
-// Upcoming Academic Calendar & Events
+// Important Dates & Academic Calendar
 // ========================================
 let allAcademicEvents = [];
 
-function parseEventCountdown(dateStr, semesterTitle) {
-    if (!dateStr) return { diffDays: -999, label: 'TBD', cls: 'bg-white/5 text-gray-500 border-white/10', isUpcoming: false };
+function parseDateRange(dateStr, defaultYear) {
+    if (!dateStr) return null;
+    const cleanStr = String(dateStr).replace(/&nbsp;/gi, ' ').replace(/\s+/g, ' ').trim();
 
-    let year = new Date().getFullYear();
-    const yrMatch = String(semesterTitle || '').match(/\b(20\d\d)\b/);
+    let year = defaultYear || new Date().getFullYear();
+    const yrMatch = cleanStr.match(/\b(20\d\d)\b/);
     if (yrMatch) year = parseInt(yrMatch[1], 10);
 
-    const parts = dateStr.match(/([a-zA-Z]+)\s*(\d+)/);
-    if (!parts) return { diffDays: -999, label: 'Scheduled', cls: 'bg-white/10 text-gray-400 border-white/20', isUpcoming: true };
+    const monthMap = {
+        jan: 0, january: 0, feb: 1, february: 1, mar: 2, march: 2, apr: 3, april: 3,
+        may: 4, jun: 5, june: 5, jul: 6, july: 6, aug: 7, august: 7, sep: 8, sept: 8, september: 8,
+        oct: 9, october: 9, nov: 10, november: 10, dec: 11, december: 11
+    };
 
-    const month = parts[1];
-    const day = parseInt(parts[2], 10);
-    const eventDate = new Date(`${month} ${day}, ${year} 00:00:00`);
-    if (isNaN(eventDate.getTime())) return { diffDays: -999, label: 'Scheduled', cls: 'bg-white/10 text-gray-400 border-white/20', isUpcoming: true };
+    // Range across two months: "November 20 - December 02, 2026"
+    const twoMonthsMatch = cleanStr.match(/([a-zA-Z]+)\s+(\d+)\s*(?:-|–|to)\s*([a-zA-Z]+)\s+(\d+)/i);
+    if (twoMonthsMatch) {
+        const m1 = monthMap[twoMonthsMatch[1].toLowerCase()];
+        const d1 = parseInt(twoMonthsMatch[2], 10);
+        const m2 = monthMap[twoMonthsMatch[3].toLowerCase()];
+        const d2 = parseInt(twoMonthsMatch[4], 10);
+        if (m1 !== undefined && m2 !== undefined) {
+            return {
+                start: new Date(year, m1, d1, 0, 0, 0),
+                end: new Date(year, m2, d2, 23, 59, 59),
+                isRange: true
+            };
+        }
+    }
+
+    // Range within same month: "October 12 - 15, 2026"
+    const oneMonthRangeMatch = cleanStr.match(/([a-zA-Z]+)\s+(\d+)\s*(?:-|–|to)\s*(\d+)/i);
+    if (oneMonthRangeMatch) {
+        const m = monthMap[oneMonthRangeMatch[1].toLowerCase()];
+        const d1 = parseInt(oneMonthRangeMatch[2], 10);
+        const d2 = parseInt(oneMonthRangeMatch[3], 10);
+        if (m !== undefined) {
+            return {
+                start: new Date(year, m, d1, 0, 0, 0),
+                end: new Date(year, m, d2, 23, 59, 59),
+                isRange: true
+            };
+        }
+    }
+
+    // Single date: "October 12, 2026"
+    const singleMatch = cleanStr.match(/([a-zA-Z]+)\s+(\d+)/i);
+    if (singleMatch) {
+        const m = monthMap[singleMatch[1].toLowerCase()];
+        const d = parseInt(singleMatch[2], 10);
+        if (m !== undefined) {
+            return {
+                start: new Date(year, m, d, 0, 0, 0),
+                end: new Date(year, m, d, 23, 59, 59),
+                isRange: false
+            };
+        }
+    }
+
+    return null;
+}
+
+function classifyAcademicDate(dateStr, semesterTitle) {
+    if (!dateStr) return { status: 'tbd', label: 'TBD', cls: 'bg-white/5 text-gray-500 border-white/10', pulse: false, diffDays: 999 };
+
+    let defaultYear = new Date().getFullYear();
+    const yrMatch = String(semesterTitle || '').match(/\b(20\d\d)\b/);
+    if (yrMatch) defaultYear = parseInt(yrMatch[1], 10);
+
+    const range = parseDateRange(dateStr, defaultYear);
+    if (!range) return { status: 'scheduled', label: 'Scheduled', cls: 'bg-white/10 text-gray-300 border-white/20', pulse: false, diffDays: 999 };
 
     const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const todayZero = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0);
 
-    const diffMs = eventDate.getTime() - today.getTime();
-    const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
-
-    if (diffDays === 0) {
-        return { diffDays, label: 'Today', cls: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30', isUpcoming: true };
-    } else if (diffDays === 1) {
-        return { diffDays, label: 'Tomorrow', cls: 'bg-sky-500/20 text-sky-300 border-sky-500/30', isUpcoming: true };
-    } else if (diffDays > 1 && diffDays <= 7) {
-        return { diffDays, label: `In ${diffDays} days`, cls: 'bg-amber-500/20 text-amber-300 border-amber-500/30', isUpcoming: true };
-    } else if (diffDays > 7 && diffDays <= 30) {
-        const weeks = Math.ceil(diffDays / 7);
-        return { diffDays, label: `In ${weeks} wk${weeks > 1 ? 's' : ''}`, cls: 'bg-purple-500/20 text-purple-300 border-purple-500/30', isUpcoming: true };
-    } else if (diffDays > 30) {
-        return { diffDays, label: `In ${diffDays} days`, cls: 'bg-white/10 text-gray-300 border-white/20', isUpcoming: true };
-    } else {
-        return { diffDays, label: 'Concluded', cls: 'bg-white/5 text-gray-500 border-white/10', isUpcoming: false };
+    // 1. Ongoing / Active Now
+    if (today >= range.start && today <= range.end) {
+        return {
+            status: 'ongoing',
+            label: 'Active Now',
+            cls: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
+            pulse: true,
+            diffDays: 0,
+            range
+        };
     }
+
+    // 2. Future / Upcoming
+    if (todayZero < range.start) {
+        const diffMs = range.start.getTime() - todayZero.getTime();
+        const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+        let label = `In ${diffDays} days`;
+        let cls = 'bg-white/10 text-gray-300 border-white/20';
+        if (diffDays === 0) {
+            label = 'Today';
+            cls = 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30';
+        } else if (diffDays === 1) {
+            label = 'Tomorrow';
+            cls = 'bg-sky-500/20 text-sky-300 border-sky-500/30';
+        } else if (diffDays <= 7) {
+            label = `In ${diffDays} days`;
+            cls = 'bg-amber-500/20 text-amber-300 border-amber-500/30';
+        } else if (diffDays <= 30) {
+            const w = Math.ceil(diffDays / 7);
+            label = `In ${w} wk${w > 1 ? 's' : ''}`;
+            cls = 'bg-purple-500/20 text-purple-300 border-purple-500/30';
+        }
+
+        return {
+            status: 'upcoming',
+            label,
+            cls,
+            pulse: false,
+            diffDays,
+            range
+        };
+    }
+
+    // 3. Concluded
+    return {
+        status: 'concluded',
+        label: 'Concluded',
+        cls: 'bg-white/5 text-gray-500 border-white/10',
+        pulse: false,
+        diffDays: -1,
+        range
+    };
 }
 
 function getCategoryPill(category) {
@@ -491,15 +911,22 @@ function renderUpcomingEventsList(events, semesterTitle) {
 
     const parsed = events.map(e => ({
         ...e,
-        countdown: parseEventCountdown(e.date, semesterTitle)
+        classification: classifyAcademicDate(e.date, semesterTitle)
     }));
 
-    const upcoming = parsed.filter(e => e.countdown.diffDays >= 0);
-    upcoming.sort((a, b) => a.countdown.diffDays - b.countdown.diffDays);
+    // Filter for active ongoing + upcoming events
+    const activeAndUpcoming = parsed.filter(e => e.classification.status === 'ongoing' || e.classification.diffDays >= 0);
 
-    let displayList = upcoming.slice(0, 3);
+    // Sort: ongoing first, then nearest upcoming
+    activeAndUpcoming.sort((a, b) => {
+        if (a.classification.status === 'ongoing' && b.classification.status !== 'ongoing') return -1;
+        if (b.classification.status === 'ongoing' && a.classification.status !== 'ongoing') return 1;
+        return a.classification.diffDays - b.classification.diffDays;
+    });
+
+    let displayList = activeAndUpcoming.slice(0, 3);
     if (displayList.length === 0) {
-        displayList = parsed.slice(-3);
+        displayList = parsed.slice(-3); // Fallback to last events if all concluded
     }
 
     listEl.innerHTML = displayList.map(e => {
@@ -507,13 +934,14 @@ function renderUpcomingEventsList(events, semesterTitle) {
         const dateMatch = (e.date || '').match(/([a-zA-Z]+)\s*(\d+)/);
         const monthShort = dateMatch ? dateMatch[1].slice(0, 3).toUpperCase() : 'DATE';
         const dayNum = dateMatch ? dateMatch[2] : '';
+        const cl = e.classification;
 
         return `
             <div class="event-item-card p-2.5 sm:p-3 flex items-center justify-between gap-3">
                 <div class="flex items-center gap-3 min-w-0">
-                    <div class="w-11 h-11 rounded-xl bg-white/[0.04] border border-white/[0.08] flex flex-col items-center justify-center flex-shrink-0 text-center leading-none">
+                    <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-white/[0.04] border border-white/[0.08] flex flex-col items-center justify-center flex-shrink-0 text-center leading-none">
                         <span class="text-[9px] font-mono uppercase text-[#D86C5A] font-bold tracking-wider">${esc(monthShort)}</span>
-                        <span class="text-sm font-extrabold text-white mt-0.5">${esc(dayNum)}</span>
+                        <span class="text-xs sm:text-sm font-extrabold text-white mt-0.5">${esc(dayNum)}</span>
                     </div>
                     <div class="min-w-0">
                         <div class="text-xs sm:text-sm font-semibold text-gray-100 truncate">${esc(e.event)}</div>
@@ -525,8 +953,8 @@ function renderUpcomingEventsList(events, semesterTitle) {
                     </div>
                 </div>
                 <div class="flex flex-col items-end gap-1 flex-shrink-0">
-                    <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full border ${e.countdown.cls}">
-                        ${e.countdown.label}
+                    <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full border ${cl.cls} ${cl.pulse ? 'animate-pulse' : ''}">
+                        ${cl.label}
                     </span>
                     <span class="text-[9px] font-medium px-1.5 py-0.2 rounded border ${cat.cls} hidden sm:inline-block">
                         ${cat.label}
@@ -564,6 +992,7 @@ function initCalendarModal(events) {
 
         listContainer.innerHTML = filtered.map(e => {
             const cat = getCategoryPill(e.category);
+            const cl = e.classification || classifyAcademicDate(e.date);
             return `
                 <div class="p-3 rounded-xl bg-white/[0.03] border border-white/[0.06] hover:border-white/[0.12] transition-colors flex items-start justify-between gap-3">
                     <div class="min-w-0">
@@ -577,8 +1006,8 @@ function initCalendarModal(events) {
                     </div>
                     <div class="text-right flex-shrink-0">
                         <div class="text-xs font-mono font-medium text-gray-200">${esc(e.date)}</div>
-                        <span class="inline-block mt-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border ${e.countdown.cls}">
-                            ${e.countdown.label}
+                        <span class="inline-block mt-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border ${cl.cls} ${cl.pulse ? 'animate-pulse' : ''}">
+                            ${cl.label}
                         </span>
                     </div>
                 </div>

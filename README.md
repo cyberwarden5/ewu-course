@@ -86,35 +86,33 @@ scripts:
 
 ## Student-Centred Dashboard Experience
 
-The dashboard transforms the portal into a personalised student space before listing tools:
+The dashboard transforms the portal into an engaging, dignified, and personalised student space before listing academic tools:
 
-1. **Personalised Student Welcome Banner:**
-   - Displays real student identity: Student Name, ID, Degree Program, Department, and current Semester.
-   - Dynamic time-aware greeting (`Good morning`, `Good afternoon`, `Good evening`, or `Welcome back`).
-   - Profile avatar with subtle breathing pulse ring animation and instant SVG monogram initials fallback (`AL`, `EWU`).
-   - Student academic standing badge (`Good Standing` in emerald, `Dean's Honor Roll` in amber, or `Probation`).
-   - Academic Advisor / Mentor chip and one-click navigation to the full Profile view.
+1. **Personalised Student Welcome & Privacy Avatar:**
+   - **Privacy-Friendly Avatar:** Minimalist, sleek black-and-white vector avatar (`student-avatar.svg`) matching the obsidian dark aesthetic. Student photos are never exposed on this dashboard section.
+   - **Sequential Name Animation:** Welcomes the student with a smooth, upward-sliding sequential name animation cycling dynamically through each part of their real name (e.g. `Hello, Aftab` → `Hello, Kabir` → `Hello, Limon`) with zero layout shift.
+   - **Active Current Semester:** Dynamically detects and displays the student's *current active semester* (e.g. `Fall-2026`) via `/api/semesters` date range checks rather than their historical admission semester.
+   - **Clean Identity:** Displays Student ID, Undergraduate Program, Current Semester, and Academic Advisor.
 
-2. **Academic Overview & Key Statistics:**
-   - **Current CGPA:** Real-time cumulative GPA formatted to 2 decimals with standing classification.
+2. **Academic Status Cards (4-Column Grid):**
+   - **Current CGPA:** Real-time cumulative GPA formatted to 2 decimals with standing classification (`Scale 4.00`).
    - **Credits Completed:** Earned credits vs minimum required credits (`46.0 / 140.0 Cr`) and remaining balance.
-   - **Degree Progress:** Animated visual progress bar and percentage calculation (`(CrEarned / MinCr) * 100`).
-   - **Completed Courses:** Total count of completed courses calculated from curriculum areas.
-   - Instant optimistic hydration via `sessionStorage` cache prevents layout shift on return.
+   - **Degree Progress:** Visual progress bar and percentage calculation (`(CrEarned / MinCr) * 100`).
+   - **Scholarship:** Real-time scholarship status extracted from the student's Account Ledger (`/api/ledger`). Identifies award type (e.g. `Dean's Scholarship`, `Merit Scholarship`, `Tuition Waiver`), adjusted amounts, and semester duration/balance (e.g. `Tk. 18,000 adjusted • Bal: 37,000 till Spr 27`), or cleanly displays `None` if unawarded.
 
-3. **Live Academic Calendar & Upcoming Events:**
-   - Fetches live university schedules from the official EWU academic calendar (`https://www.ewubd.edu/academic-calendar`).
-   - Displays the nearest upcoming and active events with dynamic countdown badges (`Today`, `Tomorrow`, `In 3 days`, `In 2 weeks`).
-   - Category tags: `Exam`, `Advising`, `Holiday`, `Class`, and `Deadline`.
-   - "View All" modal drawer allows searchable browsing of all semester dates.
+3. **Important Dates (7 Columns):**
+   - Live academic schedule synced from the official EWU academic calendar (`https://www.ewubd.edu/academic-calendar`).
+   - **Smart Ongoing Detection:** Tags active ongoing academic events (e.g. midterm examinations, advising periods) with an `Active Now` pulsing emerald badge.
+   - **Proximity Sorting:** Prioritizes nearest upcoming dates (`Today`, `Tomorrow`, `In 3 days`, `In 2 wks`) and automatically filters out concluded past dates.
+   - "View All" modal drawer with live search and category filter.
 
-4. **Campus Vibes & Relatable Humor:**
-   - Curated collection of 28+ university jokes, exam panic moments, CGPA comeback realities, and Bangla/Banglish student expressions.
-   - Interactive `🎲 Shuffle` button with smooth transition and automatic periodic rotation.
+4. **Quotes & Upcoming Class (5 Columns):**
+   - **Quotes (Top):** Minimalist, dignified quote card displaying curated thoughts, study motivation, and relatable EWU student humor with author/lore attribution (`— EWU Student Lore`, `— Nelson Mandela`, etc.). Includes a `🎲 Shuffle` button.
+   - **Upcoming Class (Bottom):** Real-time routine tracker powered by the student's live enrolled class schedule (`/api/schedule`). Automatically detects if a class is currently in session (`In Session`), next up today (`Today`), or scheduled on an upcoming day (`Tomorrow` / `Sunday`). Displays Course Code, Section, Room, Time, and Faculty.
 
 5. **Academic Tools & Services:**
-   - Organized neatly below the student overview with section divider and total available tools count.
-   - Preserves all 10 tools, admin gating, and compact single-screen mobile layout.
+   - Positioned cleanly below the student overview space with clear category dividers and available count.
+   - Compact, single-screen mobile layout ensures students can browse all active features without excessive scrolling.
 
 ---
 
