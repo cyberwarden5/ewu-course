@@ -1,9 +1,7 @@
 # EWU Course Schedule Tool — by Aftab Kabir
 
-A lightweight, mobile-first academic dashboard for **East West University (EWU)**
-students. It provides course advising routines, department-wise offerings,
-pre-advising, degree audit, curriculum, class schedules, a course planner,
-account ledger, grade report, and a CGPA planner.
+A lightweight, student-centred, mobile-first academic portal for **East West University (EWU)**
+students. It features a personalised student welcome space, real academic statistics & degree progress, live upcoming university events from the official EWU academic calendar, relatable campus humor, and a suite of academic tools: course advising routines, department-wise offerings, pre-advising, degree audit, curriculum, class schedules, course planner, account ledger, grade report, and CGPA planner.
 
 > **Disclaimer:** This is an independent educational project. It has **no
 > official connection** with East West University. All logos and course data
@@ -83,6 +81,40 @@ scripts:
 - `window.gateFeaturePage(key)`, `window.requireAuth()`, `window.performLogout()`
 - Formatting/parsing helpers (`escapeHtml`, `parsePortalSlot`, `timeToMinutes`,
   `parseGradeReportHtml`, …).
+
+---
+
+## Student-Centred Dashboard Experience
+
+The dashboard transforms the portal into a personalised student space before listing tools:
+
+1. **Personalised Student Welcome Banner:**
+   - Displays real student identity: Student Name, ID, Degree Program, Department, and current Semester.
+   - Dynamic time-aware greeting (`Good morning`, `Good afternoon`, `Good evening`, or `Welcome back`).
+   - Profile avatar with subtle breathing pulse ring animation and instant SVG monogram initials fallback (`AL`, `EWU`).
+   - Student academic standing badge (`Good Standing` in emerald, `Dean's Honor Roll` in amber, or `Probation`).
+   - Academic Advisor / Mentor chip and one-click navigation to the full Profile view.
+
+2. **Academic Overview & Key Statistics:**
+   - **Current CGPA:** Real-time cumulative GPA formatted to 2 decimals with standing classification.
+   - **Credits Completed:** Earned credits vs minimum required credits (`46.0 / 140.0 Cr`) and remaining balance.
+   - **Degree Progress:** Animated visual progress bar and percentage calculation (`(CrEarned / MinCr) * 100`).
+   - **Completed Courses:** Total count of completed courses calculated from curriculum areas.
+   - Instant optimistic hydration via `sessionStorage` cache prevents layout shift on return.
+
+3. **Live Academic Calendar & Upcoming Events:**
+   - Fetches live university schedules from the official EWU academic calendar (`https://www.ewubd.edu/academic-calendar`).
+   - Displays the nearest upcoming and active events with dynamic countdown badges (`Today`, `Tomorrow`, `In 3 days`, `In 2 weeks`).
+   - Category tags: `Exam`, `Advising`, `Holiday`, `Class`, and `Deadline`.
+   - "View All" modal drawer allows searchable browsing of all semester dates.
+
+4. **Campus Vibes & Relatable Humor:**
+   - Curated collection of 28+ university jokes, exam panic moments, CGPA comeback realities, and Bangla/Banglish student expressions.
+   - Interactive `🎲 Shuffle` button with smooth transition and automatic periodic rotation.
+
+5. **Academic Tools & Services:**
+   - Organized neatly below the student overview with section divider and total available tools count.
+   - Preserves all 10 tools, admin gating, and compact single-screen mobile layout.
 
 ---
 

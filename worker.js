@@ -1358,10 +1358,9 @@ async function handleGetCurriculum(request) {
 // ===== ENDPOINT: GET /api/academic-calendar ===== (Official Academic Calendar & Holidays)
 async function handleGetAcademicCalendar(request) {
   try {
+    const userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
     const calRes = await fetchWithRetry('https://www.ewubd.edu/academic-calendar', {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-      }
+      headers: { 'User-Agent': userAgent }
     }, 1);
 
     if (!calRes || !calRes.ok) {
@@ -1371,21 +1370,50 @@ async function handleGetAcademicCalendar(request) {
       }, 503, request);
     }
 
-    const html = await calRes.text();
-    const rowMatches = html.match(/<tr[^>]*>([\s\S]*?)<\/tr>/gi);
+    let html = await calRes.text();
+    let rowMatches = html.match(/<tr[^>]*>([\s\S]*?)<\/tr>/gi);
+    let calendarTitle = 'Academic Calendar';
+    let calendarUrl = 'https://www.ewubd.edu/academic-calendar';
+
+    // If main index has no rows, extract the detail calendar link
     if (!rowMatches || rowMatches.length <= 5) {
+      const linkMatches = [...html.matchAll(/href="(\/academic-calendar-details\/[^"]+)">([^<]+)<\/a>/g)];
+      if (linkMatches && linkMatches.length > 0) {
+        // Prioritize undergraduate calendar
+        const ugLink = linkMatches.find(m => {
+          const t = m[2].toLowerCase();
+          const u = m[1].toLowerCase();
+          return !t.includes('final exam') && !t.includes('pharm') && !t.includes('ll.b') && !u.includes('graduate') && !t.includes('graduate');
+        }) || linkMatches[0];
+
+        calendarTitle = ugLink[2].trim();
+        calendarUrl = 'https://www.ewubd.edu' + ugLink[1];
+
+        const detailRes = await fetchWithRetry(calendarUrl, {
+          headers: { 'User-Agent': userAgent }
+        }, 1);
+
+        if (detailRes && detailRes.ok) {
+          html = await detailRes.text();
+          rowMatches = html.match(/<tr[^>]*>([\s\S]*?)<\/tr>/gi);
+        }
+      }
+    }
+
+    if (!rowMatches || rowMatches.length <= 3) {
       return jsonResponse({
         status: 'error',
         message: 'No academic calendar records could be parsed from the university website.'
       }, 503, request);
     }
 
+    const allEvents = [];
     const extractedHolidays = [];
     let detectedFirstDay = null;
     let detectedLastDay = null;
     let detectedSemester = 'Current Semester';
 
-    const semTitleMatch = html.match(/<(?:h2|h3|h4)[^>]*>[\s\S]*?(Fall|Spring|Summer)\s*(\d{4})[\s\S]*?<\/(?:h2|h3|h4)>/i);
+    const semTitleMatch = html.match(/(Fall|Spring|Summer)\s*(\d{4})/i) || calendarTitle.match(/(Fall|Spring|Summer)\s*(\d{4})/i);
     if (semTitleMatch) {
       detectedSemester = `${semTitleMatch[1]} ${semTitleMatch[2]}`;
     }
@@ -1398,13 +1426,38 @@ async function handleGetAcademicCalendar(request) {
         const dayText = clean(cells[1]);
         const eventText = clean(cells[2]);
 
+        if (!dateText || !eventText || dateText.toLowerCase() === 'date') continue;
+
+        let category = 'event';
+        if (/Holiday|Vacation|Durgapuja|Eid|Puja|Victory|Christmas|Break|Day off|Martyrs|Independence|May Day/i.test(eventText)) {
+          category = 'holiday';
+        } else if (/Exam|Examination/i.test(eventText)) {
+          category = 'exam';
+        } else if (/Advising|Registration|Payment|Tuition|Fee|Add|Drop/i.test(eventText)) {
+          category = 'advising';
+        } else if (/Class|Classes|Orientation/i.test(eventText)) {
+          category = 'class';
+        } else if (/Deadline|Last day to|Withdrawal/i.test(eventText)) {
+          category = 'deadline';
+        }
+
         if (/First\s+Day\s+of\s+Classes/i.test(eventText)) {
           detectedFirstDay = dateText;
         }
         if (/Last\s+Day\s+of\s+Classes/i.test(eventText)) {
           detectedLastDay = dateText;
         }
-        if (/Holiday|Vacation|Durgapuja|Eid|Puja|Victory|Christmas|Break/i.test(eventText)) {
+
+        const eventObj = {
+          date: dateText,
+          day: dayText,
+          event: eventText,
+          category: category
+        };
+
+        allEvents.push(eventObj);
+
+        if (category === 'holiday') {
           extractedHolidays.push({
             name: eventText.replace(/^Holiday:\s*/i, '').trim(),
             description: eventText,
@@ -1419,8 +1472,11 @@ async function handleGetAcademicCalendar(request) {
       status: 'success',
       source: 'live',
       semester: detectedSemester,
+      calendarTitle: calendarTitle,
+      calendarUrl: calendarUrl,
       firstDayOfClasses: detectedFirstDay,
       lastDayOfClasses: detectedLastDay,
+      events: allEvents,
       holidays: extractedHolidays
     }, 200, request);
   } catch (err) {

@@ -52,6 +52,7 @@ dashboard.png
 image.png
 Info/
 
+scratch/
 .dev.vars*
 !.dev.vars.example
 !.env.example

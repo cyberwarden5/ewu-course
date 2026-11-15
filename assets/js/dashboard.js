@@ -59,32 +59,582 @@ function updateStudentIdDisplay(id, name) {
     }
 }
 
-// Fetch student profile asynchronously to display full name in header
-async function loadStudentProfileName() {
-    try {
-        const res = await fetch(`${API_BASE_URL}/api/profile`, { credentials: 'include' });
-        if (res.ok) {
-            const json = await res.json();
-            const prof = json && json.data ? json.data : null;
-            if (prof) {
-                const cleanName = [prof.FirstName, prof.MiddleName, prof.LastName]
-                    .filter(Boolean)
-                    .join(' ')
-                    .replace(/[\r\n\t]+/g, ' ')
-                    .replace(/\s+/g, ' ')
-                    .trim();
+// ========================================
+// Student Quotes 
+// ========================================
+const STUDENT_QUOTES = [
+    { quote: "Ki bochor toh sesh, comeback diba kobe?", category: "Comeback Era" },
+    { quote: "Buke hat diye bol toh, CGPA koto?", category: "CGPA Realities" },
+    { quote: "Ki vai, business suru korben na?", category: "Career Goals" },
+    { quote: "Varsity te bondhu hoyna, sob shap! 🐍", category: "Campus Truth" },
+    { quote: "Midterm er age: 'Eibar A+ confirm.' Midterm er pore: 'Pass korlei shanti!'", category: "Exam Panic" },
+    { quote: "Assignment submission at 11:59 PM. Sent at 11:58:59 PM. Pure adrenaline!", category: "Deadline Rush" },
+    { quote: "Advising er din EWU portal er server: 'Ami toh mori nai, tobe beche o nai!'", category: "Advising Rush" },
+    { quote: "Group project e 4 jon member: 1 jon kaj kore, 2 jon dekhe, ar 4 number jon submission er shomoy name spell kore dey!", category: "Group Projects" },
+    { quote: "Attendance 80% maintain korte giye ghum 20% e neme ashe.", category: "EWU Life" },
+    { quote: "CGPA is temporary, but 'Mama, canteen e chol ek cup cha khai' is permanent.", category: "Canteen Chronicles" },
+    { quote: "Faculty: 'Question standard hoise.' Students: 'Amader standard neme gese sir!'", category: "Exam Realities" },
+    { quote: "Retake is an investment in self-improvement... Santona...", category: "EWU Humor" },
+    { quote: "Class er gap e ki korbo? Canteen e boshe existential crisis e bhogbo.", category: "Campus Life" },
+    { quote: "Shob semester er shurute bhabi ekta daily routine banabo. Calendar e sudhu exam er date daag thake.", category: "Semester Goals" },
+    { quote: "Final exam er age: 'Dua koro bondhu.' Exam seshe: 'Mama kobe treat dibi?'", category: "Friendship" },
+    { quote: "Course drop korar por je shukher shanti pawa jay, seta Nirvana er cheyeo beshi.", category: "Inner Peace" },
+    { quote: "Syllabus dekhe mone hoy, 4 mash er moddhe PhD sesh korte hobe.", category: "Academic Pressure" },
+    { quote: "Bondhu jokhon 3.9 peye bole 'Kisu pari na vai', tokhon khub kosto hoy.", category: "Pain & Sorrow" },
+    { quote: "Sleep schedule? What is that? Amar schedule to Registrar Office decide kore.", category: "Sleep Deprived" },
+    { quote: "Bhalo group mate pawa mane lottery jeeta!", category: "University Lore" },
+    { quote: "First week: 'Sob class notes nibo.' Midterm: 'Bhai keu ektu note gula dis!'", category: "Student Evolution" },
+    { quote: "Advising slot shokal 8 tay, sleep cycle shokal 9 tay shuru.", category: "Advising Struggles" },
+    { quote: "University library te shobai porashona kore na, Keo Keo AC er thanda hawa khete ashe.", category: "Library Secrets" },
+    { quote: "GPA 4.00 chilo dream, 3.50 chilo goal, 3.00 chilo hope, pass marks holo reality.", category: "Student Journey" },
+    { quote: "Prerequisite clear howar pore je anondo, ta kono festival eo nei.", category: "Milestone" },
+    { quote: "East West er bridge paar howar shomoy haway sob porashona ure jay!", category: "EWU Campus" },
+    { quote: "Life update: Survived advising rush, now waiting for graduation miracle.", category: "Survival Mode" },
+    { quote: "Bhai lab report copy korte giye student ID ta o copy kore felio na aber!", category: "Pro Tips" }
+];
 
-                if (cleanName) {
-                    try { localStorage.setItem('studentName', cleanName); } catch (e) { }
-                    if (prof.StudentId) {
-                        try { localStorage.setItem('studentId', prof.StudentId); } catch (e) { }
-                    }
-                    updateStudentIdDisplay(prof.StudentId, cleanName);
+let quoteIntervalId = null;
+let currentQuoteIndex = -1;
+
+function displayQuote(index) {
+    const textEl = document.getElementById('studentQuoteText');
+    const catEl = document.getElementById('studentQuoteCategory');
+    if (!textEl || !catEl) return;
+
+    if (index == null || index < 0 || index >= STUDENT_QUOTES.length) {
+        index = Math.floor(Math.random() * STUDENT_QUOTES.length);
+    }
+    currentQuoteIndex = index;
+    const item = STUDENT_QUOTES[index];
+
+    textEl.style.opacity = '0';
+    textEl.style.transform = 'translateY(4px)';
+
+    setTimeout(() => {
+        textEl.textContent = item.quote;
+        catEl.textContent = item.category;
+        textEl.style.opacity = '1';
+        textEl.style.transform = 'translateY(0)';
+    }, 180);
+}
+
+function initStudentQuotes() {
+    displayQuote();
+
+    const shuffleBtn = document.getElementById('btnShuffleQuote');
+    if (shuffleBtn) {
+        shuffleBtn.onclick = () => {
+            let nextIndex;
+            do {
+                nextIndex = Math.floor(Math.random() * STUDENT_QUOTES.length);
+            } while (nextIndex === currentQuoteIndex && STUDENT_QUOTES.length > 1);
+            displayQuote(nextIndex);
+            if (quoteIntervalId) clearInterval(quoteIntervalId);
+            quoteIntervalId = setInterval(() => displayQuote(), 12000);
+        };
+    }
+
+    if (!quoteIntervalId) {
+        quoteIntervalId = setInterval(() => {
+            if (!document.hidden) {
+                let nextIndex;
+                do {
+                    nextIndex = Math.floor(Math.random() * STUDENT_QUOTES.length);
+                } while (nextIndex === currentQuoteIndex && STUDENT_QUOTES.length > 1);
+                displayQuote(nextIndex);
+            }
+        }, 12000);
+    }
+}
+
+// ========================================
+// Personalised Student Welcome & Avatar
+// ========================================
+function getInitials(name) {
+    if (!name) return 'EWU';
+    const parts = name.trim().split(/\s+/).filter(Boolean);
+    if (parts.length === 0) return 'EWU';
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
+async function loadDashboardAvatar(profile) {
+    const photoEl = document.getElementById('dashboardStudentPhoto');
+    const fallbackEl = document.getElementById('dashboardStudentAvatarFallback');
+    const initialsEl = document.getElementById('dashboardAvatarInitials');
+    if (!photoEl || !fallbackEl) return;
+
+    const studentId = profile.StudentId || getStoredStudentId() || '';
+    const cleanName = [profile.FirstName, profile.MiddleName, profile.LastName]
+        .filter(Boolean)
+        .join(' ')
+        .replace(/[\r\n\t]+/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+    if (initialsEl) {
+        initialsEl.textContent = getInitials(cleanName) || 'EWU';
+    }
+
+    if (profile.ProfilePictureUrl || studentId) {
+        const params = new URLSearchParams();
+        if (studentId) params.append('studentId', studentId);
+        if (profile.ProfilePictureUrl) params.append('url', profile.ProfilePictureUrl);
+        const photoUrl = `${API_BASE_URL}/api/profile/photo?${params.toString()}`;
+
+        try {
+            const res = await fetch(photoUrl, { credentials: 'include' });
+            if (res.ok) {
+                const blob = await res.blob();
+                if (blob && blob.type.startsWith('image/')) {
+                    const objectUrl = URL.createObjectURL(blob);
+                    photoEl.src = objectUrl;
+                    photoEl.classList.remove('hidden');
+                    fallbackEl.classList.add('hidden');
+                    return;
                 }
             }
+        } catch (e) {
+            // Graceful fallback to SVG initials
         }
-    } catch (e) {
-        // Non-blocking profile name fetch
+    }
+
+    photoEl.classList.add('hidden');
+    fallbackEl.classList.remove('hidden');
+}
+
+function renderStudentWelcome(profile) {
+    if (!profile) return;
+
+    // Time of day greeting
+    const hour = new Date().getHours();
+    let timeGreeting = 'Welcome';
+    if (hour >= 5 && hour < 12) timeGreeting = 'Good morning';
+    else if (hour >= 12 && hour < 17) timeGreeting = 'Good afternoon';
+    else if (hour >= 17 && hour < 22) timeGreeting = 'Good evening';
+    else timeGreeting = 'Welcome back';
+
+    const greetingTimeBadge = document.getElementById('greetingTimeBadge');
+    if (greetingTimeBadge) greetingTimeBadge.textContent = timeGreeting;
+
+    const cleanName = [profile.FirstName, profile.MiddleName, profile.LastName]
+        .filter(Boolean)
+        .join(' ')
+        .replace(/[\r\n\t]+/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+    const welcomeStudentName = document.getElementById('welcomeStudentName');
+    if (welcomeStudentName) {
+        welcomeStudentName.textContent = cleanName || 'Student';
+    }
+
+    const studentId = profile.StudentId || getStoredStudentId();
+    const welcomeStudentId = document.getElementById('welcomeStudentId');
+    if (welcomeStudentId && studentId) {
+        welcomeStudentId.textContent = studentId;
+    }
+
+    const programName = profile.ProgramName || profile.ProgramShortName || 'Undergraduate Program';
+    const welcomeProgram = document.getElementById('welcomeProgram');
+    if (welcomeProgram) {
+        welcomeProgram.textContent = programName.replace(/[\r\n\t]+/g, ' ').replace(/\s+/g, ' ').trim();
+    }
+
+    const welcomeSemester = document.getElementById('welcomeSemester');
+    if (welcomeSemester) {
+        welcomeSemester.textContent = profile.SemesterName || 'Current Term';
+    }
+
+    const welcomeAdvisor = document.getElementById('welcomeAdvisor');
+    if (welcomeAdvisor) {
+        const mentor = (profile.Mentor || profile.MentorEmail || 'Assigned Faculty')
+            .replace(/[\r\n\t]+/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+        welcomeAdvisor.textContent = mentor;
+        welcomeAdvisor.title = mentor;
+    }
+
+    const standingBadge = document.getElementById('studentStandingBadge');
+    if (standingBadge) {
+        const prob = Number(profile.ProbationNumber) || 0;
+        const cgpa = Number(profile.CGPA) || 0;
+        if (prob > 0) {
+            standingBadge.textContent = `Probation (${prob})`;
+            standingBadge.className = 'text-[10px] md:text-xs font-semibold px-2.5 py-0.5 rounded-full bg-rose-500/15 text-rose-300 border border-rose-500/30';
+        } else if (cgpa >= 3.75) {
+            standingBadge.textContent = "Dean's Honor Roll";
+            standingBadge.className = 'text-[10px] md:text-xs font-semibold px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30';
+        } else {
+            standingBadge.textContent = 'Good Standing';
+            standingBadge.className = 'text-[10px] md:text-xs font-semibold px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30';
+        }
+    }
+
+    loadDashboardAvatar(profile);
+}
+
+// ========================================
+// Academic Overview & Key Statistics
+// ========================================
+function renderAcademicStats(profile, degreeReview) {
+    const analysis = (degreeReview && degreeReview.analysis) ? degreeReview.analysis : null;
+
+    // 1. CGPA
+    const cgpaVal = (analysis && analysis.CGPA != null) ? analysis.CGPA : (profile ? profile.CGPA : null);
+    const statCgpa = document.getElementById('statCgpa');
+    const statCgpaSub = document.getElementById('statCgpaSub');
+    if (statCgpa) {
+        if (cgpaVal != null && !isNaN(cgpaVal)) {
+            const num = Number(cgpaVal);
+            statCgpa.textContent = num.toFixed(2);
+            if (statCgpaSub) {
+                if (num >= 3.75) {
+                    statCgpaSub.innerHTML = '<span class="text-amber-400 font-medium">★ Dean’s Honor Standing</span>';
+                } else if (num >= 3.0) {
+                    statCgpaSub.innerHTML = '<span class="text-emerald-400 font-medium">✓ Good Standing</span>';
+                } else {
+                    statCgpaSub.innerHTML = '<span class="text-gray-400">Scale 4.00</span>';
+                }
+            }
+        } else {
+            statCgpa.textContent = '—';
+        }
+    }
+
+    // 2. Credits Earned & Min Required
+    const earnedCredits = (analysis && analysis.CrEarned != null)
+        ? Number(analysis.CrEarned)
+        : (profile && profile.CreditsCompleted != null ? Number(profile.CreditsCompleted) : null);
+
+    const minCredits = (analysis && analysis.MinCr != null) ? Number(analysis.MinCr) : 140;
+
+    const remainingCredits = (analysis && analysis.RemainingCr != null)
+        ? Number(analysis.RemainingCr)
+        : (earnedCredits != null ? Math.max(0, minCredits - earnedCredits) : null);
+
+    const statCreditsEarned = document.getElementById('statCreditsEarned');
+    const statMinCredits = document.getElementById('statMinCredits');
+    const statRemainingCredits = document.getElementById('statRemainingCredits');
+
+    if (statCreditsEarned) {
+        statCreditsEarned.textContent = (earnedCredits != null && !isNaN(earnedCredits)) ? earnedCredits.toFixed(1) : '—';
+    }
+    if (statMinCredits) {
+        statMinCredits.textContent = minCredits.toFixed(1);
+    }
+    if (statRemainingCredits) {
+        statRemainingCredits.textContent = (remainingCredits != null && !isNaN(remainingCredits))
+            ? `${remainingCredits.toFixed(1)} Cr remaining`
+            : '— remaining';
+    }
+
+    // 3. Degree Progress Percentage & Progress Bar
+    const statProgressPercent = document.getElementById('statProgressPercent');
+    const statProgressBar = document.getElementById('statProgressBar');
+    const statProgressLabel = document.getElementById('statProgressLabel');
+
+    if (earnedCredits != null && minCredits > 0) {
+        const pct = Math.min(100, Math.max(0, Math.round((earnedCredits / minCredits) * 100)));
+        if (statProgressPercent) statProgressPercent.textContent = `${pct}%`;
+        if (statProgressBar) {
+            statProgressBar.style.width = `${pct}%`;
+        }
+        if (statProgressLabel && profile && (profile.ProgramShortName || profile.ProgramName)) {
+            statProgressLabel.textContent = profile.ProgramShortName || 'Degree Track';
+        }
+    }
+
+    // 4. Completed Courses Count
+    const statCoursesCompleted = document.getElementById('statCoursesCompleted');
+    const statCoursesSub = document.getElementById('statCoursesSub');
+    if (statCoursesCompleted) {
+        let completedCoursesCount = 0;
+        let areaCount = 0;
+        if (degreeReview && Array.isArray(degreeReview.courseAreas)) {
+            degreeReview.courseAreas.forEach(area => {
+                let hasPassedInArea = false;
+                if (Array.isArray(area.CourseView)) {
+                    area.CourseView.forEach(course => {
+                        const grade = (course.Grade || '').trim().toUpperCase();
+                        if (grade && grade !== 'F' && grade !== 'W' && grade !== 'I') {
+                            completedCoursesCount++;
+                            hasPassedInArea = true;
+                        }
+                    });
+                }
+                if (hasPassedInArea) areaCount++;
+            });
+        }
+
+        if (completedCoursesCount > 0) {
+            statCoursesCompleted.textContent = completedCoursesCount;
+            if (statCoursesSub) {
+                statCoursesSub.textContent = `Across ${areaCount} Areas`;
+            }
+        } else if (earnedCredits != null && earnedCredits > 0) {
+            const estimated = Math.round(earnedCredits / 3);
+            statCoursesCompleted.textContent = `~${estimated}`;
+            if (statCoursesSub) statCoursesSub.textContent = 'Estimated Completed';
+        } else {
+            statCoursesCompleted.textContent = '—';
+        }
+    }
+}
+
+function hydrateCachedAcademicData() {
+    try {
+        const p = sessionStorage.getItem('_ewu_profile_cache');
+        const d = sessionStorage.getItem('_ewu_degree_cache');
+        const prof = p ? JSON.parse(p) : null;
+        const deg = d ? JSON.parse(d) : null;
+        if (prof) renderStudentWelcome(prof);
+        if (prof || deg) renderAcademicStats(prof, deg);
+    } catch (e) { }
+}
+
+async function fetchStudentAcademicData() {
+    try {
+        const [profRes, degRes] = await Promise.all([
+            fetch(`${API_BASE_URL}/api/profile`, { credentials: 'include' }).catch(() => null),
+            fetch(`${API_BASE_URL}/api/degree-review`, { credentials: 'include' }).catch(() => null)
+        ]);
+
+        let profData = null;
+        if (profRes && profRes.ok) {
+            const j = await profRes.json();
+            profData = j && j.data ? j.data : j;
+            if (profData) {
+                try {
+                    sessionStorage.setItem('_ewu_profile_cache', JSON.stringify(profData));
+                    if (profData.StudentId) localStorage.setItem('studentId', profData.StudentId);
+                    const cleanName = [profData.FirstName, profData.MiddleName, profData.LastName].filter(Boolean).join(' ').trim();
+                    if (cleanName) localStorage.setItem('studentName', cleanName);
+                    updateStudentIdDisplay(profData.StudentId, cleanName);
+                } catch (e) { }
+            }
+        }
+
+        let degData = null;
+        if (degRes && degRes.ok) {
+            const j = await degRes.json();
+            degData = j;
+            if (degData) {
+                try { sessionStorage.setItem('_ewu_degree_cache', JSON.stringify(degData)); } catch (e) { }
+            }
+        }
+
+        if (profData) renderStudentWelcome(profData);
+        if (profData || degData) renderAcademicStats(profData, degData);
+    } catch (err) {
+        console.warn('Academic data fetch error:', err);
+    }
+}
+
+// ========================================
+// Upcoming Academic Calendar & Events
+// ========================================
+let allAcademicEvents = [];
+
+function parseEventCountdown(dateStr, semesterTitle) {
+    if (!dateStr) return { diffDays: -999, label: 'TBD', cls: 'bg-white/5 text-gray-500 border-white/10', isUpcoming: false };
+
+    let year = new Date().getFullYear();
+    const yrMatch = String(semesterTitle || '').match(/\b(20\d\d)\b/);
+    if (yrMatch) year = parseInt(yrMatch[1], 10);
+
+    const parts = dateStr.match(/([a-zA-Z]+)\s*(\d+)/);
+    if (!parts) return { diffDays: -999, label: 'Scheduled', cls: 'bg-white/10 text-gray-400 border-white/20', isUpcoming: true };
+
+    const month = parts[1];
+    const day = parseInt(parts[2], 10);
+    const eventDate = new Date(`${month} ${day}, ${year} 00:00:00`);
+    if (isNaN(eventDate.getTime())) return { diffDays: -999, label: 'Scheduled', cls: 'bg-white/10 text-gray-400 border-white/20', isUpcoming: true };
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const diffMs = eventDate.getTime() - today.getTime();
+    const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) {
+        return { diffDays, label: 'Today', cls: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30', isUpcoming: true };
+    } else if (diffDays === 1) {
+        return { diffDays, label: 'Tomorrow', cls: 'bg-sky-500/20 text-sky-300 border-sky-500/30', isUpcoming: true };
+    } else if (diffDays > 1 && diffDays <= 7) {
+        return { diffDays, label: `In ${diffDays} days`, cls: 'bg-amber-500/20 text-amber-300 border-amber-500/30', isUpcoming: true };
+    } else if (diffDays > 7 && diffDays <= 30) {
+        const weeks = Math.ceil(diffDays / 7);
+        return { diffDays, label: `In ${weeks} wk${weeks > 1 ? 's' : ''}`, cls: 'bg-purple-500/20 text-purple-300 border-purple-500/30', isUpcoming: true };
+    } else if (diffDays > 30) {
+        return { diffDays, label: `In ${diffDays} days`, cls: 'bg-white/10 text-gray-300 border-white/20', isUpcoming: true };
+    } else {
+        return { diffDays, label: 'Concluded', cls: 'bg-white/5 text-gray-500 border-white/10', isUpcoming: false };
+    }
+}
+
+function getCategoryPill(category) {
+    const map = {
+        exam: { label: 'Exam', cls: 'bg-rose-500/15 text-rose-300 border-rose-500/30' },
+        advising: { label: 'Advising', cls: 'bg-sky-500/15 text-sky-300 border-sky-500/30' },
+        holiday: { label: 'Holiday', cls: 'bg-amber-500/15 text-amber-300 border-amber-500/30' },
+        class: { label: 'Class', cls: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' },
+        deadline: { label: 'Deadline', cls: 'bg-red-500/15 text-red-300 border-red-500/30' }
+    };
+    return map[category] || { label: 'Academic', cls: 'bg-white/10 text-gray-300 border-white/20' };
+}
+
+function renderUpcomingEventsList(events, semesterTitle) {
+    const listEl = document.getElementById('upcomingEventsList');
+    if (!listEl || !Array.isArray(events) || events.length === 0) return;
+
+    const parsed = events.map(e => ({
+        ...e,
+        countdown: parseEventCountdown(e.date, semesterTitle)
+    }));
+
+    const upcoming = parsed.filter(e => e.countdown.diffDays >= 0);
+    upcoming.sort((a, b) => a.countdown.diffDays - b.countdown.diffDays);
+
+    let displayList = upcoming.slice(0, 3);
+    if (displayList.length === 0) {
+        displayList = parsed.slice(-3);
+    }
+
+    listEl.innerHTML = displayList.map(e => {
+        const cat = getCategoryPill(e.category);
+        const dateMatch = (e.date || '').match(/([a-zA-Z]+)\s*(\d+)/);
+        const monthShort = dateMatch ? dateMatch[1].slice(0, 3).toUpperCase() : 'DATE';
+        const dayNum = dateMatch ? dateMatch[2] : '';
+
+        return `
+            <div class="event-item-card p-2.5 sm:p-3 flex items-center justify-between gap-3">
+                <div class="flex items-center gap-3 min-w-0">
+                    <div class="w-11 h-11 rounded-xl bg-white/[0.04] border border-white/[0.08] flex flex-col items-center justify-center flex-shrink-0 text-center leading-none">
+                        <span class="text-[9px] font-mono uppercase text-[#D86C5A] font-bold tracking-wider">${esc(monthShort)}</span>
+                        <span class="text-sm font-extrabold text-white mt-0.5">${esc(dayNum)}</span>
+                    </div>
+                    <div class="min-w-0">
+                        <div class="text-xs sm:text-sm font-semibold text-gray-100 truncate">${esc(e.event)}</div>
+                        <div class="flex items-center gap-2 mt-0.5 text-[10px] text-gray-400">
+                            <span>${esc(e.date)}</span>
+                            <span>•</span>
+                            <span>${esc(e.day)}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex flex-col items-end gap-1 flex-shrink-0">
+                    <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full border ${e.countdown.cls}">
+                        ${e.countdown.label}
+                    </span>
+                    <span class="text-[9px] font-medium px-1.5 py-0.2 rounded border ${cat.cls} hidden sm:inline-block">
+                        ${cat.label}
+                    </span>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    initCalendarModal(parsed);
+}
+
+function initCalendarModal(events) {
+    const modal = document.getElementById('calendarModal');
+    const openBtn = document.getElementById('btnOpenCalendarModal');
+    const closeBtn = document.getElementById('btnCloseCalendarModal');
+    const searchInput = document.getElementById('calendarSearchInput');
+    const listContainer = document.getElementById('modalCalendarList');
+    if (!modal || !openBtn || !closeBtn || !listContainer) return;
+
+    function renderModalList(filterText = '') {
+        const lower = filterText.toLowerCase().trim();
+        const filtered = events.filter(e => {
+            if (!lower) return true;
+            return (e.event && e.event.toLowerCase().includes(lower))
+                || (e.date && e.date.toLowerCase().includes(lower))
+                || (e.day && e.day.toLowerCase().includes(lower))
+                || (e.category && e.category.toLowerCase().includes(lower));
+        });
+
+        if (filtered.length === 0) {
+            listContainer.innerHTML = '<div class="py-8 text-center text-xs text-gray-400">No matching events found.</div>';
+            return;
+        }
+
+        listContainer.innerHTML = filtered.map(e => {
+            const cat = getCategoryPill(e.category);
+            return `
+                <div class="p-3 rounded-xl bg-white/[0.03] border border-white/[0.06] hover:border-white/[0.12] transition-colors flex items-start justify-between gap-3">
+                    <div class="min-w-0">
+                        <div class="flex items-center gap-2 mb-1 flex-wrap">
+                            <span class="text-[10px] font-semibold px-2 py-0.5 rounded border ${cat.cls}">
+                                ${cat.label}
+                            </span>
+                            <span class="text-[10px] font-mono text-gray-400">${esc(e.day)}</span>
+                        </div>
+                        <h4 class="text-xs sm:text-sm font-semibold text-white leading-snug">${esc(e.event)}</h4>
+                    </div>
+                    <div class="text-right flex-shrink-0">
+                        <div class="text-xs font-mono font-medium text-gray-200">${esc(e.date)}</div>
+                        <span class="inline-block mt-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border ${e.countdown.cls}">
+                            ${e.countdown.label}
+                        </span>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    openBtn.onclick = () => {
+        renderModalList('');
+        if (searchInput) searchInput.value = '';
+        modal.classList.remove('hidden');
+    };
+
+    closeBtn.onclick = () => {
+        modal.classList.add('hidden');
+    };
+
+    modal.onclick = (e) => {
+        if (e.target === modal) modal.classList.add('hidden');
+    };
+
+    if (searchInput) {
+        searchInput.oninput = (e) => {
+            renderModalList(e.target.value);
+        };
+    }
+}
+
+async function fetchAcademicCalendarEvents() {
+    const badgeEl = document.getElementById('calendarSemesterBadge');
+
+    try {
+        const cached = sessionStorage.getItem('_ewu_calendar_cache');
+        if (cached) {
+            const data = JSON.parse(cached);
+            if (data && Array.isArray(data.events)) {
+                allAcademicEvents = data.events;
+                if (badgeEl && data.semester) badgeEl.textContent = data.semester;
+                renderUpcomingEventsList(data.events, data.semester);
+            }
+        }
+    } catch (e) { }
+
+    try {
+        const res = await fetch(`${API_BASE_URL}/api/academic-calendar`);
+        if (res.ok) {
+            const data = await res.json();
+            if (data && data.status === 'success' && Array.isArray(data.events)) {
+                allAcademicEvents = data.events;
+                try { sessionStorage.setItem('_ewu_calendar_cache', JSON.stringify(data)); } catch (e) { }
+                if (badgeEl && data.semester) badgeEl.textContent = data.semester;
+                renderUpcomingEventsList(data.events, data.semester);
+            }
+        }
+    } catch (err) {
+        console.warn('Academic calendar fetch notice:', err);
     }
 }
 
@@ -104,8 +654,8 @@ async function checkAuth() {
             updateStudentIdDisplay(getStoredStudentId());
         }
 
-        // Asynchronously fetch profile to populate student's full name in header
-        loadStudentProfileName();
+        // Asynchronously fetch profile and degree review to populate student dashboard
+        fetchStudentAcademicData();
 
         return true;
     } catch (error) {
@@ -217,6 +767,8 @@ function renderFeatureCards(statuses) {
 
     const activeCount = document.getElementById('activeCount');
     if (activeCount) activeCount.textContent = `${activeKeys.length} Available`;
+    const toolsSummaryPill = document.getElementById('toolsSummaryPill');
+    if (toolsSummaryPill) toolsSummaryPill.textContent = `${activeKeys.length} Tools Available`;
 
     // Unavailable features
     if (unavailableKeys.length) {
@@ -351,10 +903,10 @@ function cleanupPreviousPage() {
     }
     // Stop recurring timers registered by other feature pages
     if (typeof window.stopDepartmentClock === 'function') {
-        try { window.stopDepartmentClock(); } catch (e) {}
+        try { window.stopDepartmentClock(); } catch (e) { }
     }
     if (typeof window.stopAdviseClock === 'function') {
-        try { window.stopAdviseClock(); } catch (e) {}
+        try { window.stopAdviseClock(); } catch (e) { }
     }
     // Remove page-scoped styles injected during the previous navigation
     document.querySelectorAll('style[data-subpage-style]').forEach(el => el.remove());
@@ -632,7 +1184,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     updateStudentIdDisplay();
     initAjaxRouter();
 
-    // Instant optimistic hydration of cards from sessionStorage to avoid any layout shift
+    // Instant optimistic hydration of cards and academic widgets from cache
     try {
         const cachedStatusesStr = sessionStorage.getItem('ewu_dashboard_statuses');
         if (cachedStatusesStr) {
@@ -640,6 +1192,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             renderFeatureCards(cachedStatuses);
         }
     } catch (e) { }
+
+    initStudentQuotes();
+    hydrateCachedAcademicData();
+    fetchAcademicCalendarEvents();
 
     const mobileMenuBtn = document.getElementById('mobileMenuBtn');
     const mobileMenu = document.getElementById('mobileMenu');
