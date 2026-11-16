@@ -1379,12 +1379,52 @@ async function handleGetAcademicCalendar(request) {
     if (!rowMatches || rowMatches.length <= 5) {
       const linkMatches = [...html.matchAll(/href="(\/academic-calendar-details\/[^"]+)">([^<]+)<\/a>/g)];
       if (linkMatches && linkMatches.length > 0) {
-        // Prioritize undergraduate calendar
-        const ugLink = linkMatches.find(m => {
+        const now = new Date();
+        const currentYear = now.getFullYear();
+        const currentMonth = now.getMonth(); // 0=Jan..11=Dec
+
+        // Predict term based on current month:
+        // Jan-Apr: Spring, May-Aug: Summer, Sep-Dec: Fall
+        let termName = 'fall';
+        if (currentMonth >= 0 && currentMonth <= 3) termName = 'spring';
+        else if (currentMonth >= 4 && currentMonth <= 7) termName = 'summer';
+        else termName = 'fall';
+
+        const url = new URL(request.url);
+        const reqSem = (url.searchParams.get('semester') || '').toLowerCase();
+        if (reqSem.includes('spring')) termName = 'spring';
+        else if (reqSem.includes('summer')) termName = 'summer';
+        else if (reqSem.includes('fall')) termName = 'fall';
+
+        // Filter out graduate, pharmacy, llb, and exam schedules to get undergraduate calendars
+        const validLinks = linkMatches.filter(m => {
           const t = m[2].toLowerCase();
           const u = m[1].toLowerCase();
-          return !t.includes('final exam') && !t.includes('pharm') && !t.includes('ll.b') && !u.includes('graduate') && !t.includes('graduate');
-        }) || linkMatches[0];
+          return !t.includes('final exam') && !t.includes('pharm') && !t.includes('ll.b') && !t.includes('ll.m') && !u.includes('graduate') && !t.includes('graduate');
+        });
+
+        // 1. Search for link matching both termName and currentYear (e.g. "fall-2026")
+        let ugLink = validLinks.find(m => {
+          const t = m[2].toLowerCase();
+          const u = m[1].toLowerCase();
+          const hasTerm = t.includes(termName) || u.includes(termName);
+          const hasYear = t.includes(String(currentYear)) || u.includes(String(currentYear));
+          return hasTerm && hasYear;
+        });
+
+        // 2. Search for link matching termName
+        if (!ugLink) {
+          ugLink = validLinks.find(m => {
+            const t = m[2].toLowerCase();
+            const u = m[1].toLowerCase();
+            return t.includes(termName) || u.includes(termName);
+          });
+        }
+
+        // 3. Fallback to first valid link
+        if (!ugLink) {
+          ugLink = validLinks[0] || linkMatches[0];
+        }
 
         calendarTitle = ugLink[2].trim();
         calendarUrl = 'https://www.ewubd.edu' + ugLink[1];

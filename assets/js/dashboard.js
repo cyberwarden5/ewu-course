@@ -60,35 +60,32 @@ function updateStudentIdDisplay(id, name) {
 }
 
 // ========================================
-// Student Quotes (Clean, dignified, mixture of famous thoughts & relatable EWU student humor)
+// Student Quotes (Curated mixture of recognized wisdom & relatable EWU campus lore)
 // ========================================
 const STUDENT_QUOTES = [
+    // Recognized inspiration
     { quote: "It always seems impossible until it's done.", author: "Nelson Mandela" },
-    { quote: "Ki bochor toh sesh, comeback diba kobe?", author: "EWU Student Lore" },
+    { quote: "Stay hungry, stay foolish.", author: "Steve Jobs" },
+    { quote: "You don't have to see the whole staircase, just take the first step.", author: "Martin Luther King Jr." },
     { quote: "The beautiful thing about learning is that no one can take it away from you.", author: "B.B. King" },
+    { quote: "Consistency is what transforms average into excellence.", author: "Tony Dungy" },
+    { quote: "Don't count the days, make the days count.", author: "Muhammad Ali" },
+    { quote: "Focus on progress, not perfection.", author: "Bill Phillips" },
+    { quote: "Education is the most powerful weapon which you can use to change the world.", author: "Nelson Mandela" },
+    { quote: "If you want to shine like a sun, first burn like a sun.", author: "A.P.J. Abdul Kalam" },
+
+    // Relatable university, campus life & EWU student lore
+    { quote: "Ki bochor toh sesh, comeback diba kobe?", author: "EWU Student Lore" },
     { quote: "Buke hat diye bol toh, CGPA koto?", author: "Campus Reality" },
-    { quote: "Success is the sum of small efforts, repeated day in and day out.", author: "Robert Collier" },
     { quote: "Ki vai, business suru korben na?", author: "Senior Advice" },
-    { quote: "You don't have to be great to start, but you have to start to be great.", author: "Zig Ziglar" },
     { quote: "Varsity te bondhu hoyna, sob shap!", author: "Campus Lore" },
     { quote: "Midterm er age: 'Eibar A+ confirm.' Midterm er pore: 'Pass korlei shanti!'", author: "Exam Chronicles" },
     { quote: "Assignment submission at 11:59 PM. Sent at 11:58:59 PM. Pure adrenaline!", author: "Deadline Adrenaline" },
-    { quote: "Don't count the days, make the days count.", author: "Muhammad Ali" },
-    { quote: "Advising er din EWU portal er server: 'Ami toh mori nai, tobe beche o nai!'", author: "Advising Chronicles" },
-    { quote: "Group project e 4 jon member: 1 jon kaj kore, 2 jon dekhe, ar 4 number jon submission er shomoy name spell kore dey!", author: "Group Project Lore" },
-    { quote: "Consistency is what transforms average into excellence.", author: "Tony Dungy" },
     { quote: "Attendance 80% maintain korte giye ghum 20% e neme ashe.", author: "EWU Life" },
     { quote: "CGPA is temporary, but 'Mama, canteen e chol ek cup cha khai' is permanent.", author: "Canteen Chronicles" },
-    { quote: "Faculty: 'Question standard hoise.' Students: 'Amader standard neme gese sir!'", author: "Exam Realities" },
-    { quote: "Retake is an investment in self-improvement... santona...", author: "Student Hope" },
-    { quote: "Focus on progress, not perfection.", author: "Bill Phillips" },
-    { quote: "Class er gap e ki korbo? Canteen e boshe existential crisis e bhogbo.", author: "Campus Life" },
+    { quote: "Advising slot shokal 8 tay, sleep cycle shokal 9 tay shuru.", author: "Advising Chronicles" },
     { quote: "Course drop korar por je shukher shanti pawa jay, seta Nirvana er cheyeo beshi.", author: "Inner Peace" },
-    { quote: "East West er bridge paar howar shomoy haway sob porashona ure jay!", author: "EWU Campus" },
-    { quote: "Life update: Survived advising rush, now waiting for graduation miracle.", author: "Survival Mode" },
-    { quote: "Advising slot shokal 8 tay, sleep cycle shokal 9 tay shuru.", author: "Advising Struggles" },
-    { quote: "First week: 'Sob class notes nibo.' Midterm: 'Bhai keu ektu note gula dis!'", author: "Student Evolution" },
-    { quote: "Believe you can and you're halfway there.", author: "Theodore Roosevelt" }
+    { quote: "East West er bridge paar howar shomoy haway sob porashona ure jay!", author: "EWU Campus" }
 ];
 
 let quoteIntervalId = null;
@@ -105,17 +102,22 @@ function displayQuote(index) {
     currentQuoteIndex = index;
     const item = STUDENT_QUOTES[index];
 
+    // Smooth subtle fade out
+    textEl.style.transition = 'opacity 0.35s ease, transform 0.35s ease';
     textEl.style.opacity = '0';
     textEl.style.transform = 'translateY(4px)';
+    authorEl.style.transition = 'opacity 0.35s ease';
     authorEl.style.opacity = '0';
 
     setTimeout(() => {
         textEl.textContent = item.quote;
         authorEl.textContent = `— ${item.author}`;
+        textEl.style.transition = 'opacity 0.45s ease, transform 0.45s cubic-bezier(0.16, 1, 0.3, 1)';
         textEl.style.opacity = '1';
         textEl.style.transform = 'translateY(0)';
+        authorEl.style.transition = 'opacity 0.45s ease';
         authorEl.style.opacity = '1';
-    }, 180);
+    }, 350);
 }
 
 function initStudentQuotes() {
@@ -130,11 +132,12 @@ function initStudentQuotes() {
             } while (nextIndex === currentQuoteIndex && STUDENT_QUOTES.length > 1);
             displayQuote(nextIndex);
             if (quoteIntervalId) clearInterval(quoteIntervalId);
-            quoteIntervalId = setInterval(() => displayQuote(), 12000);
+            quoteIntervalId = setInterval(() => displayQuote(), 26000);
         };
     }
 
     if (!quoteIntervalId) {
+        // Relaxed 26s rotation gives users ample time to read without distraction
         quoteIntervalId = setInterval(() => {
             if (!document.hidden) {
                 let nextIndex;
@@ -143,12 +146,13 @@ function initStudentQuotes() {
                 } while (nextIndex === currentQuoteIndex && STUDENT_QUOTES.length > 1);
                 displayQuote(nextIndex);
             }
-        }, 12000);
+        }, 26000);
     }
 }
 
 // ========================================
 // Personalised Sequential Name Animation
+// Relaxed timing & gentle eased transition
 // ========================================
 let nameParts = ['Student'];
 let nameIndex = 0;
@@ -177,13 +181,14 @@ function initNameAnimation(fullName) {
 
     if (nameParts.length <= 1) return;
 
+    // 4.5 second delay provides plenty of comfortable reading time
     nameIntervalId = setInterval(() => {
         if (document.hidden) return;
         const target = document.getElementById('animatedStudentName');
         if (!target) return;
 
-        // Animate upward and fade out
-        target.style.transition = 'transform 0.4s ease-in, opacity 0.4s ease-in';
+        // Smoothly glide upward and fade out
+        target.style.transition = 'transform 0.55s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.5s ease-in';
         target.style.transform = 'translateY(-100%)';
         target.style.opacity = '0';
 
@@ -195,11 +200,12 @@ function initNameAnimation(fullName) {
 
             void target.offsetHeight; // force reflow
 
-            target.style.transition = 'transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.45s ease-out';
+            // Gentle deceleration into place
+            target.style.transition = 'transform 0.65s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.65s ease-out';
             target.style.transform = 'translateY(0)';
             target.style.opacity = '1';
-        }, 400);
-    }, 2800);
+        }, 550);
+    }, 4500);
 }
 
 // ========================================
@@ -764,40 +770,59 @@ async function fetchStudentAcademicData() {
 // ========================================
 let allAcademicEvents = [];
 
-function parseDateRange(dateStr, defaultYear) {
+const MONTH_MAP = {
+    jan: 0, january: 0,
+    feb: 1, february: 1,
+    mar: 2, march: 2,
+    apr: 3, april: 3,
+    may: 4,
+    jun: 5, june: 5,
+    jul: 6, july: 6,
+    aug: 7, august: 7,
+    sep: 8, sept: 8, september: 8,
+    oct: 9, october: 9,
+    nov: 10, november: 10,
+    dec: 11, december: 11
+};
+
+function parseDateRangeRobust(dateStr, defaultYear) {
     if (!dateStr) return null;
-    const cleanStr = String(dateStr).replace(/&nbsp;/gi, ' ').replace(/\s+/g, ' ').trim();
+    let clean = String(dateStr)
+        .replace(/&nbsp;/gi, ' ')
+        .replace(/\./g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
 
     let year = defaultYear || new Date().getFullYear();
-    const yrMatch = cleanStr.match(/\b(20\d\d)\b/);
-    if (yrMatch) year = parseInt(yrMatch[1], 10);
+    const yrMatch = clean.match(/\b(20\d\d)\b/);
+    if (yrMatch) {
+        year = parseInt(yrMatch[1], 10);
+        // Strip out the year and trailing comma so it doesn't get conflated with day numbers
+        clean = clean.replace(/\b20\d\d\b/g, '').replace(/,\s*,/g, ',').trim().replace(/,\s*$/, '');
+    }
 
-    const monthMap = {
-        jan: 0, january: 0, feb: 1, february: 1, mar: 2, march: 2, apr: 3, april: 3,
-        may: 4, jun: 5, june: 5, jul: 6, july: 6, aug: 7, august: 7, sep: 8, sept: 8, september: 8,
-        oct: 9, october: 9, nov: 10, november: 10, dec: 11, december: 11
-    };
-
-    // Range across two months: "November 20 - December 02, 2026"
-    const twoMonthsMatch = cleanStr.match(/([a-zA-Z]+)\s+(\d+)\s*(?:-|–|to)\s*([a-zA-Z]+)\s+(\d+)/i);
+    // Range across two months: "Nov 30-Dec 03" or "Dec 26 - Jan 04"
+    const twoMonthsMatch = clean.match(/([a-zA-Z]+)\s+(\d+)\s*(?:-|–|to)\s*([a-zA-Z]+)\s+(\d+)/i);
     if (twoMonthsMatch) {
-        const m1 = monthMap[twoMonthsMatch[1].toLowerCase()];
+        const m1 = MONTH_MAP[twoMonthsMatch[1].toLowerCase()];
         const d1 = parseInt(twoMonthsMatch[2], 10);
-        const m2 = monthMap[twoMonthsMatch[3].toLowerCase()];
+        const m2 = MONTH_MAP[twoMonthsMatch[3].toLowerCase()];
         const d2 = parseInt(twoMonthsMatch[4], 10);
         if (m1 !== undefined && m2 !== undefined) {
+            let endYear = year;
+            if (m2 < m1) endYear = year + 1; // cross into next year (e.g. Dec to Jan)
             return {
                 start: new Date(year, m1, d1, 0, 0, 0),
-                end: new Date(year, m2, d2, 23, 59, 59),
+                end: new Date(endYear, m2, d2, 23, 59, 59),
                 isRange: true
             };
         }
     }
 
-    // Range within same month: "October 12 - 15, 2026"
-    const oneMonthRangeMatch = cleanStr.match(/([a-zA-Z]+)\s+(\d+)\s*(?:-|–|to)\s*(\d+)/i);
+    // Range within same month: "October 19-21" or "December 13-20"
+    const oneMonthRangeMatch = clean.match(/([a-zA-Z]+)\s+(\d+)\s*(?:-|–|to)\s*(\d+)/i);
     if (oneMonthRangeMatch) {
-        const m = monthMap[oneMonthRangeMatch[1].toLowerCase()];
+        const m = MONTH_MAP[oneMonthRangeMatch[1].toLowerCase()];
         const d1 = parseInt(oneMonthRangeMatch[2], 10);
         const d2 = parseInt(oneMonthRangeMatch[3], 10);
         if (m !== undefined) {
@@ -809,10 +834,27 @@ function parseDateRange(dateStr, defaultYear) {
         }
     }
 
-    // Single date: "October 12, 2026"
-    const singleMatch = cleanStr.match(/([a-zA-Z]+)\s+(\d+)/i);
+    // Comma-separated list in same month: "Sept 13, 14, 15"
+    const commaListMatch = clean.match(/([a-zA-Z]+)\s+(\d+)(?:\s*,\s*(\d+))+/i);
+    if (commaListMatch) {
+        const m = MONTH_MAP[commaListMatch[1].toLowerCase()];
+        const rawNums = clean.match(/\b\d+\b/g);
+        const numbers = rawNums ? rawNums.map(n => parseInt(n, 10)).filter(n => n >= 1 && n <= 31) : [];
+        if (m !== undefined && numbers.length > 0) {
+            const d1 = Math.min(...numbers);
+            const d2 = Math.max(...numbers);
+            return {
+                start: new Date(year, m, d1, 0, 0, 0),
+                end: new Date(year, m, d2, 23, 59, 59),
+                isRange: true
+            };
+        }
+    }
+
+    // Single date: "November 19" or "October 01"
+    const singleMatch = clean.match(/([a-zA-Z]+)\s+(\d+)/i);
     if (singleMatch) {
-        const m = monthMap[singleMatch[1].toLowerCase()];
+        const m = MONTH_MAP[singleMatch[1].toLowerCase()];
         const d = parseInt(singleMatch[2], 10);
         if (m !== undefined) {
             return {
@@ -833,14 +875,15 @@ function classifyAcademicDate(dateStr, semesterTitle) {
     const yrMatch = String(semesterTitle || '').match(/\b(20\d\d)\b/);
     if (yrMatch) defaultYear = parseInt(yrMatch[1], 10);
 
-    const range = parseDateRange(dateStr, defaultYear);
+    const range = parseDateRangeRobust(dateStr, defaultYear);
     if (!range) return { status: 'scheduled', label: 'Scheduled', cls: 'bg-white/10 text-gray-300 border-white/20', pulse: false, diffDays: 999 };
 
     const today = new Date();
-    const todayZero = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0);
+    const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0).getTime();
+    const todayEnd = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59).getTime();
 
-    // 1. Ongoing / Active Now
-    if (today >= range.start && today <= range.end) {
+    // 1. Ongoing / Active Now (today is within range)
+    if (todayEnd >= range.start.getTime() && todayStart <= range.end.getTime()) {
         return {
             status: 'ongoing',
             label: 'Active Now',
@@ -851,10 +894,10 @@ function classifyAcademicDate(dateStr, semesterTitle) {
         };
     }
 
-    // 2. Future / Upcoming
-    if (todayZero < range.start) {
-        const diffMs = range.start.getTime() - todayZero.getTime();
-        const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+    // 2. Future / Upcoming (range.start is after today)
+    if (range.start.getTime() > todayEnd) {
+        const diffMs = range.start.getTime() - todayStart;
+        const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
 
         let label = `In ${diffDays} days`;
         let cls = 'bg-white/10 text-gray-300 border-white/20';
@@ -883,7 +926,7 @@ function classifyAcademicDate(dateStr, semesterTitle) {
         };
     }
 
-    // 3. Concluded
+    // 3. Concluded / Past (range.end is before today)
     return {
         status: 'concluded',
         label: 'Concluded',
@@ -907,62 +950,79 @@ function getCategoryPill(category) {
 
 function renderUpcomingEventsList(events, semesterTitle) {
     const listEl = document.getElementById('upcomingEventsList');
-    if (!listEl || !Array.isArray(events) || events.length === 0) return;
+    if (!listEl) return;
+
+    if (!Array.isArray(events) || events.length === 0) {
+        listEl.innerHTML = `
+            <div class="event-item-card p-4 text-center">
+                <div class="text-xs font-semibold text-gray-300">No events found</div>
+                <div class="text-[10px] text-gray-500 mt-0.5">Academic calendar schedule will appear here.</div>
+            </div>
+        `;
+        return;
+    }
 
     const parsed = events.map(e => ({
         ...e,
         classification: classifyAcademicDate(e.date, semesterTitle)
     }));
 
-    // Filter for active ongoing + upcoming events
-    const activeAndUpcoming = parsed.filter(e => e.classification.status === 'ongoing' || e.classification.diffDays >= 0);
+    // Filter strictly for active ongoing and upcoming events (exclude concluded past dates)
+    const relevantEvents = parsed.filter(e => e.classification.status === 'ongoing' || e.classification.status === 'upcoming');
 
-    // Sort: ongoing first, then nearest upcoming
-    activeAndUpcoming.sort((a, b) => {
+    // Sort: ongoing periods first, then nearest upcoming events by diffDays
+    relevantEvents.sort((a, b) => {
         if (a.classification.status === 'ongoing' && b.classification.status !== 'ongoing') return -1;
         if (b.classification.status === 'ongoing' && a.classification.status !== 'ongoing') return 1;
         return a.classification.diffDays - b.classification.diffDays;
     });
 
-    let displayList = activeAndUpcoming.slice(0, 3);
+    const displayList = relevantEvents.slice(0, 4);
+
     if (displayList.length === 0) {
-        displayList = parsed.slice(-3); // Fallback to last events if all concluded
-    }
-
-    listEl.innerHTML = displayList.map(e => {
-        const cat = getCategoryPill(e.category);
-        const dateMatch = (e.date || '').match(/([a-zA-Z]+)\s*(\d+)/);
-        const monthShort = dateMatch ? dateMatch[1].slice(0, 3).toUpperCase() : 'DATE';
-        const dayNum = dateMatch ? dateMatch[2] : '';
-        const cl = e.classification;
-
-        return `
-            <div class="event-item-card p-2.5 sm:p-3 flex items-center justify-between gap-3">
-                <div class="flex items-center gap-3 min-w-0">
-                    <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-white/[0.04] border border-white/[0.08] flex flex-col items-center justify-center flex-shrink-0 text-center leading-none">
-                        <span class="text-[9px] font-mono uppercase text-[#D86C5A] font-bold tracking-wider">${esc(monthShort)}</span>
-                        <span class="text-xs sm:text-sm font-extrabold text-white mt-0.5">${esc(dayNum)}</span>
-                    </div>
-                    <div class="min-w-0">
-                        <div class="text-xs sm:text-sm font-semibold text-gray-100 truncate">${esc(e.event)}</div>
-                        <div class="flex items-center gap-2 mt-0.5 text-[10px] text-gray-400">
-                            <span>${esc(e.date)}</span>
-                            <span>•</span>
-                            <span>${esc(e.day)}</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="flex flex-col items-end gap-1 flex-shrink-0">
-                    <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full border ${cl.cls} ${cl.pulse ? 'animate-pulse' : ''}">
-                        ${cl.label}
-                    </span>
-                    <span class="text-[9px] font-medium px-1.5 py-0.2 rounded border ${cat.cls} hidden sm:inline-block">
-                        ${cat.label}
-                    </span>
-                </div>
+        // Genuinely inform the student if all events in current calendar have ended, rather than showing confusing ancient events
+        listEl.innerHTML = `
+            <div class="event-item-card p-4 text-center">
+                <div class="text-xs font-semibold text-gray-300">No upcoming events scheduled</div>
+                <div class="text-[10px] text-gray-500 mt-1">All events for the current term have concluded. Check official calendar for upcoming schedules.</div>
             </div>
         `;
-    }).join('');
+    } else {
+        listEl.innerHTML = displayList.map(e => {
+            const cat = getCategoryPill(e.category);
+            const dateMatch = (e.date || '').replace(/\./g, '').match(/([a-zA-Z]+)\s*(\d+)/);
+            const monthShort = dateMatch ? dateMatch[1].slice(0, 3).toUpperCase() : 'DATE';
+            const dayNum = dateMatch ? dateMatch[2] : '';
+            const cl = e.classification;
+
+            return `
+                <div class="event-item-card p-2.5 sm:p-3 flex items-center justify-between gap-3">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-white/[0.04] border border-white/[0.08] flex flex-col items-center justify-center flex-shrink-0 text-center leading-none">
+                            <span class="text-[9px] font-mono uppercase text-[#D86C5A] font-bold tracking-wider">${esc(monthShort)}</span>
+                            <span class="text-xs sm:text-sm font-extrabold text-white mt-0.5">${esc(dayNum)}</span>
+                        </div>
+                        <div class="min-w-0">
+                            <div class="text-xs sm:text-sm font-semibold text-gray-100 truncate">${esc(e.event)}</div>
+                            <div class="flex items-center gap-2 mt-0.5 text-[10px] text-gray-400">
+                                <span>${esc(e.date)}</span>
+                                <span>•</span>
+                                <span>${esc(e.day)}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex flex-col items-end gap-1 flex-shrink-0">
+                        <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full border ${cl.cls} ${cl.pulse ? 'animate-pulse' : ''}">
+                            ${cl.label}
+                        </span>
+                        <span class="text-[9px] font-medium px-1.5 py-0.2 rounded border ${cat.cls} hidden sm:inline-block">
+                            ${cat.label}
+                        </span>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
 
     initCalendarModal(parsed);
 }
@@ -1044,15 +1104,24 @@ async function fetchAcademicCalendarEvents() {
         if (cached) {
             const data = JSON.parse(cached);
             if (data && Array.isArray(data.events)) {
-                allAcademicEvents = data.events;
-                if (badgeEl && data.semester) badgeEl.textContent = data.semester;
-                renderUpcomingEventsList(data.events, data.semester);
+                // Check if cached events are relevant to current year/semester
+                const activeParsed = data.events.map(e => classifyAcademicDate(e.date, data.semester));
+                const hasUpcoming = activeParsed.some(c => c.status === 'ongoing' || c.status === 'upcoming');
+                if (hasUpcoming) {
+                    allAcademicEvents = data.events;
+                    if (badgeEl && data.semester) badgeEl.textContent = data.semester;
+                    renderUpcomingEventsList(data.events, data.semester);
+                }
             }
         }
     } catch (e) { }
 
     try {
-        const res = await fetch(`${API_BASE_URL}/api/academic-calendar`);
+        let apiUrl = `${API_BASE_URL}/api/academic-calendar`;
+        if (currentSemesterGlobal && currentSemesterGlobal.SemesterName) {
+            apiUrl += `?semester=${encodeURIComponent(currentSemesterGlobal.SemesterName)}`;
+        }
+        const res = await fetch(apiUrl);
         if (res.ok) {
             const data = await res.json();
             if (data && data.status === 'success' && Array.isArray(data.events)) {

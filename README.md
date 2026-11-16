@@ -88,9 +88,9 @@ scripts:
 
 The dashboard transforms the portal into an engaging, dignified, and personalised student space before listing academic tools:
 
-1. **Personalised Student Welcome & Privacy Avatar:**
-   - **Privacy-Friendly Avatar:** Minimalist, sleek black-and-white vector avatar (`student-avatar.svg`) matching the obsidian dark aesthetic. Student photos are never exposed on this dashboard section.
-   - **Sequential Name Animation:** Welcomes the student with a smooth, upward-sliding sequential name animation cycling dynamically through each part of their real name (e.g. `Hello, Aftab` → `Hello, Kabir` → `Hello, Limon`) with zero layout shift.
+1. **Personalised Student Welcome & Avatar:**
+   - **Provided Vector Avatar:** High-fidelity vector avatar (`svg/avatar-default-svgrepo-com.svg`) set on a subtle silver-slate gradient medallion, perfectly integrated into the obsidian dark aesthetic. Student photos are kept private and never exposed on this dashboard section.
+   - **Sequential Name Animation:** Welcomes the student with a relaxed, smooth upward-sliding sequential name animation (4.5s interval with gentle cubic-bezier timing) cycling dynamically through each part of their real name (e.g. `Hello, Aftab` → `Hello, Kabir` → `Hello, Limon`) with zero layout shift.
    - **Active Current Semester:** Dynamically detects and displays the student's *current active semester* (e.g. `Fall-2026`) via `/api/semesters` date range checks rather than their historical admission semester.
    - **Clean Identity:** Displays Student ID, Undergraduate Program, Current Semester, and Academic Advisor.
 
@@ -101,14 +101,14 @@ The dashboard transforms the portal into an engaging, dignified, and personalise
    - **Scholarship:** Real-time scholarship status extracted from the student's Account Ledger (`/api/ledger`). Identifies award type (e.g. `Dean's Scholarship`, `Merit Scholarship`, `Tuition Waiver`), adjusted amounts, and semester duration/balance (e.g. `Tk. 18,000 adjusted • Bal: 37,000 till Spr 27`), or cleanly displays `None` if unawarded.
 
 3. **Important Dates (7 Columns):**
-   - Live academic schedule synced from the official EWU academic calendar (`https://www.ewubd.edu/academic-calendar`).
+   - Live academic schedule synced from the official EWU academic calendar (`https://www.ewubd.edu/academic-calendar`) with dynamic semester detection on the API worker (e.g. Fall 2026).
    - **Smart Ongoing Detection:** Tags active ongoing academic events (e.g. midterm examinations, advising periods) with an `Active Now` pulsing emerald badge.
-   - **Proximity Sorting:** Prioritizes nearest upcoming dates (`Today`, `Tomorrow`, `In 3 days`, `In 2 wks`) and automatically filters out concluded past dates.
+   - **Strict Concluded Event Filtering:** Robust multi-format date parser (`parseDateRangeRobust`) handles two-month ranges, cross-year events, comma-separated dates, and single dates; strictly excludes concluded past events from the main upcoming reminders widget.
    - "View All" modal drawer with live search and category filter.
 
 4. **Quotes & Upcoming Class (5 Columns):**
-   - **Quotes (Top):** Minimalist, dignified quote card displaying curated thoughts, study motivation, and relatable EWU student humor with author/lore attribution (`— EWU Student Lore`, `— Nelson Mandela`, etc.). Includes a `🎲 Shuffle` button.
-   - **Upcoming Class (Bottom):** Real-time routine tracker powered by the student's live enrolled class schedule (`/api/schedule`). Automatically detects if a class is currently in session (`In Session`), next up today (`Today`), or scheduled on an upcoming day (`Tomorrow` / `Sunday`). Displays Course Code, Section, Room, Time, and Faculty.
+   - **Quotes (Top):** Minimalist quote card with a relaxed 26s rotation interval, displaying a curated selection of genuine wisdom from recognized thinkers (Mandela, Jobs, King Jr., Kalam, etc.) balanced with relatable EWU student experiences (`— EWU Student Lore`). Includes a `🎲 Shuffle` button.
+   - **Upcoming Class (Bottom):** Real-time routine tracker powered by the student's live enrolled class schedule (`/api/schedule`). Automatically detects if a class is currently in session (`In Session`), next up today (`Today`), or scheduled on an upcoming day (`Tomorrow` / `Tuesday`). Displays Course Code, Section, Room, Time, and Faculty.
 
 5. **Academic Tools & Services:**
    - Positioned cleanly below the student overview space with clear category dividers and available count.
