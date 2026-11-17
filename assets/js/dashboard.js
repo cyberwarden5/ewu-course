@@ -247,6 +247,38 @@ function updateCurrentSemesterDisplay(sem) {
     }
 }
 
+function getShortenedDegree(fullName, shortName) {
+    if (!fullName) return shortName || 'Degree';
+    let clean = fullName.replace(/[\r\n\t]+/g, ' ').replace(/\s+/g, ' ').trim();
+
+    const replacements = [
+        { regex: /Computer\s+Science\s+and\s+Engineering/i, short: 'CSE' },
+        { regex: /Electrical\s+and\s+Electronic\s+Engineering/i, short: 'EEE' },
+        { regex: /Electronic\s+and\s+Telecommunication\s+Engineering/i, short: 'ETE' },
+        { regex: /Information\s+and\s+Communication\s+Engineering/i, short: 'ICE' },
+        { regex: /Civil\s+Engineering/i, short: 'CE' },
+        { regex: /Bachelor\s+of\s+Business\s+Administration/i, short: 'BBA' },
+        { regex: /Master\s+of\s+Business\s+Administration/i, short: 'MBA' },
+        { regex: /Pharmacy/i, short: 'Pharm.' },
+        { regex: /Economics/i, short: 'ECON' },
+        { regex: /English/i, short: 'ENG' },
+        { regex: /Law/i, short: 'LLB' }
+    ];
+
+    for (const r of replacements) {
+        if (r.regex.test(clean)) {
+            return clean.replace(r.regex, r.short);
+        }
+    }
+
+    if (shortName && shortName.length <= 8) {
+        if (/^B\.?\s*Sc\.?/i.test(clean)) return `B.Sc. in ${shortName}`;
+        return shortName;
+    }
+
+    return clean;
+}
+
 // ========================================
 // Personalised Student Welcome Rendering
 // ========================================
@@ -268,10 +300,21 @@ function renderStudentWelcome(profile) {
         welcomeStudentId.textContent = studentId;
     }
 
-    const programName = profile.ProgramName || profile.ProgramShortName || 'Undergraduate Program';
+    const programName = (profile.ProgramName || profile.ProgramShortName || 'Undergraduate Program')
+        .replace(/[\r\n\t]+/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+    // Desktop full program name
     const welcomeProgram = document.getElementById('welcomeProgram');
     if (welcomeProgram) {
-        welcomeProgram.textContent = programName.replace(/[\r\n\t]+/g, ' ').replace(/\s+/g, ' ').trim();
+        welcomeProgram.textContent = programName;
+    }
+
+    // Mobile shortened program name (e.g. B.Sc. in CSE)
+    const welcomeProgramMobile = document.getElementById('welcomeProgramMobile');
+    if (welcomeProgramMobile) {
+        welcomeProgramMobile.textContent = getShortenedDegree(programName, profile.ProgramShortName);
     }
 
     // Current semester (will be refined by detectCurrentSemester)
@@ -996,26 +1039,26 @@ function renderUpcomingEventsList(events, semesterTitle) {
             const cl = e.classification;
 
             return `
-                <div class="event-item-card p-2.5 sm:p-3 flex items-center justify-between gap-3">
-                    <div class="flex items-center gap-3 min-w-0">
-                        <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-white/[0.04] border border-white/[0.08] flex flex-col items-center justify-center flex-shrink-0 text-center leading-none">
+                <div class="event-item-card p-3 sm:p-3.5 flex items-start justify-between gap-3 min-h-[64px]">
+                    <div class="flex items-start gap-3 min-w-0 flex-1">
+                        <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-white/[0.04] border border-white/[0.08] flex flex-col items-center justify-center flex-shrink-0 text-center leading-none mt-0.5 shadow-sm">
                             <span class="text-[9px] font-mono uppercase text-[#D86C5A] font-bold tracking-wider">${esc(monthShort)}</span>
                             <span class="text-xs sm:text-sm font-extrabold text-white mt-0.5">${esc(dayNum)}</span>
                         </div>
-                        <div class="min-w-0">
-                            <div class="text-xs sm:text-sm font-semibold text-gray-100 truncate">${esc(e.event)}</div>
-                            <div class="flex items-center gap-2 mt-0.5 text-[10px] text-gray-400">
-                                <span>${esc(e.date)}</span>
-                                <span>•</span>
+                        <div class="min-w-0 flex-1">
+                            <div class="event-title text-xs sm:text-sm font-semibold text-gray-100 leading-snug break-words whitespace-normal">${esc(e.event)}</div>
+                            <div class="flex items-center gap-1.5 sm:gap-2 mt-1 text-[10px] sm:text-[11px] text-gray-400 flex-wrap leading-tight">
+                                <span class="text-gray-300 font-medium">${esc(e.date)}</span>
+                                <span class="text-gray-600">•</span>
                                 <span>${esc(e.day)}</span>
                             </div>
                         </div>
                     </div>
-                    <div class="flex flex-col items-end gap-1 flex-shrink-0">
-                        <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full border ${cl.cls} ${cl.pulse ? 'animate-pulse' : ''}">
+                    <div class="flex flex-col items-end gap-1.5 flex-shrink-0 pt-0.5">
+                        <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full border whitespace-nowrap ${cl.cls} ${cl.pulse ? 'animate-pulse' : ''}">
                             ${cl.label}
                         </span>
-                        <span class="text-[9px] font-medium px-1.5 py-0.2 rounded border ${cat.cls} hidden sm:inline-block">
+                        <span class="text-[9px] font-medium px-1.5 py-0.5 rounded border ${cat.cls} hidden sm:inline-block whitespace-nowrap">
                             ${cat.label}
                         </span>
                     </div>
@@ -1062,7 +1105,7 @@ function initCalendarModal(events) {
                             </span>
                             <span class="text-[10px] font-mono text-gray-400">${esc(e.day)}</span>
                         </div>
-                        <h4 class="text-xs sm:text-sm font-semibold text-white leading-snug">${esc(e.event)}</h4>
+                        <h4 class="text-xs sm:text-sm font-semibold text-white leading-snug break-words whitespace-normal">${esc(e.event)}</h4>
                     </div>
                     <div class="text-right flex-shrink-0">
                         <div class="text-xs font-mono font-medium text-gray-200">${esc(e.date)}</div>
@@ -1286,31 +1329,59 @@ function activeCardHtml(key, status) {
     const isBeta = status === 'beta';
 
     return `
-        <div class="fade-in feature-tile-card" style="position:relative;background:linear-gradient(145deg, rgba(22,22,32,0.75) 0%, rgba(14,14,20,0.85) 100%);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);border:1px solid ${theme.border};box-shadow:0 10px 30px rgba(0,0,0,0.4);display:flex;flex-direction:column;justify-content:space-between;overflow:hidden;">
+        <div class="fade-in feature-tile-card" style="position:relative;background:linear-gradient(145deg, rgba(22,22,32,0.8) 0%, rgba(14,14,20,0.9) 100%);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);border:1px solid ${theme.border};box-shadow:0 10px 30px rgba(0,0,0,0.4);display:flex;flex-direction:column;justify-content:space-between;overflow:hidden;">
             <div class="feature-tile-bar" style="position:absolute;top:0;left:0;right:0;background:${theme.btn};"></div>
-            <div class="p-3 md:p-6 lg:p-7">
-                <div class="flex items-center md:items-start justify-between gap-2 md:gap-3 mb-2 md:mb-4">
+            
+            <div class="p-3.5 sm:p-4 md:p-6 lg:p-7">
+                <!-- Mobile row / Desktop header -->
+                <div class="flex items-center md:items-start justify-between gap-3 md:gap-3 mb-1.5 md:mb-4">
                     <div class="feature-tile-icon" style="background:${theme.bg};border:1px solid ${theme.border};display:flex;align-items:center;justify-content:center;color:${theme.accent};flex-shrink:0;">
                         ${f.icon}
                     </div>
-                    <span class="inline-flex items-center gap-1 md:gap-1.5 px-1.5 py-0.5 md:px-2.5 md:py-1 rounded-full border text-[10px] md:text-xs font-semibold ${pill.cls}">
+
+                    <!-- Content block on mobile (<md) -->
+                    <div class="flex-1 min-w-0 md:hidden">
+                        <div class="flex items-center justify-between gap-2">
+                            <h3 class="text-sm sm:text-base font-bold text-white tracking-tight truncate">${esc(f.name)}</h3>
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[10px] font-semibold flex-shrink-0 ${pill.cls}">
+                                <span class="w-1.5 h-1.5 rounded-full ${pill.dot}"></span>
+                                <span>${isBeta ? 'Beta' : 'Live'}</span>
+                            </span>
+                        </div>
+                        <p class="text-[11.5px] text-gray-400 line-clamp-1 mt-0.5 leading-snug">${esc(f.description)}</p>
+                    </div>
+
+                    <!-- Right chevron button on mobile -->
+                    <div class="md:hidden flex-shrink-0">
+                        <div class="w-8 h-8 rounded-xl bg-white/[0.05] border border-white/[0.08] flex items-center justify-center transition-colors" style="color:${theme.accent};">
+                            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                        </div>
+                    </div>
+
+                    <!-- Desktop Status Pill (hidden on mobile) -->
+                    <span class="hidden md:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-semibold ${pill.cls}">
                         <span class="w-1.5 h-1.5 rounded-full ${pill.dot}"></span>
-                        <span class="hidden md:inline">${pill.label}</span>
-                        <span class="md:hidden">${isBeta ? 'Beta' : 'Live'}</span>
+                        <span>${pill.label}</span>
                     </span>
                 </div>
-                <div class="flex items-center justify-between gap-1 md:block">
-                    <h3 class="text-[12.5px] leading-tight md:text-lg lg:text-xl font-bold text-white md:mb-2">${esc(f.name)}</h3>
-                    <svg class="w-3.5 h-3.5 md:hidden flex-shrink-0 opacity-85" style="color:${theme.accent};" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+
+                <!-- Desktop Title & Description (hidden on mobile) -->
+                <div class="hidden md:block">
+                    <h3 class="text-lg lg:text-xl font-bold text-white mb-2">${esc(f.name)}</h3>
+                    <p class="text-gray-300 text-xs sm:text-sm leading-relaxed mb-6">${esc(f.description)}</p>
                 </div>
-                <p class="hidden md:block text-gray-300 text-xs sm:text-sm leading-relaxed mb-6">${esc(f.description)}</p>
             </div>
-            <div class="feature-tile-footer px-6 sm:px-7 pb-6 sm:pb-7 pt-0">
+
+            <!-- Desktop Action Button Footer (hidden on mobile) -->
+            <div class="hidden md:block feature-tile-footer px-6 sm:px-7 pb-6 sm:pb-7 pt-0">
                 <a href="${f.page}" class="no-underline ajax-nav-link feature-tile-btn" style="background:${theme.btn};color:#fff;box-shadow:0 4px 18px ${theme.glow};">
                     <span>${isBeta ? 'Open (Beta)' : 'Open'}</span>
                     <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
                 </a>
             </div>
+
+            <!-- Full-card clickable anchor for mobile touch accessibility -->
+            <a href="${f.page}" class="mobile-card-link md:hidden absolute inset-0 z-10 ajax-nav-link opacity-0" aria-label="Open ${esc(f.name)}"></a>
         </div>`;
 }
 
@@ -1319,18 +1390,36 @@ function lockedCardHtml(key, status) {
     const pill = STATUS_PILL[status] || STATUS_PILL.coming_soon;
     return `
         <div class="feature-locked-card" style="position:relative;background:linear-gradient(145deg, rgba(16,16,24,0.5) 0%, rgba(10,10,16,0.65) 100%);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,0.08);display:flex;flex-direction:column;justify-content:space-between;overflow:hidden;">
-            <div class="p-3 md:p-5 lg:p-6">
-                <div class="flex items-center md:items-start justify-between gap-2 md:gap-3 mb-2 md:mb-4">
+            <div class="p-3.5 sm:p-4 md:p-5 lg:p-6">
+                <div class="flex items-center md:items-start justify-between gap-3 md:gap-3 mb-1 md:mb-4">
                     <div class="feature-locked-icon" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.45);flex-shrink:0;">
                         ${f.icon}
                     </div>
-                    <span class="inline-flex items-center gap-1 md:gap-1.5 px-1.5 md:px-2.5 py-0.5 rounded-full border text-[10px] md:text-[11px] font-medium ${pill.cls}">
-                        <svg class="w-2.5 h-2.5 md:w-3 md:h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+
+                    <!-- Content block on mobile (<md) -->
+                    <div class="flex-1 min-w-0 md:hidden">
+                        <div class="flex items-center justify-between gap-2">
+                            <h3 class="text-sm sm:text-base font-bold text-gray-200 tracking-tight truncate">${esc(f.name)}</h3>
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[10px] font-medium flex-shrink-0 ${pill.cls}">
+                                <svg class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                                <span>${pill.label}</span>
+                            </span>
+                        </div>
+                        <p class="text-[11.5px] text-gray-500 line-clamp-1 mt-0.5 leading-snug">${esc(f.description)}</p>
+                    </div>
+
+                    <!-- Desktop Status Pill (hidden on mobile) -->
+                    <span class="hidden md:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border text-[11px] font-medium ${pill.cls}">
+                        <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
                         ${pill.label}
                     </span>
                 </div>
-                <h3 class="text-[12.5px] leading-tight md:text-base font-bold text-gray-200 md:mb-1.5">${esc(f.name)}</h3>
-                <p class="hidden md:block text-gray-400 text-xs leading-relaxed">${esc(f.description)}</p>
+
+                <!-- Desktop Title & Description (hidden on mobile) -->
+                <div class="hidden md:block">
+                    <h3 class="text-base font-bold text-gray-200 mb-1.5">${esc(f.name)}</h3>
+                    <p class="text-gray-400 text-xs leading-relaxed">${esc(f.description)}</p>
+                </div>
             </div>
             <div class="hidden md:flex mt-2 px-5 sm:px-6 pb-5 sm:pb-6 pt-3.5 border-t border-white/[0.06] items-center justify-between text-[11px] text-gray-500 font-mono">
                 <span class="flex items-center gap-1.5">
@@ -1561,6 +1650,20 @@ async function navigateToPage(url, pushState = true) {
         }
 
         if (loadingView) loadingView.classList.add('hidden');
+
+        // Ensure a Back to Dashboard button is always present at the top of the rendered subpage
+        if (!pageView.querySelector('a[href="dashboard"], a[href="/dashboard"], [data-back-dashboard]')) {
+            const topBar = document.createElement('div');
+            topBar.className = 'mb-4 sm:mb-5';
+            topBar.innerHTML = `
+                <a href="dashboard" class="inline-flex items-center gap-2 px-3.5 py-2 sm:py-1.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] hover:border-white/[0.16] text-xs font-medium text-gray-300 hover:text-white transition-all group no-underline shadow-sm cursor-pointer" title="Return to Dashboard">
+                    <svg class="w-3.5 h-3.5 text-[#D86C5A] group-hover:-translate-x-0.5 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                    <span>Back to Dashboard</span>
+                </a>
+            `;
+            pageView.insertBefore(topBar, pageView.firstChild);
+        }
+
         pageView.classList.remove('hidden');
         window.scrollTo({ top: 0, behavior: 'smooth' });
 

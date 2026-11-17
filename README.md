@@ -91,8 +91,8 @@ The dashboard transforms the portal into an engaging, dignified, and personalise
 1. **Personalised Student Welcome & Avatar:**
    - **Provided Vector Avatar:** High-fidelity vector avatar (`svg/avatar-default-svgrepo-com.svg`) set on a subtle silver-slate gradient medallion, perfectly integrated into the obsidian dark aesthetic. Student photos are kept private and never exposed on this dashboard section.
    - **Sequential Name Animation:** Welcomes the student with a relaxed, smooth upward-sliding sequential name animation (4.5s interval with gentle cubic-bezier timing) cycling dynamically through each part of their real name (e.g. `Hello, Aftab` → `Hello, Kabir` → `Hello, Limon`) with zero layout shift.
+   - **Responsive Identity Line:** Intelligently adapts degree information for mobile screen real-estate (`2025-2-60-331 • B.Sc. in CSE • Fall-2026` on mobile vs full `B.Sc. in Computer Science and Engineering` on desktop) with zero overflow.
    - **Active Current Semester:** Dynamically detects and displays the student's *current active semester* (e.g. `Fall-2026`) via `/api/semesters` date range checks rather than their historical admission semester.
-   - **Clean Identity:** Displays Student ID, Undergraduate Program, Current Semester, and Academic Advisor.
 
 2. **Academic Status Cards (4-Column Grid):**
    - **Current CGPA:** Real-time cumulative GPA formatted to 2 decimals with standing classification (`Scale 4.00`).
@@ -103,6 +103,7 @@ The dashboard transforms the portal into an engaging, dignified, and personalise
 3. **Important Dates (7 Columns):**
    - Live academic schedule synced from the official EWU academic calendar (`https://www.ewubd.edu/academic-calendar`) with dynamic semester detection on the API worker (e.g. Fall 2026).
    - **Smart Ongoing Detection:** Tags active ongoing academic events (e.g. midterm examinations, advising periods) with an `Active Now` pulsing emerald badge.
+   - **Natural Multi-line Text Wrapping:** Long event titles and schedule descriptions wrap naturally on mobile without truncation or ellipses (`...`), while maintaining top-aligned date boxes and badges.
    - **Strict Concluded Event Filtering:** Robust multi-format date parser (`parseDateRangeRobust`) handles two-month ranges, cross-year events, comma-separated dates, and single dates; strictly excludes concluded past events from the main upcoming reminders widget.
    - "View All" modal drawer with live search and category filter.
 
@@ -110,9 +111,10 @@ The dashboard transforms the portal into an engaging, dignified, and personalise
    - **Quotes (Top):** Minimalist quote card with a relaxed 26s rotation interval, displaying a curated selection of genuine wisdom from recognized thinkers (Mandela, Jobs, King Jr., Kalam, etc.) balanced with relatable EWU student experiences (`— EWU Student Lore`). Includes a `🎲 Shuffle` button.
    - **Upcoming Class (Bottom):** Real-time routine tracker powered by the student's live enrolled class schedule (`/api/schedule`). Automatically detects if a class is currently in session (`In Session`), next up today (`Today`), or scheduled on an upcoming day (`Tomorrow` / `Tuesday`). Displays Course Code, Section, Room, Time, and Faculty.
 
-5. **Academic Tools & Services:**
-   - Positioned cleanly below the student overview space with clear category dividers and available count.
-   - Compact, single-screen mobile layout ensures students can browse all active features without excessive scrolling.
+5. **Academic Tools & Services (Redesigned Mobile App Layout):**
+   - **Native App-Style Cards on Mobile:** Transformed into clean, comfortable 1-column mobile cards (`min-h-[82px]`) featuring prominent 44px themed icons, bold 15px titles, informative 1-line descriptions, live/beta status pills, and right-hand action chevrons. The entire card surface serves as a comfortable, accessible touch target.
+   - **Preserved Desktop Layout:** Full 3-column / 2-column grid with tall cards, multi-line descriptions, and full-width gradient buttons remains 100% untouched on desktop screens.
+   - **Universal "Back to Dashboard":** Every single tool and subpage (`advise`, `department-courses`, `profile`, `documentation`, `curriculum`, `grade-report`, etc.) includes a visible, consistently placed Back to Dashboard button. In-memory AJAX navigation restores the dashboard without reloading the page.
 
 ---
 
