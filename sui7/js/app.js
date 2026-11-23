@@ -4,6 +4,8 @@
 
 const API_URL = 'https://api.aftabx.tech/api';
 let trafficChartInstance = null;
+let hourlyChartInstance = null;
+let analyticsWindowDays = 7;
 let overviewHourlyChartInstance = null;
 let portalPingInterval = null;
 
@@ -301,24 +303,10 @@ function hydrateView(viewName, data) {
     if (viewName === 'site-analytics') {
         const dates = Object.keys(data.analytics || {}).sort();
         renderChart(dates, data.analytics || {});
-
-        // Fill Engagement Bar
-        let uVisits = 0, tActions = 0;
-        dates.forEach(d => {
-            uVisits += (data.analytics[d].unique_ips ? data.analytics[d].unique_ips.length : (data.analytics[d].visits || 0));
-            tActions += data.analytics[d].actions || 0;
-        });
-        const total = uVisits + tActions;
-        const eBar = document.getElementById('engagementBar');
-        const eTxt = document.getElementById('engagementText');
-        if (eBar && total > 0) {
-            const perc = Math.round((tActions / total) * 100);
-            requestAnimationFrame(() => {
-                eBar.style.width = perc + '%';
-                if (eTxt) eTxt.textContent = `${perc}% Action Density`;
-            });
-        }
-
+        updateEngagementPanel(dates, data.analytics || {});
+        renderHourlyActivity(data.recentLogs || []);
+        setupAnalyticsWindowListeners();
+        markAnalyticsWindowButton(analyticsWindowDays);
         renderRoutePopularity(data.recentLogs || []);
     }
 
@@ -1340,6 +1328,128 @@ function renderChart(dates, analyticsObj) {
             scales: {
                 x: { grid: { color: 'rgba(255,255,255,0.03)', drawBorder: false }, ticks: { color: '#6b7280', font: { family: 'Inter', size: 11 } } },
                 y: { grid: { color: 'rgba(255,255,255,0.03)', drawBorder: false }, ticks: { color: '#6b7280', precision: 0, font: { family: 'Inter', size: 11 } }, beginAtZero: true }
+            }
+        }
+    });
+}
+
+// ================= ANALYTICS WINDOW & HOURLY ACTIVITY =================
+function updateEngagementPanel(dates, analyticsObj) {
+    let uVisits = 0, tActions = 0;
+    dates.forEach(d => {
+        uVisits += (analyticsObj[d].unique_ips ? analyticsObj[d].unique_ips.length : (analyticsObj[d].visits || 0));
+        tActions += analyticsObj[d].actions || 0;
+    });
+    const total = uVisits + tActions;
+    const eBar = document.getElementById('engagementBar');
+    const eTxt = document.getElementById('engagementText');
+    if (total > 0) {
+        const perc = Math.round((tActions / total) * 100);
+        requestAnimationFrame(() => {
+            if (eBar) eBar.style.width = perc + '%';
+            if (eTxt) eTxt.textContent = `${perc}% Action Density`;
+        });
+    } else if (eBar) {
+        eBar.style.width = '0%';
+        if (eTxt) eTxt.textContent = '0% Action Density';
+    }
+}
+
+async function setAnalyticsWindow(days) {
+    analyticsWindowDays = days;
+    markAnalyticsWindowButton(days);
+    const label = document.getElementById('analyticsWindowLabel');
+    if (label) label.textContent = `${days}-Day Window`;
+
+    try {
+        const token = localStorage.getItem('adminToken');
+        const res = await fetch(`${API_URL}/admin/analytics?days=${days}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        const dates = Object.keys(data.analytics || {}).sort();
+        renderChart(dates, data.analytics || {});
+        updateEngagementPanel(dates, data.analytics || {});
+    } catch (e) { }
+}
+
+function setupAnalyticsWindowListeners() {
+    document.querySelectorAll('.analytics-window-btn').forEach(btn => {
+        btn.onclick = () => {
+            const days = parseInt(btn.getAttribute('data-days'), 10);
+            if (days && days !== analyticsWindowDays) setAnalyticsWindow(days);
+        };
+    });
+}
+
+function markAnalyticsWindowButton(days) {
+    document.querySelectorAll('.analytics-window-btn').forEach(btn => {
+        const active = parseInt(btn.getAttribute('data-days'), 10) === days;
+        btn.classList.toggle('bg-brand-500/20', active);
+        btn.classList.toggle('text-white', active);
+        btn.classList.toggle('text-gray-400', !active);
+    });
+}
+
+function renderHourlyActivity(logs) {
+    const canvas = document.getElementById('hourlyChart');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const cutoff = Date.now() - 24 * 60 * 60 * 1000;
+    const visits = new Array(24).fill(0);
+    const actions = new Array(24).fill(0);
+    (logs || []).forEach(l => {
+        const t = new Date(l.time).getTime();
+        if (isNaN(t) || t < cutoff) return;
+        const h = new Date(t).getHours();
+        if (l.type === 'visit') visits[h]++;
+        else actions[h]++;
+    });
+
+    if (hourlyChartInstance) hourlyChartInstance.destroy();
+
+    const gradientVisits = ctx.createLinearGradient(0, 0, 0, 300);
+    gradientVisits.addColorStop(0, 'rgba(52, 211, 153, 0.45)');
+    gradientVisits.addColorStop(1, 'rgba(52, 211, 153, 0.0)');
+
+    hourlyChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: Array.from({ length: 24 }, (_, h) => `${String(h).padStart(2, '0')}:00`),
+            datasets: [
+                {
+                    label: 'Page Visits',
+                    data: visits,
+                    backgroundColor: gradientVisits,
+                    borderColor: '#34d399',
+                    borderWidth: 1.5,
+                    borderRadius: 4
+                },
+                {
+                    label: 'Actions',
+                    data: actions,
+                    backgroundColor: 'rgba(139, 92, 246, 0.35)',
+                    borderColor: '#8b5cf6',
+                    borderWidth: 1.5,
+                    borderRadius: 4
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: (currentSettings.animations && !currentSettings.lowEndMode) ? undefined : false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+                legend: { labels: { color: '#9ca3af', usePointStyle: true, boxWidth: 6, font: { family: 'Inter', size: 12 } } },
+                tooltip: { backgroundColor: 'rgba(17, 24, 39, 0.95)', titleColor: '#fff', bodyColor: '#cbd5e1', borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1, padding: 10 }
+            },
+            scales: {
+                x: { stacked: true, grid: { color: 'rgba(255,255,255,0.03)', drawBorder: false }, ticks: { color: '#6b7280', font: { family: 'Inter', size: 10 }, maxRotation: 0, autoSkip: true } },
+                y: { stacked: true, grid: { color: 'rgba(255,255,255,0.03)', drawBorder: false }, ticks: { color: '#6b7280', precision: 0, font: { family: 'Inter', size: 11 } }, beginAtZero: true }
             }
         }
     });

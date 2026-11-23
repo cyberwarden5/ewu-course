@@ -93,6 +93,16 @@ async function attemptLogin(username, password) {
         lowerMsg.includes('account has been blocked') ||
         lowerMsg.includes('blocked');
 
+    // Case 3: Rate limited (429) - stop auto retry so we don't burn more attempts
+    const isRateLimited = statusCode === 429 || lowerMsg.includes('too many attempts');
+
+    if (isRateLimited) {
+        return { 
+            status: 'invalid_credentials', 
+            message: errorMsg || 'Too many attempts. Please wait a few minutes and try again.'
+        };
+    }
+
     if (isIncorrectCredentials || isBlocked) {
         return { 
             status: 'invalid_credentials', 

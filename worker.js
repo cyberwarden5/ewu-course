@@ -136,6 +136,42 @@ function jsonResponse(data, status = 200, request) {
   });
 }
 
+// Helper: Simple KV-backed fixed-window rate limiter.
+// Returns { allowed: true } or { allowed: false, retryAfter: <seconds> }.
+async function checkRateLimit(env, key, limit, windowMs) {
+  if (!env || !env.ADMIN_KV) return { allowed: true };
+  const now = Date.now();
+  let entry = { count: 0, start: now };
+  try {
+    const raw = await env.ADMIN_KV.get(key);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed.count === 'number' && typeof parsed.start === 'number') entry = parsed;
+    }
+  } catch (e) { }
+  if (now - entry.start > windowMs) entry = { count: 0, start: now };
+  entry.count++;
+  try {
+    await env.ADMIN_KV.put(key, JSON.stringify(entry), { expirationTtl: Math.max(60, Math.ceil(windowMs / 1000)) });
+  } catch (e) { }
+  if (entry.count > limit) {
+    return { allowed: false, retryAfter: Math.max(1, Math.ceil((entry.start + windowMs - now) / 1000)) };
+  }
+  return { allowed: true };
+}
+
+function rateLimitedResponse(retryAfter, request) {
+  const headers = {
+    'Content-Type': 'application/json',
+    'Retry-After': String(retryAfter),
+    ...getCorsHeaders(request)
+  };
+  return new Response(JSON.stringify({
+    status: 'error',
+    message: 'Too many attempts. Please wait a few minutes and try again.'
+  }), { status: 429, headers });
+}
+
 // Helper: SHA-256 hash using Web Crypto API
 async function hashSHA256(str) {
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
@@ -302,6 +338,14 @@ async function handleLogin(request, env) {
         message: 'Username and password are required'
       }, 400, request);
     }
+
+    // Rate limit: fixed windows per IP and per user ID so brute-force attempts
+    // never reach the upstream portal. Generous enough for real students.
+    const loginIp = request.headers.get('CF-Connecting-IP') || 'unknown';
+    const ipLimit = await checkRateLimit(env, `rl_login_ip_${loginIp}`, 8, 10 * 60 * 1000);
+    if (!ipLimit.allowed) return rateLimitedResponse(ipLimit.retryAfter, request);
+    const userLimit = await checkRateLimit(env, `rl_login_user_${username}`, 5, 10 * 60 * 1000);
+    if (!userLimit.allowed) return rateLimitedResponse(userLimit.retryAfter, request);
 
     // Check User ID Blocklist
     if (env && env.ADMIN_KV) {
@@ -1869,6 +1913,27 @@ async function handlePortalPing(request, env) {
   }
 }
 
+async function handleAdminAnalytics(request, env) {
+  if (!(await verifyAdminAuth(request, env))) return jsonResponse({ error: 'Unauthorized' }, 401, request);
+  const url = new URL(request.url);
+  let days = parseInt(url.searchParams.get('days') || '30', 10);
+  if (isNaN(days) || days < 1) days = 30;
+  if (days > 90) days = 90;
+
+  let analytics = {};
+  if (env.ADMIN_KV) {
+    for (let i = 0; i < days; i++) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const dateStr = d.toISOString().split('T')[0];
+      const data = await env.ADMIN_KV.get(`analytics_${dateStr}`, 'json');
+      analytics[dateStr] = data || { visits: 0, actions: 0, unique_ips: [] };
+    }
+  }
+
+  return jsonResponse({ days: days, analytics: analytics }, 200, request);
+}
+
 async function handleAdminDashboard(request, env) {
   if (!(await verifyAdminAuth(request, env))) return jsonResponse({ error: 'Unauthorized' }, 401, request);
 
@@ -2195,6 +2260,9 @@ export default {
     }
     if (url.pathname === '/api/analytics' && request.method === 'POST') {
       return handleAnalyticsEvent(request, env);
+    }
+    if (url.pathname === '/api/admin/analytics' && request.method === 'GET') {
+      return handleAdminAnalytics(request, env);
     }
     if (url.pathname === '/api/admin/login' && request.method === 'POST') {
       return handleAdminLogin(request, env);
