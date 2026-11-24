@@ -50,11 +50,11 @@
         if (contentEl) contentEl.classList.add('hidden');
 
         try {
-            const res = await fetch(`${API_BASE_URL}/api/degree-review`, { credentials: 'include' });
+            const storedId = localStorage.getItem('studentId') || localStorage.getItem('ewu_student_id') || '';
+            const degUrl = storedId ? `${API_BASE_URL}/api/degree-review?studentId=${encodeURIComponent(storedId)}` : `${API_BASE_URL}/api/degree-review`;
+            const res = await fetch(degUrl, { credentials: 'include' });
             if (res.status === 401 || res.status === 403) {
-                try { localStorage.removeItem('ewu_session_id'); sessionStorage.removeItem('ewu_session_id'); } catch(e) {}
-                window.location.href = 'login?expired=1';
-                return;
+                throw new Error('Degree review is currently unavailable. Please try again.');
             }
 
             const json = await res.json().catch(() => null);

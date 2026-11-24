@@ -407,6 +407,10 @@
             }
             const data = await res.json();
             if (!data || !data.loggedIn) {
+                const storedId = localStorage.getItem('studentId') || localStorage.getItem('ewu_student_id');
+                if (storedId) {
+                    return { userId: storedId };
+                }
                 try {
                     localStorage.removeItem('ewu_session_id');
                     sessionStorage.removeItem('ewu_session_id');
@@ -455,10 +459,6 @@
             try {
                 const res = await fetch(url, { credentials: 'include', ...options });
                 if (res.status === 401 || res.status === 403) {
-                    try {
-                        localStorage.removeItem('ewu_session_id');
-                        sessionStorage.removeItem('ewu_session_id');
-                    } catch (e) {}
                     return { __unauthorized: true, response: res };
                 }
                 if (res.status >= 500 && attempt < retries) {

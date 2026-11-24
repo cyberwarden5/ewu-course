@@ -82,9 +82,7 @@
         try {
             const res = await fetch(`${API_BASE_URL}/api/profile`, { credentials: 'include' });
             if (res.status === 401 || res.status === 403) {
-                try { localStorage.removeItem('ewu_session_id'); sessionStorage.removeItem('ewu_session_id'); } catch(e) {}
-                window.location.href = 'login?expired=1';
-                return;
+                throw new Error('Student profile is currently unavailable. Please try again.');
             }
 
             const json = await res.json().catch(() => null);

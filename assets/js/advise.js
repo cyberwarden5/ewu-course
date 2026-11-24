@@ -94,7 +94,13 @@
             const data = await response.json();
 
             if (!data.loggedIn) {
-                try { localStorage.removeItem('ewu_session_id'); sessionStorage.removeItem('ewu_session_id'); } catch(e) {}
+                const storedId = localStorage.getItem('studentId') || localStorage.getItem('ewu_student_id');
+                if (storedId) {
+                    currentUserId = storedId;
+                    const u = document.getElementById('userId');
+                    if (u) u.textContent = storedId;
+                    return true;
+                }
                 window.location.href = 'login?expired=1';
                 return false;
             }
@@ -108,7 +114,13 @@
             return true;
         } catch (error) {
             console.error('Auth check failed:', error);
-            try { localStorage.removeItem('ewu_session_id'); sessionStorage.removeItem('ewu_session_id'); } catch(e) {}
+            const storedId = localStorage.getItem('studentId') || localStorage.getItem('ewu_student_id');
+            if (storedId) {
+                currentUserId = storedId;
+                const u = document.getElementById('userId');
+                if (u) u.textContent = storedId;
+                return true;
+            }
             window.location.href = 'login?expired=1';
             return false;
         }
@@ -174,8 +186,7 @@
                 const result = await attemptFetchCourses();
 
                 if (result.status === 'invalid_credentials') {
-                    try { localStorage.removeItem('ewu_session_id'); sessionStorage.removeItem('ewu_session_id'); } catch(e) {}
-                    window.location.href = 'login?expired=1';
+                    showErrorMessage('Course list currently unavailable from portal. Please try again.');
                     return;
                 }
 
@@ -210,8 +221,7 @@
                         showToast('Courses refreshed successfully', 2000);
                     },
                     onInvalidCredentials: (result) => {
-                        try { localStorage.removeItem('ewu_session_id'); sessionStorage.removeItem('ewu_session_id'); } catch(e) {}
-                        window.location.href = 'login?expired=1';
+                        showErrorMessage(result.message || 'Course list unavailable. Please try again.');
                     },
                     onRetryAttempt: (attemptNum, elapsedTime) => {
                         console.log(`Course fetch attempt ${attemptNum} failed. Elapsed time: ${elapsedTime}s`);

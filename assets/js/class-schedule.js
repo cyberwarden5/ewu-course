@@ -50,8 +50,7 @@
         try {
             const result = await fetchJsonWithRetry(`${API_BASE_URL}/api/schedule/semesters`);
             if (result.__unauthorized) {
-                try { localStorage.removeItem('ewu_session_id'); sessionStorage.removeItem('ewu_session_id'); } catch(e) {}
-                window.location.href = 'login?expired=1';
+                renderEmpty('Unable to load semesters from portal.');
                 return;
             }
             const semesters = (result.data && result.data.semesters) || [];
@@ -106,9 +105,7 @@
         try {
             const result = await fetchJsonWithRetry(`${API_BASE_URL}/api/schedule?semesterId=${encodeURIComponent(currentSemesterId)}`);
             if (result.__unauthorized) {
-                try { localStorage.removeItem('ewu_session_id'); sessionStorage.removeItem('ewu_session_id'); } catch(e) {}
-                window.location.href = 'login?expired=1';
-                return;
+                throw new Error('Class schedule is currently unavailable. Please try again.');
             }
             const data = result.data || {};
             if (data.status === 'error') throw new Error(data.message || 'Failed to load schedule');

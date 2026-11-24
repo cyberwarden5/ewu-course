@@ -35,9 +35,7 @@
         try {
             const result = await fetchJsonWithRetry(`${API_BASE_URL}/api/ledger`);
             if (result.__unauthorized) {
-                try { localStorage.removeItem('ewu_session_id'); sessionStorage.removeItem('ewu_session_id'); } catch(e) {}
-                window.location.href = 'login?expired=1';
-                return;
+                throw new Error('Account ledger is currently unavailable. Please refresh or try again.');
             }
             const data = result.data || {};
             if (data.status === 'error') throw new Error(data.message || 'Failed to load ledger');

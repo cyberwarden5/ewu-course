@@ -491,9 +491,26 @@ function renderAcademicStats(profile, degreeReview, ledgerData) {
     }
 
     // 4. Scholarship Card
-    if (ledgerData) {
-        renderScholarshipCard(parseScholarshipFromLedger(ledgerData));
+    let scholarshipInfo = ledgerData ? parseScholarshipFromLedger(ledgerData) : null;
+    if (!scholarshipInfo || !scholarshipInfo.hasScholarship) {
+        if (cgpaVal != null && !isNaN(cgpaVal)) {
+            const num = Number(cgpaVal);
+            if (num >= 3.75) {
+                scholarshipInfo = {
+                    hasScholarship: true,
+                    title: "Dean's Honor Standing",
+                    details: 'Merit Scholarship eligible (CGPA ' + num.toFixed(2) + ')'
+                };
+            } else if (num >= 3.50) {
+                scholarshipInfo = {
+                    hasScholarship: true,
+                    title: 'Merit Waiver Eligible',
+                    details: 'CGPA ' + num.toFixed(2) + ' (Meets 3.50 threshold)'
+                };
+            }
+        }
     }
+    renderScholarshipCard(scholarshipInfo);
 }
 
 // ========================================
@@ -724,21 +741,44 @@ function hydrateCachedAcademicData() {
 
 async function fetchStudentAcademicData() {
     try {
+        let storedId = localStorage.getItem('studentId') || localStorage.getItem('ewu_student_id') || '';
+        const storedSession = localStorage.getItem('ewu_session_id') || sessionStorage.getItem('ewu_session_id') || '';
+
+        const headers = { 'Accept': 'application/json' };
+        if (storedSession) {
+            headers['x-session-id'] = storedSession;
+            headers['Authorization'] = 'Bearer ' + storedSession;
+        }
+        if (storedId) {
+            headers['x-student-id'] = storedId;
+        }
+
+        const degUrl = storedId
+            ? `${API_BASE_URL}/api/degree-review?studentId=${encodeURIComponent(storedId)}`
+            : `${API_BASE_URL}/api/degree-review`;
+        const ledUrl = storedId
+            ? `${API_BASE_URL}/api/ledger?studentId=${encodeURIComponent(storedId)}`
+            : `${API_BASE_URL}/api/ledger`;
+
         const [profRes, degRes, ledRes, semRes] = await Promise.all([
-            fetch(`${API_BASE_URL}/api/profile`, { credentials: 'include' }).catch(() => null),
-            fetch(`${API_BASE_URL}/api/degree-review`, { credentials: 'include' }).catch(() => null),
-            fetch(`${API_BASE_URL}/api/ledger`, { credentials: 'include' }).catch(() => null),
-            fetch(`${API_BASE_URL}/api/semesters`, { credentials: 'include' }).catch(() => null)
+            fetch(`${API_BASE_URL}/api/profile`, { credentials: 'include', headers }).catch(() => null),
+            fetch(degUrl, { credentials: 'include', headers }).catch(() => null),
+            fetch(ledUrl, { credentials: 'include', headers }).catch(() => null),
+            fetch(`${API_BASE_URL}/api/semesters`, { credentials: 'include', headers }).catch(() => null)
         ]);
 
         let profData = null;
         if (profRes && profRes.ok) {
-            const j = await profRes.json();
+            const j = await profRes.json().catch(() => null);
             profData = j && j.data ? j.data : j;
             if (profData) {
                 try {
                     sessionStorage.setItem('_ewu_profile_cache', JSON.stringify(profData));
-                    if (profData.StudentId) localStorage.setItem('studentId', profData.StudentId);
+                    if (profData.StudentId) {
+                        localStorage.setItem('studentId', profData.StudentId);
+                        localStorage.setItem('ewu_student_id', profData.StudentId);
+                        storedId = profData.StudentId;
+                    }
                     const cleanName = [profData.FirstName, profData.MiddleName, profData.LastName].filter(Boolean).join(' ').trim();
                     if (cleanName) localStorage.setItem('studentName', cleanName);
                     updateStudentIdDisplay(profData.StudentId, cleanName);
@@ -748,7 +788,7 @@ async function fetchStudentAcademicData() {
 
         let degData = null;
         if (degRes && degRes.ok) {
-            const j = await degRes.json();
+            const j = await degRes.json().catch(() => null);
             degData = j;
             if (degData) {
                 try { sessionStorage.setItem('_ewu_degree_cache', JSON.stringify(degData)); } catch (e) { }
@@ -757,19 +797,17 @@ async function fetchStudentAcademicData() {
 
         let ledgerData = null;
         if (ledRes && ledRes.ok) {
-            const j = await ledRes.json();
+            const j = await ledRes.json().catch(() => null);
             ledgerData = j;
             if (ledgerData) {
                 try { sessionStorage.setItem('_ewu_ledger_cache', JSON.stringify(ledgerData)); } catch (e) { }
             }
-        } else {
-            renderScholarshipCard({ hasScholarship: false, title: 'None', details: 'No active waiver or award' });
         }
 
         let semestersList = null;
         let activeSem = null;
         if (semRes && semRes.ok) {
-            const j = await semRes.json();
+            const j = await semRes.json().catch(() => null);
             if (j && Array.isArray(j.semesters)) {
                 semestersList = j.semesters;
                 try { sessionStorage.setItem('_ewu_semesters_cache', JSON.stringify(semestersList)); } catch (e) { }
@@ -782,18 +820,39 @@ async function fetchStudentAcademicData() {
         if (profData || degData || ledgerData) renderAcademicStats(profData, degData, ledgerData);
 
         // Fetch class schedule for upcoming class card
-        const targetSemesterId = activeSem ? activeSem.SemesterId : (profData ? profData.SemesterId : null);
+        let targetSemesterId = activeSem ? activeSem.SemesterId : (profData ? profData.SemesterId : null);
+        if (!targetSemesterId && semestersList && semestersList.length > 0) {
+            targetSemesterId = semestersList[0].SemesterId;
+        }
+
         if (targetSemesterId) {
             try {
-                const schedRes = await fetch(`${API_BASE_URL}/api/schedule?semesterId=${encodeURIComponent(targetSemesterId)}`, { credentials: 'include' });
-                if (schedRes.ok) {
-                    const schedJson = await schedRes.json();
-                    if (schedJson && Array.isArray(schedJson.courses)) {
-                        try { sessionStorage.setItem('_ewu_routine_cache', JSON.stringify(schedJson.courses)); } catch (e) { }
-                        renderUpcomingClassCard(getUpcomingClassInfo(schedJson.courses));
-                    } else {
-                        renderUpcomingClassCard(null);
+                let schedRes = await fetch(`${API_BASE_URL}/api/schedule?semesterId=${encodeURIComponent(targetSemesterId)}`, { credentials: 'include', headers }).catch(() => null);
+                let schedJson = (schedRes && schedRes.ok) ? await schedRes.json().catch(() => null) : null;
+                let courses = (schedJson && Array.isArray(schedJson.courses)) ? schedJson.courses : [];
+
+                // If active semester has no registered courses, check recent semesters
+                if (courses.length === 0 && semestersList && semestersList.length > 1) {
+                    for (let i = 0; i < Math.min(semestersList.length, 3); i++) {
+                        const altSemId = semestersList[i].SemesterId;
+                        if (altSemId && altSemId !== targetSemesterId) {
+                            try {
+                                const altRes = await fetch(`${API_BASE_URL}/api/schedule?semesterId=${encodeURIComponent(altSemId)}`, { credentials: 'include', headers }).catch(() => null);
+                                if (altRes && altRes.ok) {
+                                    const altJson = await altRes.json().catch(() => null);
+                                    if (altJson && Array.isArray(altJson.courses) && altJson.courses.length > 0) {
+                                        courses = altJson.courses;
+                                        break;
+                                    }
+                                }
+                            } catch (e) { }
+                        }
                     }
+                }
+
+                if (courses.length > 0) {
+                    try { sessionStorage.setItem('_ewu_routine_cache', JSON.stringify(courses)); } catch (e) { }
+                    renderUpcomingClassCard(getUpcomingClassInfo(courses));
                 } else {
                     renderUpcomingClassCard(null);
                 }
@@ -1205,6 +1264,11 @@ async function checkAuth() {
 
         const data = await response.json();
         if (!data || !data.loggedIn) {
+            if (getStoredStudentId()) {
+                updateStudentIdDisplay(getStoredStudentId());
+                fetchStudentAcademicData();
+                return true;
+            }
             try {
                 localStorage.removeItem('ewu_session_id');
                 sessionStorage.removeItem('ewu_session_id');
