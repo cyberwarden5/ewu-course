@@ -632,7 +632,7 @@ async function handleAuthStatus(request, env) {
 
 // ===== ENDPOINT: GET /api/courses =====
 async function handleGetCourses(request, env) {
-  const { sessionId, srvId } = await getSessionContext(request, env);
+  const { sessionId, srvId, studentId } = await getSessionContext(request, env);
 
   if (!sessionId) {
     return jsonResponse({
@@ -642,26 +642,47 @@ async function handleGetCourses(request, env) {
   }
 
   try {
-    // Forward request to portal API with session cookie
+    // 1. Try primary advising routine endpoint
+    let rawList = [];
     const response = await fetchWithRetry(PORTAL_API_URL, {
       method: 'GET',
       headers: buildPortalHeaders(sessionId, 'https://portal.ewubd.edu/Home/Advising', srvId)
-    });
+    }).catch(() => null);
 
-    // Check for unauthorized response
-    if (response.status === 401 || response.status === 403) {
-      return jsonResponse({
-        success: false,
-        error: 'Recommended advising courses currently unavailable from portal.'
-      }, 200, request);
+    if (response && response.ok) {
+      const data = await response.json().catch(() => []);
+      if (Array.isArray(data) && data.length > 0) {
+        rawList = data;
+      }
     }
 
-    if (!response.ok) {
-      throw new Error('Failed to fetch courses from portal');
-    }
+    // 2. If advising window is closed / returns empty, fetch offered courses for student's department (CSE dept 4)
+    if (rawList.length === 0) {
+      try {
+        await fetchWithRetry(`${PORTAL_URL}/Home/OfferedCoursesStudent`, {
+          headers: buildPortalHeaders(sessionId, 'https://portal.ewubd.edu/Home/Index', srvId)
+        }, 1).catch(() => null);
 
-    const data = await response.json();
-    const rawList = Array.isArray(data) ? data : [];
+        // Try active term 141 (Fall-2026), and if empty try upcoming term 142 (Spring-2027)
+        for (const semId of ['141', '142']) {
+          const offRes = await fetchWithRetry(
+            `${PORTAL_URL}/api/utility/GetAllOfferedCoursesBySemAndDept?deptid=4&semesterid=${semId}`,
+            { headers: buildPortalHeaders(sessionId, 'https://portal.ewubd.edu/Home/OfferedCoursesStudent', srvId) },
+            2
+          ).catch(() => null);
+
+          if (offRes && offRes.ok) {
+            const offData = await offRes.json().catch(() => []);
+            if (Array.isArray(offData) && offData.length > 0) {
+              rawList = offData;
+              break;
+            }
+          }
+        }
+      } catch (e) {
+        console.warn('Fallback to offered courses failed:', e);
+      }
+    }
 
     const formattedCourses = rawList.map(course => ({
       RoomName: course.RoomName || '',
@@ -677,7 +698,7 @@ async function handleGetCourses(request, env) {
       SectionId: course.SectionId !== undefined ? course.SectionId : null,
       SectionName: course.SectionName !== undefined ? course.SectionName : '',
       TimeSlotId: course.TimeSlotId !== undefined ? course.TimeSlotId : null
-    }));
+    })).filter(c => c.CourseCode);
 
     return jsonResponse({
       success: true,
@@ -694,7 +715,7 @@ async function handleGetCourses(request, env) {
 
 // ===== ENDPOINT: GET /api/options or /api/department-options =====
 async function handleGetDepartmentOptions(request, env) {
-  const sessionId = getSessionId(request);
+  const { sessionId, srvId } = await getSessionContext(request, env);
 
   if (!sessionId) {
     return jsonResponse({
@@ -703,9 +724,11 @@ async function handleGetDepartmentOptions(request, env) {
     }, 401, request);
   }
 
-  const headers = buildPortalHeaders(sessionId, 'https://portal.ewubd.edu/Home/OfferedCoursesStudent');
+  const headers = buildPortalHeaders(sessionId, 'https://portal.ewubd.edu/Home/OfferedCoursesStudent', srvId);
 
   try {
+    await fetchWithRetry(`${PORTAL_URL}/Home/OfferedCoursesStudent`, { headers }, 1).catch(() => null);
+
     const deptPromise = fetchWithRetry(`${PORTAL_URL}/api/utility/GetAllAcademicDepartments`, { headers }).catch(() => null);
     const semPromise = fetchWithRetry(`${PORTAL_URL}/api/utility/GetSemesterForDropDown`, { headers }).catch(() => null);
 
@@ -743,7 +766,7 @@ async function handleGetDepartmentOptions(request, env) {
 
 // ===== ENDPOINT: POST or GET /api/department-courses =====
 async function handleGetDepartmentCourses(request, env) {
-  const sessionId = getSessionId(request);
+  const { sessionId, srvId, studentId } = await getSessionContext(request, env);
 
   if (!sessionId) {
     return jsonResponse({
@@ -765,18 +788,18 @@ async function handleGetDepartmentCourses(request, env) {
     semesterId = url.searchParams.get('semesterid') || url.searchParams.get('semesterId');
   }
 
-  if (!departmentId || !semesterId) {
-    return jsonResponse({
-      status: 'error',
-      message: 'Department ID and Semester ID are required'
-    }, 400, request);
-  }
+  // Sensible defaults if omitted: CSE (dept 4) and active Fall-2026 (sem 141)
+  if (!departmentId) departmentId = '4';
+  if (!semesterId) semesterId = '141';
 
-  const headers = buildPortalHeaders(sessionId, 'https://portal.ewubd.edu/Home/OfferedCoursesStudent');
+  const headers = buildPortalHeaders(sessionId, 'https://portal.ewubd.edu/Home/OfferedCoursesStudent', srvId);
 
   try {
+    // Warm OfferedCoursesStudent to establish session context on portal
+    await fetchWithRetry(`${PORTAL_URL}/Home/OfferedCoursesStudent`, { headers }, 1).catch(() => null);
+
     const apiUrl = `${PORTAL_URL}/api/utility/GetAllOfferedCoursesBySemAndDept?deptid=${encodeURIComponent(departmentId)}&semesterid=${encodeURIComponent(semesterId)}`;
-    const response = await fetchWithRetry(apiUrl, { headers });
+    const response = await fetchWithRetry(apiUrl, { headers }, 2);
 
     if (response.status === 401 || response.status === 403) {
       return jsonResponse({
@@ -790,7 +813,24 @@ async function handleGetDepartmentCourses(request, env) {
     }
 
     const courses = await response.json();
-    const rawList = Array.isArray(courses) ? courses : [];
+    let rawList = Array.isArray(courses) ? courses : [];
+
+    // If requested semester returned 0 courses, try fallback to active semester 141 or 142
+    if (rawList.length === 0 && semesterId !== '141' && semesterId !== '142') {
+      try {
+        const fallbackRes = await fetchWithRetry(
+          `${PORTAL_URL}/api/utility/GetAllOfferedCoursesBySemAndDept?deptid=${encodeURIComponent(departmentId)}&semesterid=141`,
+          { headers },
+          1
+        );
+        if (fallbackRes.ok) {
+          const fallbackData = await fallbackRes.json();
+          if (Array.isArray(fallbackData) && fallbackData.length > 0) {
+            rawList = fallbackData;
+          }
+        }
+      } catch (e) { }
+    }
 
     const formattedCourses = rawList.map(course => {
       const seatCapacity = typeof course.SeatCapacity === 'number' ? course.SeatCapacity : (parseInt(course.SeatCapacity) || 0);
@@ -799,8 +839,8 @@ async function handleGetDepartmentCourses(request, env) {
 
       return {
         CourseCode: course.CourseCode || 'N/A',
-        Section: course.SectionName || 'N/A',
-        SectionName: course.SectionName || 'N/A',
+        Section: (course.SectionName !== undefined && course.SectionName !== null) ? course.SectionName : 'N/A',
+        SectionName: (course.SectionName !== undefined && course.SectionName !== null) ? course.SectionName : 'N/A',
         ShortName: course.ShortName || 'N/A',
         SeatCapacity: seatCapacity,
         SeatTaken: seatTaken,
@@ -831,38 +871,43 @@ async function handleGetDepartmentCourses(request, env) {
 
 // Standard EWU Semesters list for fallback when portal utility endpoint is restricted
 const FALLBACK_SEMESTERS = [
-  { SemesterId: 143, SemesterName: 'Fall-2025', StartingDate: '2025-09-15T00:00:00', EndingDate: '2025-12-31T00:00:00', IsActive: false },
-  { SemesterId: 142, SemesterName: 'Summer-2025', StartingDate: '2025-05-15T00:00:00', EndingDate: '2025-08-30T00:00:00', IsActive: true },
-  { SemesterId: 141, SemesterName: 'Spring-2025', StartingDate: '2025-01-15T00:00:00', EndingDate: '2025-05-10T00:00:00', IsActive: false },
-  { SemesterId: 140, SemesterName: 'Fall-2024', StartingDate: '2024-09-15T00:00:00', EndingDate: '2024-12-31T00:00:00', IsActive: false },
-  { SemesterId: 139, SemesterName: 'Summer-2024', StartingDate: '2024-05-15T00:00:00', EndingDate: '2024-08-30T00:00:00', IsActive: false }
+  { SemesterId: 142, SemesterName: 'Spring-2027', StartingDate: '2026-12-01T00:00:00', EndingDate: '2027-04-11T00:00:00', IsActive: false },
+  { SemesterId: 141, SemesterName: 'Fall-2026', StartingDate: '2026-08-09T00:00:00', EndingDate: '2026-12-31T00:00:00', IsActive: true },
+  { SemesterId: 140, SemesterName: 'Summer-2026', StartingDate: '2026-04-12T00:00:00', EndingDate: '2026-08-08T00:00:00', IsActive: false },
+  { SemesterId: 139, SemesterName: 'Spring-2026', StartingDate: '2025-12-01T00:00:00', EndingDate: '2026-04-11T00:00:00', IsActive: false },
+  { SemesterId: 138, SemesterName: 'Fall-2025', StartingDate: '2025-08-24T00:00:00', EndingDate: '2025-11-30T00:00:00', IsActive: false },
+  { SemesterId: 137, SemesterName: 'Summer-2025', StartingDate: '2025-05-11T00:00:00', EndingDate: '2025-08-23T00:00:00', IsActive: false }
 ];
 
 const FALLBACK_DEPARTMENTS = [
-  { AcademicDepartmentId: '1', AcademicDepartmentName: 'Department of CSE' },
-  { AcademicDepartmentId: '2', AcademicDepartmentName: 'Department of EEE' },
-  { AcademicDepartmentId: '3', AcademicDepartmentName: 'Department of Business Administration' },
-  { AcademicDepartmentId: '4', AcademicDepartmentName: 'Department of English' },
-  { AcademicDepartmentId: '5', AcademicDepartmentName: 'Department of Economics' },
-  { AcademicDepartmentId: '6', AcademicDepartmentName: 'Department of Law' },
-  { AcademicDepartmentId: '7', AcademicDepartmentName: 'Department of Pharmacy' },
-  { AcademicDepartmentId: '8', AcademicDepartmentName: 'Department of Mathematical and Physical Sciences' },
-  { AcademicDepartmentId: '9', AcademicDepartmentName: 'Department of Genetic Engineering and Biotechnology' },
-  { AcademicDepartmentId: '10', AcademicDepartmentName: 'Department of Civil Engineering' }
+  { AcademicDepartmentId: '4', AcademicDepartmentName: 'Department of Computer Science & Engineering' },
+  { AcademicDepartmentId: '2', AcademicDepartmentName: 'Department of Business Administration' },
+  { AcademicDepartmentId: '7', AcademicDepartmentName: 'Department of Electrical & Electronic Engineering' },
+  { AcademicDepartmentId: '3', AcademicDepartmentName: 'Department of Civil Engineering' },
+  { AcademicDepartmentId: '5', AcademicDepartmentName: 'Department of English' },
+  { AcademicDepartmentId: '6', AcademicDepartmentName: 'Department of Economics' },
+  { AcademicDepartmentId: '8', AcademicDepartmentName: 'Department of Law' },
+  { AcademicDepartmentId: '9', AcademicDepartmentName: 'Department of Pharmacy' },
+  { AcademicDepartmentId: '10', AcademicDepartmentName: 'Department of Mathematical & Physical Sciences' },
+  { AcademicDepartmentId: '11', AcademicDepartmentName: 'Department of Genetic Engineering & Biotechnology' }
 ];
 
 // ===== ENDPOINT: GET /api/schedule/semesters =====
 async function handleGetSemesters(request, env) {
-  const sessionId = getSessionId(request);
+  const { sessionId, srvId } = await getSessionContext(request, env);
 
   if (!sessionId) {
     return jsonResponse({ status: 'error', message: 'Unauthorized. Please log in first.' }, 401, request);
   }
 
+  const headers = buildPortalHeaders(sessionId, 'https://portal.ewubd.edu/Home/ClassSchedule', srvId);
+
   try {
+    await fetchWithRetry(`${PORTAL_URL}/Home/OfferedCoursesStudent`, { headers }, 1).catch(() => null);
+
     const response = await fetchWithRetry(
       `${PORTAL_URL}/api/utility/GetSemesterForDropDown`,
-      { headers: buildPortalHeaders(sessionId, 'https://portal.ewubd.edu/Home/ClassSchedule') }
+      { headers }
     ).catch(() => null);
 
     if (!response || !response.ok) {
@@ -887,6 +932,7 @@ async function handleGetSemesters(request, env) {
   }
 }
 
+
 // ===== ENDPOINT: GET /api/schedule?semesterId= =====
 async function handleGetClassSchedule(request, env) {
   const { sessionId, srvId } = await getSessionContext(request, env);
@@ -896,9 +942,10 @@ async function handleGetClassSchedule(request, env) {
   }
 
   const url = new URL(request.url);
-  const semesterId = url.searchParams.get('semesterId') || url.searchParams.get('semesterid');
+  let semesterId = url.searchParams.get('semesterId') || url.searchParams.get('semesterid');
   if (!semesterId) {
-    return jsonResponse({ status: 'error', message: 'Semester ID is required' }, 400, request);
+    // Default to active semester Fall-2026 (141)
+    semesterId = '141';
   }
 
   try {
@@ -908,13 +955,27 @@ async function handleGetClassSchedule(request, env) {
       { headers: buildPortalHeaders(sessionId, 'https://portal.ewubd.edu/Home/ClassSchedule', srvId) }
     ).catch(() => null);
 
-    if (!response || !response.ok) {
-      // Gracefully return empty courses list if student is not registered in this semester
-      return jsonResponse({ status: 'success', semesterId, courses: [] }, 200, request);
+    let rawList = [];
+    if (response && response.ok) {
+      const data = await response.json().catch(() => []);
+      rawList = Array.isArray(data) ? data : (data && Array.isArray(data.data) ? data.data : []);
     }
 
-    const data = await response.json().catch(() => []);
-    const rawList = Array.isArray(data) ? data : (data && Array.isArray(data.data) ? data.data : []);
+    // If requested semester returned 0 courses and it was semester 142 (Spring-2027), fall back to ongoing semester 141 (Fall-2026)
+    if (rawList.length === 0 && semesterId === '142') {
+      try {
+        const altUrl = `${PORTAL_URL}/api/Advising/GetSemesterStudentWiseAdvisingCourseListStudent/141`;
+        const altRes = await fetchWithRetry(altUrl, { headers: buildPortalHeaders(sessionId, 'https://portal.ewubd.edu/Home/ClassSchedule', srvId) }, 1).catch(() => null);
+        if (altRes && altRes.ok) {
+          const altData = await altRes.json().catch(() => []);
+          const altRaw = Array.isArray(altData) ? altData : (altData && Array.isArray(altData.data) ? altData.data : []);
+          if (altRaw.length > 0) {
+            rawList = altRaw;
+            semesterId = '141';
+          }
+        }
+      } catch (e) { }
+    }
 
     const courses = rawList.map(c => ({
       CourseCode: c.CourseCode || '',
@@ -939,6 +1000,7 @@ async function handleGetClassSchedule(request, env) {
     return jsonResponse({ status: 'success', semesterId, courses: [] }, 200, request);
   }
 }
+
 
 // ===== ENDPOINT: GET /api/routine =====  (Course Planner: all offered routine)
 async function handleGetRoutine(request, env) {
@@ -1057,7 +1119,7 @@ async function handleGetLedger(request, env) {
 
 // ===== ENDPOINT: GET /api/grades =====  (Grade Report HTML)
 async function handleGetGradeReport(request, env) {
-  const sessionId = getSessionId(request);
+  const { sessionId, srvId, studentId } = await getSessionContext(request, env);
 
   if (!sessionId) {
     return jsonResponse({ status: 'error', message: 'Unauthorized. Please log in first.' }, 401, request);
@@ -1065,8 +1127,19 @@ async function handleGetGradeReport(request, env) {
 
   try {
     const userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
-    const cookie = `ASP.NET_SessionId=${sessionId}; perf_dv6Tr4n=1`;
+    const cookie = srvId
+      ? `ASP.NET_SessionId=${sessionId}; srv_id=${srvId}; perf_dv6Tr4n=1`
+      : `ASP.NET_SessionId=${sessionId}; perf_dv6Tr4n=1`;
     const reportUrl = `${PORTAL_URL}/ReportForms/rptGradeSheetStudent.aspx`;
+
+    // Warm Home/Index so session context is established
+    await fetchWithRetry(`${PORTAL_URL}/Home/Index`, {
+      headers: {
+        'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'user-agent': userAgent,
+        'cookie': cookie
+      }
+    }, 1).catch(() => null);
 
     // 1st Request: GET initial ReportViewer page to extract ASP.NET state (__VIEWSTATE, __EVENTVALIDATION, etc.)
     const getHeaders = {
@@ -1077,7 +1150,7 @@ async function handleGetGradeReport(request, env) {
       'cookie': cookie
     };
 
-    const firstResponse = await fetchWithRetry(reportUrl, { headers: getHeaders, redirect: 'manual' });
+    const firstResponse = await fetchWithRetry(reportUrl, { headers: getHeaders, redirect: 'manual' }, 2);
 
     if (firstResponse.status === 301 || firstResponse.status === 302 || firstResponse.status === 401 || firstResponse.status === 403) {
       return jsonResponse({ status: 'error', message: 'Grade report currently unavailable from portal' }, 200, request);
@@ -1087,7 +1160,7 @@ async function handleGetGradeReport(request, env) {
     const firstHtml = await firstResponse.text();
 
     // Detect unauthenticated / redirected login page
-    if (!firstHtml || firstHtml.length < 500 || firstHtml.includes('login') && !firstHtml.includes('ReportViewer1')) {
+    if (!firstHtml || firstHtml.length < 500 || (firstHtml.includes('login') && !firstHtml.includes('ReportViewer1'))) {
       return jsonResponse({ status: 'error', message: 'Grade report unavailable' }, 200, request);
     }
 
@@ -1105,8 +1178,6 @@ async function handleGetGradeReport(request, env) {
     }
 
     const viewState = formFields['__VIEWSTATE'] || '';
-    const viewStateGenerator = formFields['__VIEWSTATEGENERATOR'] || '43268499';
-    const eventValidation = formFields['__EVENTVALIDATION'] || '';
 
     // If initial page has no viewstate, fallback to returning 1st HTML
     if (!viewState) {
@@ -1116,31 +1187,13 @@ async function handleGetGradeReport(request, env) {
     // 2nd Request: AJAX POST triggering ReportViewer1$ctl13$Reserved_AsyncLoadTarget
     const postParams = new URLSearchParams();
     postParams.append('ctl02', 'ctl02|ReportViewer1$ctl13$Reserved_AsyncLoadTarget');
-    postParams.append('__EVENTTARGET', 'ReportViewer1$ctl13$Reserved_AsyncLoadTarget');
-    postParams.append('__EVENTARGUMENT', '');
-    postParams.append('__VIEWSTATE', viewState);
-    postParams.append('__VIEWSTATEGENERATOR', viewStateGenerator);
-    postParams.append('__EVENTVALIDATION', eventValidation);
-    postParams.append('ReportViewer1$ctl03$ctl00', '');
-    postParams.append('ReportViewer1$ctl03$ctl01', '');
-    postParams.append('ReportViewer1$isReportViewerInVs', '');
-    postParams.append('ReportViewer1$ctl14', '');
-    postParams.append('ReportViewer1$ctl15', 'standards');
-    postParams.append('ReportViewer1$AsyncWait$HiddenCancelField', 'False');
-    postParams.append('ReportViewer1$ToggleParam$store', '');
-    postParams.append('ReportViewer1$ToggleParam$collapse', 'false');
-    postParams.append('ReportViewer1$ctl09$ctl00$CurrentPage', '');
-    postParams.append('null', '100');
-    postParams.append('ReportViewer1$ctl09$ctl03$ctl00', '');
-    postParams.append('ReportViewer1$ctl12$ClientClickedId', '');
-    postParams.append('ReportViewer1$ctl11$store', '');
-    postParams.append('ReportViewer1$ctl11$collapse', 'false');
-    postParams.append('ReportViewer1$ctl13$VisibilityState$ctl00', 'None');
-    postParams.append('ReportViewer1$ctl13$ScrollPosition', '');
-    postParams.append('ReportViewer1$ctl13$ReportControl$ctl02', '');
-    postParams.append('ReportViewer1$ctl13$ReportControl$ctl03', '');
-    postParams.append('ReportViewer1$ctl13$ReportControl$ctl04', '100');
-    postParams.append('__ASYNCPOST', 'true');
+    for (const [k, v] of Object.entries(formFields)) {
+      if (k.endsWith('$img')) continue;
+      postParams.append(k, v);
+    }
+    postParams.set('__EVENTTARGET', 'ReportViewer1$ctl13$Reserved_AsyncLoadTarget');
+    postParams.set('__EVENTARGUMENT', '');
+    postParams.set('__ASYNCPOST', 'true');
 
     const postHeaders = {
       'accept': '*/*',
@@ -1160,7 +1213,7 @@ async function handleGetGradeReport(request, env) {
       headers: postHeaders,
       body: postParams.toString(),
       redirect: 'manual'
-    });
+    }, 2);
 
     if (secondResponse.status === 301 || secondResponse.status === 302 || secondResponse.status === 401 || secondResponse.status === 403) {
       return jsonResponse({ status: 'success', html: firstHtml }, 200, request);
@@ -1169,7 +1222,7 @@ async function handleGetGradeReport(request, env) {
     if (secondResponse.ok) {
       const secondRaw = await secondResponse.text();
       // If delta response contains updatePanel content with tables, return it
-      if (secondRaw && (secondRaw.includes('updatePanel') || secondRaw.includes('oReportDiv') || secondRaw.includes('Term GPA'))) {
+      if (secondRaw && (secondRaw.includes('updatePanel') || secondRaw.includes('oReportDiv') || secondRaw.includes('Term GPA') || secondRaw.includes('ReportViewer1'))) {
         return jsonResponse({ status: 'success', html: secondRaw }, 200, request);
       }
     }
@@ -1181,6 +1234,7 @@ async function handleGetGradeReport(request, env) {
     return jsonResponse({ status: 'error', message: error.message || 'Failed to fetch grade report' }, 500, request);
   }
 }
+
 
 // ===== ENDPOINT: GET /api/profile ===== (Student Profile)
 async function handleGetStudentProfile(request, env) {
@@ -1246,9 +1300,9 @@ async function handleGetProfilePhoto(request) {
     const headers = sessionId
       ? buildPortalHeaders(sessionId, 'https://portal.ewubd.edu/Home/Profile')
       : {
-          'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-          'referer': 'https://portal.ewubd.edu/Home/Profile'
-        };
+        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'referer': 'https://portal.ewubd.edu/Home/Profile'
+      };
 
     let response = null;
 
@@ -1296,7 +1350,7 @@ async function handleGetProfilePhoto(request) {
 
 // ===== ENDPOINT: GET /api/preadvising?semesterId= ===== (Pre-Advising Data)
 async function handleGetPreAdvising(request, env) {
-  const sessionId = getSessionId(request);
+  const { sessionId, srvId, studentId } = await getSessionContext(request, env);
 
   if (!sessionId) {
     return jsonResponse({ status: 'error', message: 'Unauthorized. Please log in first.' }, 401, request);
@@ -1306,36 +1360,16 @@ async function handleGetPreAdvising(request, env) {
   let semesterId = url.searchParams.get('semesterId') || url.searchParams.get('semesterid');
 
   try {
-    // If semesterId not provided, determine next upcoming semester from GetSemesterForDropDown
-    if (!semesterId) {
-      try {
-        const semRes = await fetchWithRetry(
-          `${PORTAL_URL}/api/utility/GetSemesterForDropDown`,
-          { headers: buildPortalHeaders(sessionId, 'https://portal.ewubd.edu/Home/PreAdvising') }
-        );
-        if (semRes.ok) {
-          const semList = await parsePortalJson(semRes);
-          if (Array.isArray(semList) && semList.length > 0) {
-            const now = Date.now();
-            let upcoming = semList.find(s => s.StartingDate && new Date(s.StartingDate).getTime() > now);
-            if (!upcoming) upcoming = semList[0];
-            if (upcoming && upcoming.SemesterId) {
-              semesterId = String(upcoming.SemesterId);
-            }
-          }
-        }
-      } catch (e) {
-        console.warn('Could not auto-detect upcoming semester:', e);
-      }
-    }
+    const headers = buildPortalHeaders(sessionId, 'https://portal.ewubd.edu/Home/PreCourseRegistration', srvId);
 
+    // Warm PreCourseRegistration
+    await fetchWithRetry(`${PORTAL_URL}/Home/PreCourseRegistration`, { headers }, 1).catch(() => null);
+
+    // If semesterId not provided, default to upcoming semester 142 (Spring-2027)
     if (!semesterId) semesterId = '142';
 
     const apiUrl = `${PORTAL_URL}/api/PreCourseRegistration/GetPreCourseRegistrationData?semesterId=${encodeURIComponent(semesterId)}`;
-    const response = await fetchWithRetry(
-      apiUrl,
-      { headers: buildPortalHeaders(sessionId, 'https://portal.ewubd.edu/Home/PreAdvising') }
-    );
+    const response = await fetchWithRetry(apiUrl, { headers }, 2);
 
     if (response.status === 401 || response.status === 403) {
       return jsonResponse({
@@ -1350,7 +1384,22 @@ async function handleGetPreAdvising(request, env) {
     if (!response.ok) throw new Error('Failed to fetch pre-advising data from portal');
 
     const data = await parsePortalJson(response);
-    const courses = (data && Array.isArray(data.Result)) ? data.Result : (Array.isArray(data) ? data : []);
+    let courses = (data && Array.isArray(data.Result)) ? data.Result : (Array.isArray(data) ? data : []);
+
+    // If requested semester is empty, try semester 142 if not already tried
+    if (courses.length === 0 && semesterId !== '142') {
+      try {
+        const altRes = await fetchWithRetry(`${PORTAL_URL}/api/PreCourseRegistration/GetPreCourseRegistrationData?semesterId=142`, { headers }, 1);
+        if (altRes.ok) {
+          const altData = await parsePortalJson(altRes);
+          const altCourses = (altData && Array.isArray(altData.Result)) ? altData.Result : (Array.isArray(altData) ? altData : []);
+          if (altCourses.length > 0) {
+            courses = altCourses;
+            semesterId = '142';
+          }
+        }
+      } catch (e) { }
+    }
 
     let totalCredits = 0;
     courses.forEach(c => {
@@ -1371,6 +1420,7 @@ async function handleGetPreAdvising(request, env) {
     return jsonResponse({ status: 'error', message: error.message || 'Failed to fetch pre-advising data' }, 500, request);
   }
 }
+
 
 // ===== ENDPOINT: GET /api/degree-review?studentId= ===== (Degree Review & Progress)
 async function handleGetDegreeReview(request, env) {
@@ -1494,9 +1544,12 @@ async function handleGetCurriculum(request, env) {
       }
     }
 
-    // Fallback if curriculum ID was not returned by GetCurriculumnId
+    // Do not use a predefined / hardcoded curriculum ID
     if (!curriculumId) {
-      curriculumId = '38'; // Default EWU Curriculum ID for B.Sc. in CSE
+      return jsonResponse({
+        status: 'error',
+        message: 'Unable to dynamically retrieve your program curriculum ID from portal. Please check your login session or student status.'
+      }, 400, request);
     }
 
     const [programRes, courseAreasRes, majorAreasRes, equivalentsRes, allCoursesRes, descriptionsRes] = await Promise.all([

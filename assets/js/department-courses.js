@@ -191,8 +191,16 @@ window.stopDepartmentClock = stopDepartmentClock;
 // Load department and semester options
 async function loadInitialOptions() {
     try {
+        const storedSession = localStorage.getItem('ewu_session_id') || sessionStorage.getItem('ewu_session_id') || '';
+        const headers = { 'Accept': 'application/json' };
+        if (storedSession) {
+            headers['x-session-id'] = storedSession;
+            headers['Authorization'] = 'Bearer ' + storedSession;
+        }
+
         const response = await fetch(`${API_BASE_URL}/api/options`, {
-            credentials: 'include'
+            credentials: 'include',
+            headers
         });
 
         if (response.status === 401 || response.status === 403) {
@@ -316,9 +324,11 @@ function renderSemesterDropdown(semesters) {
         });
 
         select.disabled = false;
-        // Select first active semester by default
+        // Select active semester by default (prioritizing ongoing semester like Fall-2026 / 141)
         if (semesters.length > 0) {
-            select.selectedIndex = 1;
+            let activeIdx = semesters.findIndex(s => String(s.SemesterId) === '141' || (s.StartingDate && s.EndingDate && new Date() >= new Date(s.StartingDate) && new Date() <= new Date(s.EndingDate)));
+            if (activeIdx === -1) activeIdx = 0;
+            select.selectedIndex = activeIdx + 1; // +1 because option 0 is placeholder
             selectedSemesterId = select.value;
             selectedSemesterName = select.options[select.selectedIndex]?.text || '';
         }
@@ -341,12 +351,19 @@ function renderSemesterDropdown(semesters) {
 
 // Fetch single department courses with retry
 async function fetchDepartmentCourses(departmentId, semesterId) {
+    const storedSession = localStorage.getItem('ewu_session_id') || sessionStorage.getItem('ewu_session_id') || '';
+    const headers = {
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest'
+    };
+    if (storedSession) {
+        headers['x-session-id'] = storedSession;
+        headers['Authorization'] = 'Bearer ' + storedSession;
+    }
+
     const response = await fetch(`${API_BASE_URL}/api/department-courses`, {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest'
-        },
+        headers,
         credentials: 'include',
         body: JSON.stringify({
             departmentId: departmentId,

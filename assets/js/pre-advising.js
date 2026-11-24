@@ -61,7 +61,13 @@
         if (!select) return;
 
         try {
-            const res = await fetch(`${API_BASE_URL}/api/semesters`, { credentials: 'include' });
+            const storedSession = localStorage.getItem('ewu_session_id') || sessionStorage.getItem('ewu_session_id') || '';
+            const headers = { 'Accept': 'application/json' };
+            if (storedSession) {
+                headers['x-session-id'] = storedSession;
+                headers['Authorization'] = 'Bearer ' + storedSession;
+            }
+            const res = await fetch(`${API_BASE_URL}/api/semesters`, { credentials: 'include', headers });
             if (res.status === 401 || res.status === 403) {
                 console.warn('Semesters unavailable');
                 return;
@@ -130,7 +136,14 @@
                 ? `${API_BASE_URL}/api/preadvising?semesterId=${encodeURIComponent(currentSemesterId)}`
                 : `${API_BASE_URL}/api/preadvising`;
 
-            const res = await fetch(url, { credentials: 'include' });
+            const storedSession = localStorage.getItem('ewu_session_id') || sessionStorage.getItem('ewu_session_id') || '';
+            const headers = { 'Accept': 'application/json' };
+            if (storedSession) {
+                headers['x-session-id'] = storedSession;
+                headers['Authorization'] = 'Bearer ' + storedSession;
+            }
+
+            const res = await fetch(url, { credentials: 'include', headers });
             if (res.status === 401 || res.status === 403) {
                 throw new Error('Pre-advising is currently unavailable. Please try again.');
             }

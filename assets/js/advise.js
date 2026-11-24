@@ -149,8 +149,16 @@
 
     // Course fetch attempt function (will be wrapped with retry logic)
     async function attemptFetchCourses() {
+        const storedSession = localStorage.getItem('ewu_session_id') || sessionStorage.getItem('ewu_session_id') || '';
+        const headers = { 'Accept': 'application/json' };
+        if (storedSession) {
+            headers['x-session-id'] = storedSession;
+            headers['Authorization'] = 'Bearer ' + storedSession;
+        }
+
         const response = await fetch(`${API_BASE_URL}/api/courses`, {
-            credentials: 'include'
+            credentials: 'include',
+            headers
         });
 
         if (response.status === 401) {
