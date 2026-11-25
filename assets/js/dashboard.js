@@ -1209,7 +1209,7 @@ async function checkAuth() {
                 localStorage.removeItem('ewu_session_id');
                 sessionStorage.removeItem('ewu_session_id');
             } catch (e) {}
-            window.location.href = 'login';
+            window.location.href = 'login?expired=1';
             return false;
         }
         if (data.userId && data.userId !== 'User' && data.userId !== 'Student') {
@@ -1230,7 +1230,11 @@ async function checkAuth() {
             fetchStudentAcademicData();
             return true;
         }
-        window.location.href = 'login';
+        try {
+            localStorage.removeItem('ewu_session_id');
+            sessionStorage.removeItem('ewu_session_id');
+        } catch (e) {}
+        window.location.href = 'login?expired=1';
         return false;
     }
 }

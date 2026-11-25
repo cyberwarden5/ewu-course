@@ -517,10 +517,13 @@ async function handleAuthStatus(request, env) {
       const cached = await env.ADMIN_KV.get('session_' + sessionId);
       if (cached) {
         const parsed = JSON.parse(cached);
-        return jsonResponse({
-          loggedIn: true,
-          userId: parsed.userId || 'Student'
-        }, 200, request);
+        // Only trust cache if it is fresh (within last 45 seconds)
+        if (parsed && parsed.time && (Date.now() - parsed.time < 45000)) {
+          return jsonResponse({
+            loggedIn: true,
+            userId: parsed.userId || 'Student'
+          }, 200, request);
+        }
       }
     } catch (e) { }
   }
@@ -549,7 +552,7 @@ async function handleAuthStatus(request, env) {
 
     if (!response.ok) {
       return jsonResponse({
-        loggedIn: true,
+        loggedIn: false,
         warning: 'Portal returned non-OK status'
       }, 200, request);
     }
@@ -560,7 +563,7 @@ async function handleAuthStatus(request, env) {
       const uId = student.StudentId || student.StudentName || 'Student';
       if (env && env.ADMIN_KV) {
         try {
-          await env.ADMIN_KV.put('session_' + sessionId, JSON.stringify({ userId: uId, time: Date.now() }), { expirationTtl: 3600 });
+          await env.ADMIN_KV.put('session_' + sessionId, JSON.stringify({ userId: uId, time: Date.now() }), { expirationTtl: 600 });
         } catch (e) { }
       }
       return jsonResponse({
@@ -574,17 +577,15 @@ async function handleAuthStatus(request, env) {
     }, 200, request);
   } catch (err) {
     console.warn('handleAuthStatus validation error/timeout:', err ? err.message : err);
-    // On portal timeout or network glitch, do not bounce the user out if they sent a session ID
     return jsonResponse({
-      loggedIn: true,
-      userId: 'Student',
-      warning: 'Portal latency timeout'
+      loggedIn: false,
+      error: 'Validation failed'
     }, 200, request);
   }
 }
 
 // ===== ENDPOINT: GET /api/courses =====
-async function handleGetCourses(request) {
+async function handleGetCourses(request, env) {
   const sessionId = getSessionId(request);
 
   if (!sessionId) {
@@ -596,18 +597,16 @@ async function handleGetCourses(request) {
 
   try {
     // Forward request to portal API with session cookie
-    const response = await fetch(PORTAL_API_URL, {
+    const response = await fetchWithRetry(PORTAL_API_URL, {
       method: 'GET',
-      headers: {
-        'Accept': 'application/json, text/plain, */*',
-        'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 26_0_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/141.0.7390.41 Mobile/15E148 Safari/604.1',
-        'Referer': 'https://portal.ewubd.edu/Home/Advising',
-        'Cookie': `ASP.NET_SessionId=${sessionId}; perf_dv6Tr4n=1`
-      }
+      headers: buildPortalHeaders(sessionId, 'https://portal.ewubd.edu/Home/Advising')
     });
 
     // Check for unauthorized response
     if (response.status === 401 || response.status === 403) {
+      if (env && env.ADMIN_KV) {
+        try { await env.ADMIN_KV.delete('session_' + sessionId); } catch (e) { }
+      }
       return jsonResponse({
         success: false,
         error: 'Session expired'
@@ -651,7 +650,7 @@ async function handleGetCourses(request) {
 }
 
 // ===== ENDPOINT: GET /api/options or /api/department-options =====
-async function handleGetDepartmentOptions(request) {
+async function handleGetDepartmentOptions(request, env) {
   const sessionId = getSessionId(request);
 
   if (!sessionId) {
@@ -661,22 +660,18 @@ async function handleGetDepartmentOptions(request) {
     }, 401, request);
   }
 
-  const cookieString = `ASP.NET_SessionId=${sessionId}; perf_dv6Tr4n=1`;
-  const headers = {
-    'accept': 'application/json, text/plain, */*',
-    'accept-language': 'en-US,en;q=0.9',
-    'referer': 'https://portal.ewubd.edu/Home/OfferedCoursesStudent',
-    'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-    'cookie': cookieString
-  };
+  const headers = buildPortalHeaders(sessionId, 'https://portal.ewubd.edu/Home/OfferedCoursesStudent');
 
   try {
-    const deptPromise = fetch(`${PORTAL_URL}/api/utility/GetAllAcademicDepartments`, { headers });
-    const semPromise = fetch(`${PORTAL_URL}/api/utility/GetSemesterForDropDown`, { headers });
+    const deptPromise = fetchWithRetry(`${PORTAL_URL}/api/utility/GetAllAcademicDepartments`, { headers });
+    const semPromise = fetchWithRetry(`${PORTAL_URL}/api/utility/GetSemesterForDropDown`, { headers });
 
     const [deptRes, semRes] = await Promise.all([deptPromise, semPromise]);
 
     if (deptRes.status === 401 || deptRes.status === 403 || semRes.status === 401 || semRes.status === 403) {
+      if (env && env.ADMIN_KV) {
+        try { await env.ADMIN_KV.delete('session_' + sessionId); } catch (e) { }
+      }
       return jsonResponse({
         status: 'error',
         message: 'Session expired'
@@ -712,7 +707,7 @@ async function handleGetDepartmentOptions(request) {
 }
 
 // ===== ENDPOINT: POST or GET /api/department-courses =====
-async function handleGetDepartmentCourses(request) {
+async function handleGetDepartmentCourses(request, env) {
   const sessionId = getSessionId(request);
 
   if (!sessionId) {
@@ -742,20 +737,16 @@ async function handleGetDepartmentCourses(request) {
     }, 400, request);
   }
 
-  const cookieString = `ASP.NET_SessionId=${sessionId}; perf_dv6Tr4n=1`;
-  const headers = {
-    'accept': 'application/json, text/plain, */*',
-    'accept-language': 'en-US,en;q=0.9',
-    'referer': 'https://portal.ewubd.edu/Home/OfferedCoursesStudent',
-    'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-    'cookie': cookieString
-  };
+  const headers = buildPortalHeaders(sessionId, 'https://portal.ewubd.edu/Home/OfferedCoursesStudent');
 
   try {
     const apiUrl = `${PORTAL_URL}/api/utility/GetAllOfferedCoursesBySemAndDept?deptid=${encodeURIComponent(departmentId)}&semesterid=${encodeURIComponent(semesterId)}`;
-    const response = await fetch(apiUrl, { headers });
+    const response = await fetchWithRetry(apiUrl, { headers });
 
     if (response.status === 401 || response.status === 403) {
+      if (env && env.ADMIN_KV) {
+        try { await env.ADMIN_KV.delete('session_' + sessionId); } catch (e) { }
+      }
       return jsonResponse({
         status: 'error',
         message: 'Session expired'
@@ -807,7 +798,7 @@ async function handleGetDepartmentCourses(request) {
 }
 
 // ===== ENDPOINT: GET /api/schedule/semesters =====
-async function handleGetSemesters(request) {
+async function handleGetSemesters(request, env) {
   const sessionId = getSessionId(request);
 
   if (!sessionId) {
@@ -821,6 +812,9 @@ async function handleGetSemesters(request) {
     );
 
     if (response.status === 401 || response.status === 403) {
+      if (env && env.ADMIN_KV) {
+        try { await env.ADMIN_KV.delete('session_' + sessionId); } catch (e) { }
+      }
       return jsonResponse({ status: 'error', message: 'Session expired' }, 401, request);
     }
     if (!response.ok) throw new Error('Failed to fetch semesters from portal');
@@ -844,7 +838,7 @@ async function handleGetSemesters(request) {
 }
 
 // ===== ENDPOINT: GET /api/schedule?semesterId= =====
-async function handleGetClassSchedule(request) {
+async function handleGetClassSchedule(request, env) {
   const sessionId = getSessionId(request);
 
   if (!sessionId) {
@@ -865,6 +859,9 @@ async function handleGetClassSchedule(request) {
     );
 
     if (response.status === 401 || response.status === 403) {
+      if (env && env.ADMIN_KV) {
+        try { await env.ADMIN_KV.delete('session_' + sessionId); } catch (e) { }
+      }
       return jsonResponse({ status: 'error', message: 'Session expired' }, 401, request);
     }
     if (!response.ok) throw new Error('Failed to fetch class schedule from portal');
@@ -897,7 +894,7 @@ async function handleGetClassSchedule(request) {
 }
 
 // ===== ENDPOINT: GET /api/routine =====  (Course Planner: all offered routine)
-async function handleGetRoutine(request) {
+async function handleGetRoutine(request, env) {
   const sessionId = getSessionId(request);
 
   if (!sessionId) {
@@ -911,6 +908,9 @@ async function handleGetRoutine(request) {
     );
 
     if (response.status === 401 || response.status === 403) {
+      if (env && env.ADMIN_KV) {
+        try { await env.ADMIN_KV.delete('session_' + sessionId); } catch (e) { }
+      }
       return jsonResponse({ status: 'error', message: 'Session expired' }, 401, request);
     }
     if (!response.ok) throw new Error('Failed to fetch routine from portal');
@@ -944,7 +944,7 @@ async function handleGetRoutine(request) {
 }
 
 // ===== ENDPOINT: GET /api/ledger =====
-async function handleGetLedger(request) {
+async function handleGetLedger(request, env) {
   const sessionId = getSessionId(request);
 
   if (!sessionId) {
@@ -960,6 +960,9 @@ async function handleGetLedger(request) {
     ]);
 
     if (txnRes.status === 401 || txnRes.status === 403 || balRes.status === 401 || balRes.status === 403) {
+      if (env && env.ADMIN_KV) {
+        try { await env.ADMIN_KV.delete('session_' + sessionId); } catch (e) { }
+      }
       return jsonResponse({ status: 'error', message: 'Session expired' }, 401, request);
     }
 
@@ -996,7 +999,7 @@ async function handleGetLedger(request) {
 }
 
 // ===== ENDPOINT: GET /api/grades =====  (Grade Report HTML)
-async function handleGetGradeReport(request) {
+async function handleGetGradeReport(request, env) {
   const sessionId = getSessionId(request);
 
   if (!sessionId) {
@@ -1017,9 +1020,12 @@ async function handleGetGradeReport(request) {
       'cookie': cookie
     };
 
-    const firstResponse = await fetchWithRetry(reportUrl, { headers: getHeaders });
+    const firstResponse = await fetchWithRetry(reportUrl, { headers: getHeaders, redirect: 'manual' });
 
-    if (firstResponse.status === 401 || firstResponse.status === 403) {
+    if (firstResponse.status === 301 || firstResponse.status === 302 || firstResponse.status === 401 || firstResponse.status === 403) {
+      if (env && env.ADMIN_KV) {
+        try { await env.ADMIN_KV.delete('session_' + sessionId); } catch (e) { }
+      }
       return jsonResponse({ status: 'error', message: 'Session expired' }, 401, request);
     }
     if (!firstResponse.ok) throw new Error('Failed to fetch grade report page from portal');
@@ -1028,6 +1034,9 @@ async function handleGetGradeReport(request) {
 
     // Detect unauthenticated / redirected login page
     if (!firstHtml || firstHtml.length < 500 || firstHtml.includes('login') && !firstHtml.includes('ReportViewer1')) {
+      if (env && env.ADMIN_KV) {
+        try { await env.ADMIN_KV.delete('session_' + sessionId); } catch (e) { }
+      }
       return jsonResponse({ status: 'error', message: 'Session expired or grade report unavailable' }, 401, request);
     }
 
@@ -1098,10 +1107,14 @@ async function handleGetGradeReport(request) {
     const secondResponse = await fetchWithRetry(reportUrl, {
       method: 'POST',
       headers: postHeaders,
-      body: postParams.toString()
+      body: postParams.toString(),
+      redirect: 'manual'
     });
 
-    if (secondResponse.status === 401 || secondResponse.status === 403) {
+    if (secondResponse.status === 301 || secondResponse.status === 302 || secondResponse.status === 401 || secondResponse.status === 403) {
+      if (env && env.ADMIN_KV) {
+        try { await env.ADMIN_KV.delete('session_' + sessionId); } catch (e) { }
+      }
       return jsonResponse({ status: 'error', message: 'Session expired' }, 401, request);
     }
 
@@ -1122,7 +1135,7 @@ async function handleGetGradeReport(request) {
 }
 
 // ===== ENDPOINT: GET /api/profile ===== (Student Profile)
-async function handleGetStudentProfile(request) {
+async function handleGetStudentProfile(request, env) {
   const sessionId = getSessionId(request);
 
   if (!sessionId) {
@@ -1137,6 +1150,9 @@ async function handleGetStudentProfile(request) {
     );
 
     if (response.status === 401 || response.status === 403) {
+      if (env && env.ADMIN_KV) {
+        try { await env.ADMIN_KV.delete('session_' + sessionId); } catch (e) { }
+      }
       return jsonResponse({ status: 'error', message: 'Session expired' }, 401, request);
     }
     if (!response.ok) throw new Error('Failed to fetch student profile from portal');
@@ -1227,7 +1243,7 @@ async function handleGetProfilePhoto(request) {
 }
 
 // ===== ENDPOINT: GET /api/preadvising?semesterId= ===== (Pre-Advising Data)
-async function handleGetPreAdvising(request) {
+async function handleGetPreAdvising(request, env) {
   const sessionId = getSessionId(request);
 
   if (!sessionId) {
@@ -1270,6 +1286,9 @@ async function handleGetPreAdvising(request) {
     );
 
     if (response.status === 401 || response.status === 403) {
+      if (env && env.ADMIN_KV) {
+        try { await env.ADMIN_KV.delete('session_' + sessionId); } catch (e) { }
+      }
       return jsonResponse({ status: 'error', message: 'Session expired' }, 401, request);
     }
     if (!response.ok) throw new Error('Failed to fetch pre-advising data from portal');
@@ -1298,7 +1317,7 @@ async function handleGetPreAdvising(request) {
 }
 
 // ===== ENDPOINT: GET /api/degree-review?studentId= ===== (Degree Review & Progress)
-async function handleGetDegreeReview(request) {
+async function handleGetDegreeReview(request, env) {
   const sessionId = getSessionId(request);
 
   if (!sessionId) {
@@ -1333,6 +1352,9 @@ async function handleGetDegreeReview(request) {
     ]);
 
     if (analysisRes && (analysisRes.status === 401 || analysisRes.status === 403)) {
+      if (env && env.ADMIN_KV) {
+        try { await env.ADMIN_KV.delete('session_' + sessionId); } catch (e) { }
+      }
       return jsonResponse({ status: 'error', message: 'Session expired' }, 401, request);
     }
 
@@ -1356,7 +1378,7 @@ async function handleGetDegreeReview(request) {
 }
 
 // ===== ENDPOINT: GET /api/curriculum?curriculumId= ===== (Full Program Curriculum)
-async function handleGetCurriculum(request) {
+async function handleGetCurriculum(request, env) {
   const sessionId = getSessionId(request);
 
   if (!sessionId) {
@@ -1374,6 +1396,9 @@ async function handleGetCurriculum(request) {
       try {
         const idRes = await fetchWithRetry(`${PORTAL_URL}/api/report/GetCurriculumnId`, { headers });
         if (idRes.status === 401 || idRes.status === 403) {
+          if (env && env.ADMIN_KV) {
+            try { await env.ADMIN_KV.delete('session_' + sessionId); } catch (e) { }
+          }
           return jsonResponse({ status: 'error', message: 'Session expired' }, 401, request);
         }
         if (idRes.ok) {
@@ -1437,6 +1462,9 @@ async function handleGetCurriculum(request) {
     ]);
 
     if (programRes && (programRes.status === 401 || programRes.status === 403)) {
+      if (env && env.ADMIN_KV) {
+        try { await env.ADMIN_KV.delete('session_' + sessionId); } catch (e) { }
+      }
       return jsonResponse({ status: 'error', message: 'Session expired' }, 401, request);
     }
 
@@ -2257,41 +2285,41 @@ export default {
     }
 
     if (url.pathname === '/api/courses' && request.method === 'GET') {
-      return handleGetCourses(request);
+      return handleGetCourses(request, env);
     }
 
     if ((url.pathname === '/api/options' || url.pathname === '/api/department-options') && request.method === 'GET') {
-      return handleGetDepartmentOptions(request);
+      return handleGetDepartmentOptions(request, env);
     }
 
     if ((url.pathname === '/api/department-courses' || (url.pathname === '/api/courses' && request.method === 'POST')) && (request.method === 'POST' || request.method === 'GET')) {
-      return handleGetDepartmentCourses(request);
+      return handleGetDepartmentCourses(request, env);
     }
 
     // Class Schedule, Planner, Ledger & Grade Report proxied portal endpoints
     if (url.pathname === '/api/schedule/semesters' && request.method === 'GET') {
-      return handleGetSemesters(request);
+      return handleGetSemesters(request, env);
     }
 
     if ((url.pathname === '/api/schedule' || url.pathname === '/api/class-schedule') && request.method === 'GET') {
-      return handleGetClassSchedule(request);
+      return handleGetClassSchedule(request, env);
     }
 
     if ((url.pathname === '/api/routine' || url.pathname === '/api/planner/routine') && request.method === 'GET') {
-      return handleGetRoutine(request);
+      return handleGetRoutine(request, env);
     }
 
     if ((url.pathname === '/api/ledger' || url.pathname === '/api/account-ledger') && request.method === 'GET') {
-      return handleGetLedger(request);
+      return handleGetLedger(request, env);
     }
 
     if ((url.pathname === '/api/grades' || url.pathname === '/api/grade-report') && request.method === 'GET') {
-      return handleGetGradeReport(request);
+      return handleGetGradeReport(request, env);
     }
 
     // Student Profile, Photo, Pre-Advising, Degree Review & Curriculum endpoints
     if ((url.pathname === '/api/profile' || url.pathname === '/api/student-profile') && request.method === 'GET') {
-      return handleGetStudentProfile(request);
+      return handleGetStudentProfile(request, env);
     }
 
     if (url.pathname === '/api/profile/photo' && request.method === 'GET') {
@@ -2299,19 +2327,19 @@ export default {
     }
 
     if ((url.pathname === '/api/preadvising' || url.pathname === '/api/pre-advising') && request.method === 'GET') {
-      return handleGetPreAdvising(request);
+      return handleGetPreAdvising(request, env);
     }
 
     if (url.pathname === '/api/degree-review' && request.method === 'GET') {
-      return handleGetDegreeReview(request);
+      return handleGetDegreeReview(request, env);
     }
 
     if (url.pathname === '/api/curriculum' && request.method === 'GET') {
-      return handleGetCurriculum(request);
+      return handleGetCurriculum(request, env);
     }
 
     if (url.pathname === '/api/semesters' && request.method === 'GET') {
-      return handleGetSemesters(request);
+      return handleGetSemesters(request, env);
     }
 
     if ((url.pathname === '/api/academic-calendar' || url.pathname === '/api/calendar/holidays') && request.method === 'GET') {

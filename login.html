@@ -58,10 +58,33 @@
     </style>
     <script>
         (function() {
-            if (sessionStorage.getItem('ewu_just_logged_out') === 'true') {
-                sessionStorage.removeItem('ewu_just_logged_out');
+            var urlParams = new URLSearchParams(window.location.search);
+            var isExpired = urlParams.has('expired') || urlParams.get('session_expired') === '1';
+            var justLoggedOut = sessionStorage.getItem('ewu_just_logged_out') === 'true';
+
+            if (isExpired || justLoggedOut) {
+                try {
+                    localStorage.removeItem('ewu_session_id');
+                    sessionStorage.removeItem('ewu_session_id');
+                    sessionStorage.removeItem('ewu_just_logged_out');
+                } catch(e) {}
+                document.documentElement.classList.remove('auth-checking');
+                if (isExpired) {
+                    window.addEventListener('DOMContentLoaded', function() {
+                        var alertBox = document.getElementById('alertBox');
+                        var alertIcon = document.getElementById('alertIcon');
+                        var alertMessage = document.getElementById('alertMessage');
+                        if (alertBox && alertIcon && alertMessage) {
+                            alertBox.classList.remove('hidden', 'alert-error', 'alert-success');
+                            alertBox.classList.add('alert-info');
+                            alertIcon.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#D86C5A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="flex-shrink-0"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>';
+                            alertMessage.textContent = 'Your session has expired. Please sign in again to continue.';
+                        }
+                    });
+                }
                 return;
             }
+
             var storedSession = null;
             try {
                 storedSession = localStorage.getItem('ewu_session_id') || sessionStorage.getItem('ewu_session_id');
@@ -107,6 +130,10 @@
                     }
                     window.location.replace('dashboard');
                 } else {
+                    try {
+                        localStorage.removeItem('ewu_session_id');
+                        sessionStorage.removeItem('ewu_session_id');
+                    } catch(e) {}
                     document.documentElement.classList.remove('auth-checking');
                 }
             })

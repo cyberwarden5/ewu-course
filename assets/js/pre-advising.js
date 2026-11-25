@@ -63,7 +63,8 @@
         try {
             const res = await fetch(`${API_BASE_URL}/api/semesters`, { credentials: 'include' });
             if (res.status === 401 || res.status === 403) {
-                window.location.href = 'login';
+                try { localStorage.removeItem('ewu_session_id'); sessionStorage.removeItem('ewu_session_id'); } catch(e) {}
+                window.location.href = 'login?expired=1';
                 return;
             }
 
@@ -132,7 +133,8 @@
 
             const res = await fetch(url, { credentials: 'include' });
             if (res.status === 401 || res.status === 403) {
-                window.location.href = 'login';
+                try { localStorage.removeItem('ewu_session_id'); sessionStorage.removeItem('ewu_session_id'); } catch(e) {}
+                window.location.href = 'login?expired=1';
                 return;
             }
 

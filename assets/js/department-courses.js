@@ -127,7 +127,8 @@ async function checkAuth() {
         const data = await response.json();
 
         if (!data || !data.loggedIn) {
-            window.location.href = 'login';
+            try { localStorage.removeItem('ewu_session_id'); sessionStorage.removeItem('ewu_session_id'); } catch(e) {}
+            window.location.href = 'login?expired=1';
             return false;
         }
 
@@ -142,7 +143,8 @@ async function checkAuth() {
         return true;
     } catch (error) {
         console.warn('Auth check error:', error);
-        window.location.href = 'login';
+        try { localStorage.removeItem('ewu_session_id'); sessionStorage.removeItem('ewu_session_id'); } catch(e) {}
+        window.location.href = 'login?expired=1';
         return false;
     }
 }
@@ -185,8 +187,9 @@ async function loadInitialOptions() {
             credentials: 'include'
         });
 
-        if (response.status === 401) {
-            window.location.href = 'login';
+        if (response.status === 401 || response.status === 403) {
+            try { localStorage.removeItem('ewu_session_id'); sessionStorage.removeItem('ewu_session_id'); } catch(e) {}
+            window.location.href = 'login?expired=1';
             return;
         }
 
@@ -404,8 +407,9 @@ async function startDepartmentFetchQueue(selectedDepts, semesterId) {
                         applyFiltersAndRender();
                     },
                     onInvalidCredentials: (result) => {
+                        try { localStorage.removeItem('ewu_session_id'); sessionStorage.removeItem('ewu_session_id'); } catch(e) {}
                         showAlert(result.message || 'Session expired. Redirecting to login...', 'error');
-                        setTimeout(() => window.location.href = 'login', 1500);
+                        setTimeout(() => window.location.href = 'login?expired=1', 1500);
                     },
                     onRetryAttempt: (attemptNum, elapsed, reason) => {
                         showAlert(`Portal busy while fetching ${dept.name}. Auto retrying (Attempt ${attemptNum + 1})...`, 'info');

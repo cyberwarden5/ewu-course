@@ -411,7 +411,7 @@
                     localStorage.removeItem('ewu_session_id');
                     sessionStorage.removeItem('ewu_session_id');
                 } catch (e) {}
-                window.location.href = 'login';
+                window.location.href = 'login?expired=1';
                 return null;
             }
             const id = (data.userId && data.userId !== 'User' && data.userId !== 'Student')
@@ -423,7 +423,11 @@
             if (storedId) {
                 return { userId: storedId };
             }
-            window.location.href = 'login';
+            try {
+                localStorage.removeItem('ewu_session_id');
+                sessionStorage.removeItem('ewu_session_id');
+            } catch (err) {}
+            window.location.href = 'login?expired=1';
             return null;
         }
     }
@@ -450,7 +454,11 @@
         for (let attempt = 0; attempt <= retries; attempt++) {
             try {
                 const res = await fetch(url, { credentials: 'include', ...options });
-                if (res.status === 401) {
+                if (res.status === 401 || res.status === 403) {
+                    try {
+                        localStorage.removeItem('ewu_session_id');
+                        sessionStorage.removeItem('ewu_session_id');
+                    } catch (e) {}
                     return { __unauthorized: true, response: res };
                 }
                 if (res.status >= 500 && attempt < retries) {

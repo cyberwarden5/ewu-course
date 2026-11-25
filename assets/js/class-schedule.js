@@ -49,7 +49,11 @@
         const select = document.getElementById('semesterSelect');
         try {
             const result = await fetchJsonWithRetry(`${API_BASE_URL}/api/schedule/semesters`);
-            if (result.__unauthorized) { window.location.href = 'login'; return; }
+            if (result.__unauthorized) {
+                try { localStorage.removeItem('ewu_session_id'); sessionStorage.removeItem('ewu_session_id'); } catch(e) {}
+                window.location.href = 'login?expired=1';
+                return;
+            }
             const semesters = (result.data && result.data.semesters) || [];
             if (!semesters.length) {
                 select.innerHTML = '<option value="">No semesters available</option>';
@@ -101,7 +105,11 @@
 
         try {
             const result = await fetchJsonWithRetry(`${API_BASE_URL}/api/schedule?semesterId=${encodeURIComponent(currentSemesterId)}`);
-            if (result.__unauthorized) { window.location.href = 'login'; return; }
+            if (result.__unauthorized) {
+                try { localStorage.removeItem('ewu_session_id'); sessionStorage.removeItem('ewu_session_id'); } catch(e) {}
+                window.location.href = 'login?expired=1';
+                return;
+            }
             const data = result.data || {};
             if (data.status === 'error') throw new Error(data.message || 'Failed to load schedule');
 

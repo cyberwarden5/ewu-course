@@ -45,7 +45,11 @@
         content.innerHTML = '<div class="fp-empty"><div class="fp-spinner"></div>Loading grade report…</div>';
         try {
             const result = await fetchJsonWithRetry(`${API_BASE_URL}/api/grades`);
-            if (result.__unauthorized) { window.location.href = 'login'; return; }
+            if (result.__unauthorized) {
+                try { localStorage.removeItem('ewu_session_id'); sessionStorage.removeItem('ewu_session_id'); } catch(e) {}
+                window.location.href = 'login?expired=1';
+                return;
+            }
             const data = result.data || {};
             if (data.status === 'error') throw new Error(data.message || 'Failed to load grade report');
 

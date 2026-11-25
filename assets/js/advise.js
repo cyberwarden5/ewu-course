@@ -94,7 +94,8 @@
             const data = await response.json();
 
             if (!data.loggedIn) {
-                window.location.href = 'login';
+                try { localStorage.removeItem('ewu_session_id'); sessionStorage.removeItem('ewu_session_id'); } catch(e) {}
+                window.location.href = 'login?expired=1';
                 return false;
             }
 
@@ -107,7 +108,8 @@
             return true;
         } catch (error) {
             console.error('Auth check failed:', error);
-            window.location.href = 'login';
+            try { localStorage.removeItem('ewu_session_id'); sessionStorage.removeItem('ewu_session_id'); } catch(e) {}
+            window.location.href = 'login?expired=1';
             return false;
         }
     }
@@ -172,7 +174,8 @@
                 const result = await attemptFetchCourses();
 
                 if (result.status === 'invalid_credentials') {
-                    window.location.href = 'login';
+                    try { localStorage.removeItem('ewu_session_id'); sessionStorage.removeItem('ewu_session_id'); } catch(e) {}
+                    window.location.href = 'login?expired=1';
                     return;
                 }
 
@@ -207,7 +210,8 @@
                         showToast('Courses refreshed successfully', 2000);
                     },
                     onInvalidCredentials: (result) => {
-                        window.location.href = 'login';
+                        try { localStorage.removeItem('ewu_session_id'); sessionStorage.removeItem('ewu_session_id'); } catch(e) {}
+                        window.location.href = 'login?expired=1';
                     },
                     onRetryAttempt: (attemptNum, elapsedTime) => {
                         console.log(`Course fetch attempt ${attemptNum} failed. Elapsed time: ${elapsedTime}s`);

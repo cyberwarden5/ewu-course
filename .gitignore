@@ -53,6 +53,7 @@ image.png
 Info/
 
 scratch/
+.stfolder/
 .dev.vars*
 !.dev.vars.example
 !.env.example
