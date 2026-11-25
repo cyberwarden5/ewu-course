@@ -337,18 +337,92 @@
         }, 3200);
     }
 
+    // Session token retrieval helper
+    function getStoredSessionId() {
+        try {
+            return localStorage.getItem('ewu_session_id') || sessionStorage.getItem('ewu_session_id') || null;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    // Auth headers builder
+    function getAuthHeaders() {
+        const sId = getStoredSessionId();
+        if (sId) {
+            return {
+                'x-session-id': sId,
+                'Authorization': 'Bearer ' + sId
+            };
+        }
+        return {};
+    }
+
+    // Global fetch interceptor to guarantee credentials & token injection across all feature requests
+    if (typeof window !== 'undefined' && window.fetch && !window.__ewu_fetch_patched) {
+        window.__ewu_fetch_patched = true;
+        const nativeFetch = window.fetch;
+        window.fetch = function (resource, init) {
+            init = init ? { ...init } : {};
+            let urlStr = '';
+            if (typeof resource === 'string') {
+                urlStr = resource;
+            } else if (resource && resource.url) {
+                urlStr = resource.url;
+            }
+
+            const isApiTarget = urlStr.includes('api.aftabx.tech') || urlStr.includes('/api/');
+            if (isApiTarget) {
+                init.credentials = 'include';
+                const sId = getStoredSessionId();
+                if (sId) {
+                    const headers = new Headers(init.headers || (typeof resource === 'object' && resource.headers ? resource.headers : {}));
+                    if (!headers.has('x-session-id')) {
+                        headers.set('x-session-id', sId);
+                    }
+                    if (!headers.has('Authorization')) {
+                        headers.set('Authorization', 'Bearer ' + sId);
+                    }
+                    init.headers = headers;
+                }
+            }
+            return nativeFetch.call(this, resource, init);
+        };
+    }
+
     // Standard auth guard used on every feature page.
     async function requireAuth() {
         try {
-            const res = await fetch(`${API_BASE_URL}/api/auth/status`, { credentials: 'include' });
+            const authHeaders = getAuthHeaders();
+            const res = await fetch(`${API_BASE_URL}/api/auth/status`, {
+                credentials: 'include',
+                headers: { 'Accept': 'application/json', ...authHeaders }
+            });
+            // If transient server error (500/502/504), don't immediately bounce user if studentId exists
+            if (!res.ok && res.status !== 401 && res.status !== 403) {
+                const storedId = localStorage.getItem('studentId') || localStorage.getItem('ewu_student_id');
+                if (storedId) {
+                    return { userId: storedId };
+                }
+            }
             const data = await res.json();
             if (!data || !data.loggedIn) {
+                try {
+                    localStorage.removeItem('ewu_session_id');
+                    sessionStorage.removeItem('ewu_session_id');
+                } catch (e) {}
                 window.location.href = 'login';
                 return null;
             }
-            const id = (data.userId && data.userId !== 'User') ? data.userId : (localStorage.getItem('studentId') || localStorage.getItem('ewu_student_id') || null);
+            const id = (data.userId && data.userId !== 'User' && data.userId !== 'Student')
+                ? data.userId
+                : (localStorage.getItem('studentId') || localStorage.getItem('ewu_student_id') || null);
             return { userId: id };
         } catch (e) {
+            const storedId = localStorage.getItem('studentId') || localStorage.getItem('ewu_student_id');
+            if (storedId) {
+                return { userId: storedId };
+            }
             window.location.href = 'login';
             return null;
         }
@@ -363,6 +437,7 @@
             localStorage.removeItem('studentId');
             localStorage.removeItem('ewu_student_id');
             localStorage.removeItem('userId');
+            localStorage.removeItem('ewu_session_id');
             sessionStorage.clear();
             sessionStorage.setItem('ewu_just_logged_out', 'true');
         } catch (e) {}
@@ -609,5 +684,7 @@
     window.GRADE_POINTS = GRADE_POINTS;
     window.parseGradeReportHtml = parseGradeReportHtml;
     window.extractReportHtml = extractReportHtml;
+    window.getStoredSessionId = getStoredSessionId;
+    window.getAuthHeaders = getAuthHeaders;
     window.handleLogout = performLogout;
 })();

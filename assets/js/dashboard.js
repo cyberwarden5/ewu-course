@@ -1182,9 +1182,33 @@ async function fetchAcademicCalendarEvents() {
 // Check authentication state on page load
 async function checkAuth() {
     try {
-        const response = await fetch(`${API_BASE_URL}/api/auth/status`, { credentials: 'include' });
+        const authHeaders = (typeof window.getAuthHeaders === 'function')
+            ? window.getAuthHeaders()
+            : {};
+        const response = await fetch(`${API_BASE_URL}/api/auth/status`, {
+            credentials: 'include',
+            headers: {
+                'Accept': 'application/json',
+                ...authHeaders
+            }
+        });
+
+        if (!response.ok && response.status !== 401 && response.status !== 403) {
+            console.warn('Auth status endpoint returned non-OK status:', response.status);
+            // If student ID is stored, treat as logged in temporarily during gateway latency
+            if (getStoredStudentId()) {
+                updateStudentIdDisplay(getStoredStudentId());
+                fetchStudentAcademicData();
+                return true;
+            }
+        }
+
         const data = await response.json();
         if (!data || !data.loggedIn) {
+            try {
+                localStorage.removeItem('ewu_session_id');
+                sessionStorage.removeItem('ewu_session_id');
+            } catch (e) {}
             window.location.href = 'login';
             return false;
         }
@@ -1200,7 +1224,12 @@ async function checkAuth() {
 
         return true;
     } catch (error) {
-        console.warn('Auth status check failed, redirecting to login:', error);
+        console.warn('Auth status check network error:', error);
+        if (getStoredStudentId()) {
+            updateStudentIdDisplay(getStoredStudentId());
+            fetchStudentAcademicData();
+            return true;
+        }
         window.location.href = 'login';
         return false;
     }
@@ -1219,6 +1248,7 @@ async function handleLogout(event) {
         localStorage.removeItem('studentName');
         localStorage.removeItem('ewu_student_id');
         localStorage.removeItem('userId');
+        localStorage.removeItem('ewu_session_id');
         sessionStorage.clear();
         sessionStorage.setItem('ewu_just_logged_out', 'true');
     } catch (e) { }

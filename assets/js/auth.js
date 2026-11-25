@@ -159,9 +159,14 @@ document.getElementById('loginForm')?.addEventListener('submit', async function(
             retryDelay: 1000,
             onSuccess: (result) => {
                 const sId = (result?.data?.userId && result.data.userId !== 'User') ? result.data.userId : username;
+                const sessionToken = result?.data?.sessionId;
                 try {
                     localStorage.setItem('studentId', sId);
                     localStorage.setItem('ewu_student_id', sId);
+                    if (sessionToken) {
+                        localStorage.setItem('ewu_session_id', sessionToken);
+                        sessionStorage.setItem('ewu_session_id', sessionToken);
+                    }
                 } catch (e) {
                     console.warn('Unable to persist student ID:', e);
                 }

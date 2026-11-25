@@ -9,7 +9,9 @@ const PORTAL_API_URL = 'https://portal.ewubd.edu/api/Advising/GetAllRoutine';
 // **CONFIGURATION**: Allowed origins for CORS
 const ALLOWED_ORIGINS = [
   'https://aftabx.tech',
-  'https://www.aftabx.tech'
+  'https://www.aftabx.tech',
+  'https://aftabkabir.me',
+  'https://www.aftabkabir.me'
 ];
 
 // **CONFIGURATION**: Feature registry defaults (admin can override per-feature via KV)
@@ -108,6 +110,7 @@ function getCorsHeaders(request) {
   const origin = request?.headers?.get('Origin');
   const isAllowed = origin && (
     ALLOWED_ORIGINS.includes(origin) ||
+    origin.endsWith('.pages.dev') ||
     /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)
   );
 
@@ -118,7 +121,7 @@ function getCorsHeaders(request) {
     headers['Access-Control-Allow-Origin'] = origin;
     headers['Access-Control-Allow-Credentials'] = 'true';
     headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS';
-    headers['Access-Control-Allow-Headers'] = 'Content-Type, Cookie, Authorization, X-Requested-With';
+    headers['Access-Control-Allow-Headers'] = 'Content-Type, Cookie, Authorization, X-Requested-With, x-session-id';
     headers['Access-Control-Max-Age'] = '86400';
   }
 
@@ -189,6 +192,40 @@ function getCookieValue(cookieHeader, name) {
       return cookieValue;
     }
   }
+  return null;
+}
+
+// Helper: Extract session ID from headers, cookie, or query param
+function getSessionId(request) {
+  if (!request) return null;
+
+  // 1. Custom header: x-session-id
+  const headerSession = request.headers.get('x-session-id');
+  if (headerSession && headerSession.trim()) {
+    return headerSession.trim();
+  }
+
+  // 2. Authorization header: Bearer <sessionId>
+  const authHeader = request.headers.get('Authorization') || request.headers.get('authorization');
+  if (authHeader && authHeader.toLowerCase().startsWith('bearer ')) {
+    const token = authHeader.substring(7).trim();
+    if (token) return token;
+  }
+
+  // 3. Cookie: ASP.NET_SessionId
+  const cookieHeader = request.headers.get('Cookie') || request.headers.get('cookie');
+  const cookieSession = getCookieValue(cookieHeader, 'ASP.NET_SessionId');
+  if (cookieSession && cookieSession.trim()) {
+    return cookieSession.trim();
+  }
+
+  // 4. Query param: sessionId
+  try {
+    const url = new URL(request.url);
+    const param = url.searchParams.get('sessionId');
+    if (param && param.trim()) return param.trim();
+  } catch (e) { }
+
   return null;
 }
 
@@ -399,14 +436,24 @@ async function handleLogin(request, env) {
         } catch (e) { }
       }
 
-      // Set cookie on the browser with secure attributes
-      // **IMPORTANT**: Cookie must be set on api.aftabx.tech domain
-      const cookieHeader = `ASP.NET_SessionId=${loginResult.sessionId}; Path=/; Secure; HttpOnly; SameSite=None; Max-Age=3600`;
+      // Cache session in KV for fast, non-blocking auth status checks
+      if (env && env.ADMIN_KV) {
+        try {
+          await env.ADMIN_KV.put('session_' + loginResult.sessionId, JSON.stringify({
+            userId: loginResult.userId,
+            time: Date.now()
+          }), { expirationTtl: 3600 });
+        } catch (e) { }
+      }
+
+      // Set cookie on the browser with secure attributes and Partitioned support
+      const cookieHeader = `ASP.NET_SessionId=${loginResult.sessionId}; Path=/; Secure; HttpOnly; SameSite=None; Max-Age=3600; Partitioned`;
 
       return new Response(JSON.stringify({
         status: 'success',
         message: 'Login successful',
-        userId: loginResult.userId
+        userId: loginResult.userId,
+        sessionId: loginResult.sessionId
       }), {
         status: 200,
         headers: {
@@ -431,9 +478,15 @@ async function handleLogin(request, env) {
 }
 
 // ===== ENDPOINT: POST /api/auth/logout =====
-function handleLogout(request) {
+async function handleLogout(request, env) {
+  const sessionId = getSessionId(request);
+  if (sessionId && env && env.ADMIN_KV) {
+    try {
+      await env.ADMIN_KV.delete('session_' + sessionId);
+    } catch (e) { }
+  }
   // Clear the session cookie
-  const cookieHeader = 'ASP.NET_SessionId=; Path=/; Secure; HttpOnly; SameSite=None; Max-Age=0';
+  const cookieHeader = 'ASP.NET_SessionId=; Path=/; Secure; HttpOnly; SameSite=None; Max-Age=0; Partitioned';
 
   return new Response(JSON.stringify({
     status: 'success',
@@ -449,9 +502,8 @@ function handleLogout(request) {
 }
 
 // ===== ENDPOINT: GET /api/auth/status =====
-async function handleAuthStatus(request) {
-  const cookieHeader = request.headers.get('Cookie');
-  const sessionId = getCookieValue(cookieHeader, 'ASP.NET_SessionId');
+async function handleAuthStatus(request, env) {
+  const sessionId = getSessionId(request);
 
   if (!sessionId) {
     return jsonResponse({
@@ -459,11 +511,25 @@ async function handleAuthStatus(request) {
     }, 200, request);
   }
 
+  // 1. Check KV cache first (instant response, prevents blocking on portal latency)
+  if (env && env.ADMIN_KV) {
+    try {
+      const cached = await env.ADMIN_KV.get('session_' + sessionId);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        return jsonResponse({
+          loggedIn: true,
+          userId: parsed.userId || 'Student'
+        }, 200, request);
+      }
+    } catch (e) { }
+  }
+
+  // 2. Validate session against portal API endpoint
   try {
-    // Validate session against portal API endpoint
     const apiUrl = `${PORTAL_URL}/api/StudentProfile/GetStudentProfile`;
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 6000);
+    const timer = setTimeout(() => controller.abort(), 8000);
     const response = await fetch(apiUrl, {
       method: 'GET',
       headers: buildPortalHeaders(sessionId, 'https://portal.ewubd.edu/Home/Profile'),
@@ -472,6 +538,9 @@ async function handleAuthStatus(request) {
     clearTimeout(timer);
 
     if (response.status === 401 || response.status === 403) {
+      if (env && env.ADMIN_KV) {
+        try { await env.ADMIN_KV.delete('session_' + sessionId); } catch (e) { }
+      }
       return jsonResponse({
         loggedIn: false,
         error: 'Session expired'
@@ -480,17 +549,23 @@ async function handleAuthStatus(request) {
 
     if (!response.ok) {
       return jsonResponse({
-        loggedIn: false,
-        error: 'Invalid session'
+        loggedIn: true,
+        warning: 'Portal returned non-OK status'
       }, 200, request);
     }
 
     const data = await parsePortalJson(response);
     const student = Array.isArray(data) ? data[0] : data;
     if (student && (student.StudentId || student.StudentName || student.Id)) {
+      const uId = student.StudentId || student.StudentName || 'Student';
+      if (env && env.ADMIN_KV) {
+        try {
+          await env.ADMIN_KV.put('session_' + sessionId, JSON.stringify({ userId: uId, time: Date.now() }), { expirationTtl: 3600 });
+        } catch (e) { }
+      }
       return jsonResponse({
         loggedIn: true,
-        userId: student.StudentId || student.StudentName || 'Student'
+        userId: uId
       }, 200, request);
     }
 
@@ -498,18 +573,19 @@ async function handleAuthStatus(request) {
       loggedIn: false
     }, 200, request);
   } catch (err) {
-    console.warn('handleAuthStatus validation failed:', err ? err.message : err);
+    console.warn('handleAuthStatus validation error/timeout:', err ? err.message : err);
+    // On portal timeout or network glitch, do not bounce the user out if they sent a session ID
     return jsonResponse({
-      loggedIn: false,
-      error: 'Validation failed'
+      loggedIn: true,
+      userId: 'Student',
+      warning: 'Portal latency timeout'
     }, 200, request);
   }
 }
 
 // ===== ENDPOINT: GET /api/courses =====
 async function handleGetCourses(request) {
-  const cookieHeader = request.headers.get('Cookie');
-  const sessionId = getCookieValue(cookieHeader, 'ASP.NET_SessionId');
+  const sessionId = getSessionId(request);
 
   if (!sessionId) {
     return jsonResponse({
@@ -576,8 +652,7 @@ async function handleGetCourses(request) {
 
 // ===== ENDPOINT: GET /api/options or /api/department-options =====
 async function handleGetDepartmentOptions(request) {
-  const cookieHeader = request.headers.get('Cookie');
-  const sessionId = getCookieValue(cookieHeader, 'ASP.NET_SessionId');
+  const sessionId = getSessionId(request);
 
   if (!sessionId) {
     return jsonResponse({
@@ -638,8 +713,7 @@ async function handleGetDepartmentOptions(request) {
 
 // ===== ENDPOINT: POST or GET /api/department-courses =====
 async function handleGetDepartmentCourses(request) {
-  const cookieHeader = request.headers.get('Cookie');
-  const sessionId = getCookieValue(cookieHeader, 'ASP.NET_SessionId');
+  const sessionId = getSessionId(request);
 
   if (!sessionId) {
     return jsonResponse({
@@ -734,8 +808,7 @@ async function handleGetDepartmentCourses(request) {
 
 // ===== ENDPOINT: GET /api/schedule/semesters =====
 async function handleGetSemesters(request) {
-  const cookieHeader = request.headers.get('Cookie');
-  const sessionId = getCookieValue(cookieHeader, 'ASP.NET_SessionId');
+  const sessionId = getSessionId(request);
 
   if (!sessionId) {
     return jsonResponse({ status: 'error', message: 'Unauthorized. Please log in first.' }, 401, request);
@@ -772,8 +845,7 @@ async function handleGetSemesters(request) {
 
 // ===== ENDPOINT: GET /api/schedule?semesterId= =====
 async function handleGetClassSchedule(request) {
-  const cookieHeader = request.headers.get('Cookie');
-  const sessionId = getCookieValue(cookieHeader, 'ASP.NET_SessionId');
+  const sessionId = getSessionId(request);
 
   if (!sessionId) {
     return jsonResponse({ status: 'error', message: 'Unauthorized. Please log in first.' }, 401, request);
@@ -826,8 +898,7 @@ async function handleGetClassSchedule(request) {
 
 // ===== ENDPOINT: GET /api/routine =====  (Course Planner: all offered routine)
 async function handleGetRoutine(request) {
-  const cookieHeader = request.headers.get('Cookie');
-  const sessionId = getCookieValue(cookieHeader, 'ASP.NET_SessionId');
+  const sessionId = getSessionId(request);
 
   if (!sessionId) {
     return jsonResponse({ status: 'error', message: 'Unauthorized. Please log in first.' }, 401, request);
@@ -874,8 +945,7 @@ async function handleGetRoutine(request) {
 
 // ===== ENDPOINT: GET /api/ledger =====
 async function handleGetLedger(request) {
-  const cookieHeader = request.headers.get('Cookie');
-  const sessionId = getCookieValue(cookieHeader, 'ASP.NET_SessionId');
+  const sessionId = getSessionId(request);
 
   if (!sessionId) {
     return jsonResponse({ status: 'error', message: 'Unauthorized. Please log in first.' }, 401, request);
@@ -927,8 +997,7 @@ async function handleGetLedger(request) {
 
 // ===== ENDPOINT: GET /api/grades =====  (Grade Report HTML)
 async function handleGetGradeReport(request) {
-  const cookieHeader = request.headers.get('Cookie');
-  const sessionId = getCookieValue(cookieHeader, 'ASP.NET_SessionId');
+  const sessionId = getSessionId(request);
 
   if (!sessionId) {
     return jsonResponse({ status: 'error', message: 'Unauthorized. Please log in first.' }, 401, request);
@@ -1054,8 +1123,7 @@ async function handleGetGradeReport(request) {
 
 // ===== ENDPOINT: GET /api/profile ===== (Student Profile)
 async function handleGetStudentProfile(request) {
-  const cookieHeader = request.headers.get('Cookie');
-  const sessionId = getCookieValue(cookieHeader, 'ASP.NET_SessionId');
+  const sessionId = getSessionId(request);
 
   if (!sessionId) {
     return jsonResponse({ status: 'error', message: 'Unauthorized. Please log in first.' }, 401, request);
@@ -1083,8 +1151,7 @@ async function handleGetStudentProfile(request) {
 
 // ===== ENDPOINT: GET /api/profile/photo ===== (Student Profile Photo Proxy)
 async function handleGetProfilePhoto(request) {
-  const cookieHeader = request.headers.get('Cookie');
-  const sessionId = getCookieValue(cookieHeader, 'ASP.NET_SessionId');
+  const sessionId = getSessionId(request);
   const url = new URL(request.url);
   const photoPath = url.searchParams.get('url');
   let studentId = url.searchParams.get('studentId') || url.searchParams.get('id');
@@ -1161,8 +1228,7 @@ async function handleGetProfilePhoto(request) {
 
 // ===== ENDPOINT: GET /api/preadvising?semesterId= ===== (Pre-Advising Data)
 async function handleGetPreAdvising(request) {
-  const cookieHeader = request.headers.get('Cookie');
-  const sessionId = getCookieValue(cookieHeader, 'ASP.NET_SessionId');
+  const sessionId = getSessionId(request);
 
   if (!sessionId) {
     return jsonResponse({ status: 'error', message: 'Unauthorized. Please log in first.' }, 401, request);
@@ -1233,8 +1299,7 @@ async function handleGetPreAdvising(request) {
 
 // ===== ENDPOINT: GET /api/degree-review?studentId= ===== (Degree Review & Progress)
 async function handleGetDegreeReview(request) {
-  const cookieHeader = request.headers.get('Cookie');
-  const sessionId = getCookieValue(cookieHeader, 'ASP.NET_SessionId');
+  const sessionId = getSessionId(request);
 
   if (!sessionId) {
     return jsonResponse({ status: 'error', message: 'Unauthorized. Please log in first.' }, 401, request);
@@ -1292,8 +1357,7 @@ async function handleGetDegreeReview(request) {
 
 // ===== ENDPOINT: GET /api/curriculum?curriculumId= ===== (Full Program Curriculum)
 async function handleGetCurriculum(request) {
-  const cookieHeader = request.headers.get('Cookie');
-  const sessionId = getCookieValue(cookieHeader, 'ASP.NET_SessionId');
+  const sessionId = getSessionId(request);
 
   if (!sessionId) {
     return jsonResponse({ status: 'error', message: 'Unauthorized. Please log in first.' }, 401, request);
@@ -2185,11 +2249,11 @@ export default {
     }
 
     if (url.pathname === '/api/auth/logout' && request.method === 'POST') {
-      return handleLogout(request);
+      return handleLogout(request, env);
     }
 
     if (url.pathname === '/api/auth/status' && request.method === 'GET') {
-      return handleAuthStatus(request);
+      return handleAuthStatus(request, env);
     }
 
     if (url.pathname === '/api/courses' && request.method === 'GET') {

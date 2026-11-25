@@ -62,14 +62,35 @@
                 sessionStorage.removeItem('ewu_just_logged_out');
                 return;
             }
+            var storedSession = null;
+            try {
+                storedSession = localStorage.getItem('ewu_session_id') || sessionStorage.getItem('ewu_session_id');
+            } catch(e) {}
+
+            var storedStudent = null;
+            try {
+                storedStudent = localStorage.getItem('studentId') || localStorage.getItem('ewu_student_id');
+            } catch(e) {}
+
+            if (!storedSession && !storedStudent) {
+                return;
+            }
+
             document.documentElement.classList.add('auth-checking');
             var timer = setTimeout(function() {
                 document.documentElement.classList.remove('auth-checking');
             }, 3000);
+
+            var headers = { 'Accept': 'application/json' };
+            if (storedSession) {
+                headers['x-session-id'] = storedSession;
+                headers['Authorization'] = 'Bearer ' + storedSession;
+            }
+
             fetch('https://api.aftabx.tech/api/auth/status', {
                 method: 'GET',
                 credentials: 'include',
-                headers: { 'Accept': 'application/json' }
+                headers: headers
             })
             .then(function(res) {
                 if (res.ok) return res.json();

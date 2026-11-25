@@ -23,11 +23,18 @@ const CONFIG = {
 // ===== CORS HEADERS =====
 function getCorsHeaders(request) {
     const origin = request ? request.headers.get('Origin') : null;
-    const allowedOrigin = (origin && CONFIG.ALLOWED_ORIGINS.includes(origin)) ? origin : CONFIG.ALLOWED_ORIGINS[0];
+    const isAllowed = origin && (
+        CONFIG.ALLOWED_ORIGINS.includes(origin) ||
+        origin.endsWith('.aftabx.tech') ||
+        origin.endsWith('.aftabkabir.me') ||
+        origin.endsWith('.pages.dev') ||
+        /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)
+    );
+    const allowedOrigin = isAllowed ? origin : CONFIG.ALLOWED_ORIGINS[0];
     return {
         'Access-Control-Allow-Origin': allowedOrigin,
         'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, X-Requested-With, Cookie, Authorization',
+        'Access-Control-Allow-Headers': 'Content-Type, X-Requested-With, Cookie, Authorization, x-session-id',
         'Access-Control-Allow-Credentials': 'true',
         'Access-Control-Max-Age': '86400'
     };
